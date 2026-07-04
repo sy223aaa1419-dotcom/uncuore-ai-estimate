@@ -446,7 +446,8 @@ table.ad tr:hover td{background:#f7faff}
       <input type="password" id="adPass" placeholder="パスワード" onkeydown="if(event.key==='Enter')adminLogin()">
       <button onclick="adminLogin()">ログイン</button>
       <p class="msg" id="adMsg"></p>
-      <p style="font-size:11px;color:var(--muted);text-align:center;margin-top:14px"><a href="#" onclick="location.hash='';return false" style="text-decoration:underline">← LPに戻る</a></p>
+      <p id="adHealth" style="font-size:11.5px;color:var(--muted);line-height:1.9;margin-top:12px;text-align:left"></p>
+      <p style="font-size:11px;color:var(--muted);text-align:center;margin-top:10px"><a href="#" onclick="adHealthCheck();return false" style="text-decoration:underline">接続診断を実行</a>　<a href="#" onclick="location.hash='';return false" style="text-decoration:underline">← LPに戻る</a></p>
     </div>
   </div>
   <div class="ad-shell" id="adShell">
@@ -572,14 +573,14 @@ function sizeCarSVG(size){
   return `<svg viewBox="0 0 212 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${size}サイズ車両イメージ">${glow}${body}</svg>`;
 }
 
-/* ストレージは廃止：全データはサーバー共有（/api/data/* → Cloudflare KV）に保存 */
+/* ストレージは廃止：全データはサーバー共有（/api/* → Cloudflare KV）に保存 */
 
 /* 設定（メニュー・オプション・車種）読込：サーバー共有データから取得 */
 let DATA = {menus:DEFAULT_MENUS, options:DEFAULT_OPTIONS, vehicles:DEFAULT_VEHICLES};
 const SETTINGS_VER = 2; // 車種DB更新時に上げる
 async function loadSettings(){
   try{
-    const res = await fetch("/api/data/settings");
+    const res = await fetch("/api/settings");
     if(res.ok){
       const {settings:saved} = await res.json();
       if(saved && saved.menus && saved.options && saved.vehicles && saved.ver===SETTINGS_VER) DATA = saved;
@@ -592,7 +593,7 @@ async function saveSettings(){
 }
 /* 管理API呼び出しヘルパー（X-Admin-Keyで認証） */
 async function apiAdmin(method, action, body){
-  const res = await fetch("/api/data/"+action, {
+  const res = await fetch("/api/"+action, {
     method,
     headers: Object.assign({"X-Admin-Key":adminPass}, body?{"Content-Type":"application/json"}:{}),
     body: body?JSON.stringify(body):undefined
@@ -977,7 +978,7 @@ async function finalizeEstimate(){
   };
   // サーバーに保存し見積番号を採番（管理画面に即時反映される）
   try{
-    const res = await fetch("/api/data/estimate",{
+    const res = await fetch("/api/record",{
       method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(rec)
     });
     if(res.ok){ const {no} = await res.json(); state.estimateNo = no; return; }
@@ -1232,23 +1233,72 @@ function checkAdminRoute(){
     document.getElementById("adLogin").style.display = adminAuthed?"none":"flex";
     document.getElementById("adShell").classList.toggle("on",adminAuthed);
     if(adminAuthed) adRender();
+    else adHealthCheck(); // ログイン画面表示時に自動で接続診断
   }
 }
 window.addEventListener("hashchange",checkAdminRoute);
 async function adminLogin(){
   const pass = document.getElementById("adPass").value;
-  document.getElementById("adMsg").textContent = "確認中…";
+  const msgEl = document.getElementById("adMsg");
+  msgEl.textContent = "確認中…";
+  let res, raw = "";
   try{
-    const res = await fetch("/api/data/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({pass})});
-    if(res.ok){
-      adminPass = pass; adminAuthed = true;
-      document.getElementById("adMsg").textContent = "";
-      checkAdminRoute();
-    }else{
-      const e = await res.json().catch(()=>({}));
-      document.getElementById("adMsg").textContent = e.message || "パスワードが違います";
+    res = await fetch("/api/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({pass})});
+    raw = await res.text();
+  }catch(e){
+    console.error("[admin-login] ネットワークエラー:", e);
+    msgEl.textContent = "通信エラー：サーバーに接続できません。電波状況をご確認ください。";
+    return;
+  }
+  let data = null;
+  try{ data = JSON.parse(raw); }catch(_){}
+  console.log("[admin-login] POST /api/login → HTTP", res.status, "| レスポンス:", data || raw.slice(0,200));
+  if(res.ok && data && data.ok){
+    adminPass = pass; adminAuthed = true;
+    msgEl.textContent = "";
+    checkAdminRoute();
+    return;
+  }
+  // 失敗原因をステータス別に表示（詳細はブラウザコンソールとCloudflareのFunctionsログ参照）
+  if(res.status===404 || (raw && raw.trim().startsWith("<"))){
+    msgEl.textContent = "エラー：ログインAPIが見つかりません（404）。functionsフォルダがデプロイされていない可能性があります。下の接続診断を確認してください。";
+  }else if(res.status===401){
+    msgEl.textContent = (data && data.message) || "パスワードが違います";
+  }else if(res.status===500){
+    msgEl.textContent = (data && data.message) || "サーバー設定エラー（500）";
+  }else{
+    msgEl.textContent = "エラー（HTTP "+res.status+"）："+((data && data.message)||raw.slice(0,100)||"不明");
+  }
+  adHealthCheck();
+}
+/* 接続診断：/api/health でFunctions・KV・Secretsの状態を表示 */
+async function adHealthCheck(){
+  const el = document.getElementById("adHealth");
+  if(!el) return;
+  el.textContent = "接続診断中…";
+  try{
+    const res = await fetch("/api/health");
+    const raw = await res.text();
+    let h = null; try{ h = JSON.parse(raw); }catch(_){}
+    console.log("[health] GET /api/health → HTTP", res.status, "|", h || raw.slice(0,200));
+    if(!res.ok || !h || !h.functions){
+      el.innerHTML = "❌ <b>Functionsが動作していません</b>（/api/health が "+res.status+"）。"
+        + "GitHub連携の場合は<b>リポジトリの最上位</b>に functions/ フォルダがあるか、"
+        + "直接アップロードの場合は functions/ を含めてアップロードしたかを確認してください。";
+      return;
     }
-  }catch(e){ document.getElementById("adMsg").textContent = "通信エラー：再度お試しください"; }
+    const row = (ok,label,hint)=>(ok?"✅ ":"❌ ")+label+(ok?"":"（"+hint+"）");
+    el.innerHTML = [
+      row(true,"Functions：稼働中",""),
+      row(h.adminPasswordSet,"Secret ADMIN_PASSWORD","未設定。追加後に再デプロイが必要"),
+      row(h.kvBound,"KVバインド UC_KV","未設定。バインド後に再デプロイが必要"),
+      row(h.resendKeySet,"Secret RESEND_API_KEY","未設定：問い合わせメールが送れません"),
+      row(h.anthropicKeySet,"Secret ANTHROPIC_API_KEY","未設定：AI判定が使えません")
+    ].join("<br>");
+  }catch(e){
+    console.error("[health] 失敗:", e);
+    el.textContent = "接続診断に失敗しました（通信エラー）";
+  }
 }
 function adminLogout(){ adminAuthed=false; adminPass=""; document.getElementById("adPass").value=""; checkAdminRoute(); }
 function adTab(t){
@@ -1265,7 +1315,7 @@ let adDetailNo=null;
 let adEstCache=null;
 async function adGetEstimates(force){
   if(adEstCache && !force) return adEstCache;
-  try{ adEstCache = (await apiAdmin("GET","estimates")).list || []; }
+  try{ adEstCache = (await apiAdmin("GET","records")).list || []; }
   catch(e){ alert("見積データの取得に失敗しました：" + e.message); adEstCache = adEstCache || []; }
   return adEstCache;
 }
@@ -1340,7 +1390,7 @@ async function adSetStatus(no,st){
   const list=await adGetEstimates();
   const r=list.find(x=>x.no===no); if(!r)return;
   r.status=st; (r.history=r.history||[]).push(`[${new Date().toLocaleString("ja-JP")}] ステータス変更 → ${st}`);
-  try{ await apiAdmin("PUT","estimate",{record:r}); }catch(e){ alert("保存に失敗しました："+e.message); }
+  try{ await apiAdmin("PUT","record",{record:r}); }catch(e){ alert("保存に失敗しました："+e.message); }
   adRenderList();
 }
 async function adSaveMemo(no){
@@ -1348,12 +1398,12 @@ async function adSaveMemo(no){
   const r=list.find(x=>x.no===no); if(!r)return;
   r.memo=document.getElementById("adMemo").value;
   (r.history=r.history||[]).push(`[${new Date().toLocaleString("ja-JP")}] メモ更新`);
-  try{ await apiAdmin("PUT","estimate",{record:r}); }catch(e){ alert("保存に失敗しました："+e.message); }
+  try{ await apiAdmin("PUT","record",{record:r}); }catch(e){ alert("保存に失敗しました："+e.message); }
   adOpenDetail(no,true);
 }
 async function adDeleteRec(no){
   if(!confirm("この見積データを削除しますか？"))return;
-  try{ await apiAdmin("DELETE","estimate?no="+encodeURIComponent(no)); }
+  try{ await apiAdmin("DELETE","record?no="+encodeURIComponent(no)); }
   catch(e){ alert("削除に失敗しました："+e.message); return; }
   adDetailNo=null; adRenderList();
   document.getElementById("adDetail").innerHTML="";
@@ -1495,6 +1545,3 @@ async function adSaveAll(silent){
 </script>
 </body>
 </html>
-<!-- deploy -->
- 
- 

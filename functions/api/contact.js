@@ -75,6 +75,27 @@ ${msg || "（本文なし）"}
     return json({ message: detail || `メール送信に失敗しました（${res.status}）` }, 502);
   }
 
+  // 管理画面用にKVへも保存（KV未設定でもメール送信は成功扱い）
+  if (env.UC_KV) {
+    try {
+      const at = new Date().toISOString();
+      await env.UC_KV.put(
+        "inq:" + at + "-" + Math.random().toString(36).slice(2, 8),
+        JSON.stringify({ at, estimateNo, name, tel, mail, msg })
+      );
+      if (estimateNo) {
+        const raw = await env.UC_KV.get("est:" + estimateNo);
+        if (raw) {
+          const rec = JSON.parse(raw);
+          rec.name = rec.name || name; rec.tel = rec.tel || tel; rec.mail = rec.mail || mail;
+          rec.history = rec.history || [];
+          rec.history.push(`[${new Date().toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" })}] お問い合わせフォーム送信（${name}）`);
+          await env.UC_KV.put("est:" + estimateNo, JSON.stringify(rec));
+        }
+      }
+    } catch (_) { /* 保存失敗はメール送信成功を妨げない */ }
+  }
+
   return json({ ok: true }, 200);
 }
 

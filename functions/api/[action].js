@@ -23,26 +23,50 @@ export async function onRequest(context) {
   const { request, env, params } = context;
   const action = String(params.action || "");
   const method = request.method;
+  console.log(`[api] ${method} /api/${action}`);
+
+  /* ---------- 稼働診断（公開・秘密情報は返さない） ---------- */
+  if (action === "health" && method === "GET") {
+    return json({
+      ok: true,
+      functions: true,
+      kvBound: !!env.UC_KV,
+      adminPasswordSet: !!env.ADMIN_PASSWORD,
+      resendKeySet: !!env.RESEND_API_KEY,
+      anthropicKeySet: !!env.ANTHROPIC_API_KEY,
+      time: new Date().toISOString(),
+    }, 200);
+  }
+
+  /* ---------- 管理ログイン（KV不要なのでKVチェックより前で処理） ---------- */
+  if (action === "login" && method === "POST") {
+    if (!env.ADMIN_PASSWORD) {
+      console.log("[login] NG: Secret ADMIN_PASSWORD が未設定");
+      return json({ message: "サーバー設定エラー：Secret ADMIN_PASSWORD が未設定です（設定後は再デプロイが必要）" }, 500);
+    }
+    const b = await request.json().catch(() => ({}));
+    const input = typeof b.pass === "string" ? b.pass.trim() : "";
+    const expected = String(env.ADMIN_PASSWORD).trim();
+    const match = input.length > 0 && input === expected;
+    // 秘密値そのものは記録せず、原因切り分けに必要な情報のみログ出力
+    console.log(`[login] result=${match ? "OK" : "NG"} inputLen=${input.length} expectedLen=${expected.length}` +
+      (!match && input.length === expected.length ? " (長さは一致：文字の違い)" : "") +
+      (String(env.ADMIN_PASSWORD) !== expected ? " (注意:Secret値の前後に空白/改行あり→トリムして照合)" : ""));
+    if (match) return json({ ok: true }, 200);
+    return json({ message: "パスワードが違います（入力した文字数: " + input.length + "）" }, 401);
+  }
 
   if (!env.UC_KV) {
+    console.log("[api] NG: KVバインド(UC_KV)が未設定");
     return json({ message: "サーバー設定エラー：KVが未設定です。CloudflareでKVネームスペースを作成し、変数名 UC_KV でバインドしてください（公開手順.md参照）" }, 500);
   }
   const kv = env.UC_KV;
 
-  const adminKey = request.headers.get("X-Admin-Key") || "";
-  const isAdmin = !!env.ADMIN_PASSWORD && adminKey === env.ADMIN_PASSWORD;
+  const adminKey = (request.headers.get("X-Admin-Key") || "").trim();
+  const isAdmin = !!env.ADMIN_PASSWORD && adminKey === String(env.ADMIN_PASSWORD).trim();
   const needAdmin = () => json({ message: "認証エラー：管理者ログインが必要です" }, 401);
 
-  try {
-    /* ---------- 管理ログイン ---------- */
-    if (action === "login" && method === "POST") {
-      if (!env.ADMIN_PASSWORD) return json({ message: "サーバー設定エラー：Secret ADMIN_PASSWORD が未設定です" }, 500);
-      const b = await request.json().catch(() => ({}));
-      if (typeof b.pass === "string" && b.pass === env.ADMIN_PASSWORD) return json({ ok: true }, 200);
-      return json({ message: "パスワードが違います" }, 401);
-    }
-
-    /* ---------- 設定（メニュー・価格・車種DB） ---------- */
+  try {  /* ---------- 設定（メニュー・価格・車種DB） ---------- */
     if (action === "settings" && method === "GET") {
       const v = await kv.get("settings");
       return json({ settings: v ? JSON.parse(v) : null }, 200);
