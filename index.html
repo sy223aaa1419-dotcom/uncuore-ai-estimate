@@ -425,7 +425,9 @@ table.ad tr:hover td{background:#f7faff}
       <div class="field"><label>電話番号<em>必須</em></label><input id="cTel" type="tel" placeholder="090-0000-0000"><p class="err">電話番号を入力してください</p></div>
       <div class="field"><label>メールアドレス<em>必須</em></label><input id="cMail" type="email" placeholder="example@mail.com"><p class="err">正しいメールアドレスを入力してください</p></div>
       <div class="field"><label>お問い合わせ内容</label><textarea id="cMsg" rows="4" placeholder="ご質問・ご希望などございましたらご記入ください"></textarea></div>
-      <button class="btn next" onclick="submitContact()">送信する</button>
+      <input id="cWebsite" type="text" autocomplete="off" tabindex="-1" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0" aria-hidden="true">
+      <p id="cSendErr" style="display:none;color:var(--danger);font-size:13px;letter-spacing:.04em"></p>
+      <button class="btn next" id="cSendBtn" onclick="submitContact()">送信する</button>
       <p class="privacy">送信いただいた内容はご相談への対応のみに使用いたします。</p>
     </div>
     <div id="contactDone" style="display:none;text-align:center;padding:30px 0">
@@ -778,11 +780,22 @@ async function runPhotoAI(){
     if(r.error) throw new Error("判定不可："+r.error);
     if(!r.size || !SIZES.includes(String(r.size).toUpperCase())) throw new Error("サイズを判定できませんでした。車体全体が写る写真でお試しください。");
     r.size = String(r.size).toUpperCase();
-    // 車種DBに一致があればDBのサイズを優先
-    let dbSize = null, dbMaker = null;
+    // 車種DBに一致があればDBのサイズを優先（グレード付き・表記ゆれにも対応するあいまい一致）
+    const norm = s=>String(s||"").toUpperCase()
+      .replace(/[ａ-ｚＡ-Ｚ０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0))
+      .replace(/[\s\u3000・･\-ー－]/g,"");
+    const aiModel = norm(r.model);
+    let dbSize = null, dbMaker = null, bestScore = 0;
     for(const mk of Object.keys(DATA.vehicles)){
-      const hit = DATA.vehicles[mk].find(v=>v[0]===r.model);
-      if(hit){ dbSize = hit[1]; dbMaker = mk; break; }
+      for(const v of DATA.vehicles[mk]){
+        const dn = norm(v[0]);
+        if(!dn) continue;
+        // 完全一致は最優先。3文字以上のDB車名は包含一致も許可（「ヴォクシーZS」→「ヴォクシー」）
+        let score = 0;
+        if(dn===aiModel) score = 1000 + dn.length;
+        else if(dn.length>=3 && aiModel.includes(dn)) score = dn.length;
+        if(score > bestScore){ bestScore = score; dbSize = v[1]; dbMaker = mk; }
+      }
     }
     state.maker = dbMaker || r.maker || "—";
     state.model = r.model || "（車種不明）";
@@ -1132,6 +1145,33 @@ async function submitContact(){
   let ok=true;
   fields.forEach(([id,bad])=>{document.getElementById(id).closest(".field").classList.toggle("invalid",bad); if(bad)ok=false;});
   if(!ok) return;
+  // 送信中表示
+  const btn = document.getElementById("cSendBtn");
+  const errEl = document.getElementById("cSendErr");
+  btn.disabled = true; btn.textContent = "送信中…"; errEl.style.display = "none";
+  // サーバー経由でメール送信（uncuore02@gmail.com 宛）
+  let sent = false, sendErr = "";
+  try{
+    const res = await fetch("/api/contact",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        name, tel, mail, msg,
+        estimateNo: state.estimateNo || "",
+        website: document.getElementById("cWebsite").value
+      })
+    });
+    if(res.ok){ sent = true; }
+    else{
+      try{ const e = await res.json(); sendErr = e.message || ""; }catch(_){}
+    }
+  }catch(_){ sendErr = "通信エラー"; }
+  btn.disabled = false; btn.textContent = "送信する";
+  if(!sent){
+    errEl.textContent = "⚠ 送信に失敗しました（"+(sendErr||"不明なエラー")+"）。お手数ですがLINEまたはお電話でご連絡ください。";
+    errEl.style.display = "block";
+    return;
+  }
   const inq = (await stGet("uc-inquiries")) || [];
   inq.unshift({at:new Date().toISOString(), estimateNo:state.estimateNo, name, tel, mail, msg});
   await stSet("uc-inquiries", inq);
@@ -1143,7 +1183,7 @@ async function submitContact(){
     rec.history.push(`[${new Date().toLocaleString("ja-JP")}] お問い合わせフォーム送信（${name}）`);
     await stSet("uc-estimates",list);
   }
-  // メール送信は本番環境でサーバー連携（uncuore02@gmail.com 宛）。ここでは下書きを開く導線も用意
+  // メール送信済み（上の /api/contact 経由で uncuore02@gmail.com 宛）。完了画面を表示
   document.getElementById("contactForm").style.display="none";
   document.getElementById("contactDone").style.display="block";
 }
