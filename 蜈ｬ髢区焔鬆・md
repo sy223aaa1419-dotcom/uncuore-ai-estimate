@@ -1,0 +1,71 @@
+# UNCUORE AI見積LP 公開手順（Cloudflare Pages）
+
+## 構成
+
+```
+uncuore-lp/
+├── index.html                  … LP本体（画像埋め込み済み・これ1枚で表示可能）
+└── functions/
+    └── api/
+        └── estimate.js         … AI見積の中継サーバー（APIキーを安全に保持）
+```
+
+## 事前に用意するもの
+
+1. **Cloudflareアカウント**（無料） … https://dash.cloudflare.com/sign-up
+2. **Anthropic APIキー** … https://console.anthropic.com で発行
+   - 「API Keys」→「Create Key」
+   - 従量課金（クレジットのプリペイド購入）。1回の判定は1円未満〜数円程度
+   - 使いすぎ防止に、Console の「Limits」で月額上限の設定を推奨
+
+## 公開手順（ダッシュボードから・約10分）
+
+### 1. プロジェクト作成
+
+1. Cloudflare ダッシュボード →「Workers & Pages」→「Create」→「Pages」
+2. 「Upload assets（Direct Upload）」を選択
+3. プロジェクト名を入力（例: `uncuore-lp`）
+4. この `uncuore-lp` フォルダ**ごと**ドラッグ&ドロップしてデプロイ
+   - ⚠️ `index.html` 単体ではなく、`functions` フォルダを含めてアップロードすること
+
+### 2. APIキーの設定（重要）
+
+1. デプロイしたプロジェクトの「Settings」→「Variables and Secrets」
+2. 「Add」で以下を追加:
+   - Type: **Secret**
+   - Variable name: `ANTHROPIC_API_KEY`
+   - Value: Anthropicで発行したキー（`sk-ant-...`）
+3. 保存後、**再デプロイ**（Deployments → 最新のデプロイ → Retry、または再アップロード）
+   - 環境変数は再デプロイ後に反映されます
+
+### 3. 動作確認
+
+1. 発行されたURL（`https://uncuore-lp.pages.dev` など）を開く
+2. AI見積 → 車の写真をアップロード →「AIで判定する」
+3. 車種・サイズが表示されればOK
+
+### 4. 独自ドメイン（任意）
+
+「Custom domains」→「Set up a custom domain」でお持ちのドメインを接続できます。
+接続後、`index.html` 内の JSON-LD の `"url": ""` に公開URLを入れておくとSEO上望ましいです。
+
+## 更新方法
+
+LPを修正したら、同じプロジェクトに再度フォルダをアップロードするだけです。
+
+## セキュリティ・コストについて
+
+- APIキーはサーバー側（Secret）のみに存在し、HTMLには含まれません
+- 中継サーバーはプロンプト固定・車両判定専用のため、第三者に汎用AIとして悪用されません
+- 画像は約6MBまでに制限済み
+- 大量アクセスが心配な場合: Cloudflare「Security」→「WAF」→ Rate limiting rules で
+  `/api/estimate` へのリクエストを「同一IPから10回/分まで」等に制限できます（無料枠で1ルール可）
+
+## トラブルシューティング
+
+| 症状 | 原因と対処 |
+|---|---|
+| 「サーバー設定エラー（APIキー未設定）」 | Secret登録後に再デプロイしていない |
+| 「AI判定サービスの設定に問題があります」 | APIキーが無効。Consoleでキーを確認 |
+| 判定が返らない・502 | Anthropicのクレジット残高切れの可能性。Consoleで確認 |
+| 混雑エラー（429） | 時間をおいて再試行。頻発する場合はConsoleのRate Limitを確認 |
