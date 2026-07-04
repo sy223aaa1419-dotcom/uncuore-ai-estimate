@@ -9,7 +9,9 @@ uncuore-lp/
     └── api/
         ├── estimate.js         … AI見積の中継サーバー（APIキーを安全に保持）
         ├── contact.js          … 問い合わせメール送信（uncuore02@gmail.com 宛）
-        └── data/[action].js    … 見積・問い合わせ・価格設定の共有データベースAPI
+        └── [action].js         … 見積・問い合わせ・価格設定の共有データベースAPI
+                                   （/api/record, /api/records, /api/login,
+                                     /api/inquiries, /api/settings を処理）
 ```
 
 ## 事前に用意するもの
@@ -118,3 +120,18 @@ LPを修正したら、同じプロジェクトに再度フォルダをアップ
 | 「Secret ADMIN_PASSWORD が未設定です」 | Secretを追加して再デプロイ |
 | 見積一覧が空のまま | KVバインド後に作成された見積のみ表示されます（それ以前のデータは保存されていません） |
 | 価格を編集しても保存に失敗する | 一度ログアウトして再ログイン（パスワード変更後は再ログインが必要） |
+
+### ログインできない場合の調べ方（v3以降）
+
+1. `公開URL#admin` を開くと、ログイン画面の下に**接続診断**が自動表示されます
+   - 「❌ Functionsが動作していません」→ functions/ フォルダがデプロイされていません。
+     GitHub連携なら**リポジトリの最上位**に functions/ があるか確認
+     （リポジトリ直下が uncuore-lp/functions/... と一段深い場合はNG。
+       その場合はPagesの「Build settings」で Root directory を uncuore-lp に設定）
+   - ❌が付いたSecret/KVは、設定→**再デプロイ**で反映されます
+2. **ブラウザコンソール**（PC: F12 → Console）に
+   `[admin-login] POST /api/login → HTTP xxx` と実際のステータス・応答が出ます
+3. **サーバーログ**: Cloudflareダッシュボード → 対象Pagesプロジェクト →
+   「Deployments」→ 最新デプロイ → 「Functions」タブ →「Begin log stream」を押した状態で
+   ログインを試すと `[login] result=OK/NG inputLen=… expectedLen=…` が確認できます
+   - `expectedLen` が想定と違う → Secretに余計な文字が入っています（v3以降は前後の空白・改行は自動で無視されます）

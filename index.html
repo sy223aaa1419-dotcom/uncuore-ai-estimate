@@ -904,7 +904,7 @@ function renderMenu(){
         <div class="mdesc">${m.desc||""}</div>
         <span class="badge">耐久年数：${m.years}年</span>
       </div>
-      <div class="mprice"><span class="yen">${yen(price)}</span><small>税込・概算</small></div>
+      <div class="mprice"><span class="yen">${yen(price)}</span><small>税別・概算</small></div>
     </button>`;
   });
   html += `</div>` + navRow(3,"次へ","go(5)",!state.menuId) + `</div>`;
@@ -1007,7 +1007,7 @@ function renderResult(){
     </div>
     <div class="result-total">
       <span class="k">概算お見積金額</span>
-      <span class="v">${yen(state.total)}<small>税込</small></span>
+      <span class="v">${yen(state.total)}<small>税別</small></span>
     </div>
     <p class="result-note">※本見積はAIによる概算です。車両の状態により実際の金額が変わる場合がございます。正式なお見積は現車確認のうえご提示いたします。</p>
     <div class="result-ctas">
@@ -1100,7 +1100,7 @@ async function saveEstimateImage(){
   c.fillStyle="#7dd3fc"; c.font="500 24px 'Zen Kaku Gothic New',sans-serif";
   c.fillText("概算お見積金額", pad+34, y+56);
   c.textAlign="right"; c.fillStyle="#ffffff"; c.font="600 58px 'Shippori Mincho',serif";
-  c.fillText(yen(state.total)+"（税込）", W-pad-34, y+84); c.textAlign="left";
+  c.fillText(yen(state.total)+"（税別）", W-pad-34, y+84); c.textAlign="left";
   y+=bh+50;
   c.fillStyle="#93a7c9"; c.font="400 19px 'Zen Kaku Gothic New',sans-serif";
   c.fillText("※AIによる概算です。正式なお見積は現車確認のうえご提示いたします。", pad, y);
@@ -1136,7 +1136,7 @@ function openContact(customMsg){
 【車両】${state.maker||"—"} ${state.model||""}（${state.size}サイズ／${state.condition==="new"?"新車":"経年車"}）
 【メニュー】${m?m.name:""}
 【オプション】${optNames.length?optNames.join("、"):"なし"}
-【概算金額】${yen(state.total)}（税込）
+【概算金額】${yen(state.total)}（税別）
 ――――――――――
 上記の見積内容について相談したいです。`;
   }else{
@@ -1349,7 +1349,7 @@ async function adRenderList(){
     </div>
   </div>
   <div class="ad-card"><div class="ad-table-wrap"><table class="ad">
-    <thead><tr><th>見積番号</th><th>日時</th><th>名前</th><th>電話</th><th>メール</th><th>都道府県</th><th>メーカー</th><th>車種</th><th>サイズ</th><th>状態</th><th>メニュー</th><th>金額</th><th>ステータス</th><th></th></tr></thead>
+    <thead><tr><th>見積番号</th><th>日時</th><th>名前</th><th>電話</th><th>メール</th><th>都道府県</th><th>メーカー</th><th>車種</th><th>サイズ</th><th>状態</th><th>メニュー</th><th>金額(税別)</th><th>ステータス</th><th></th></tr></thead>
     <tbody>${rows.map(r=>`<tr>
       <td>${r.no}</td><td>${new Date(r.at).toLocaleString("ja-JP")}</td><td>${r.name}</td><td>${r.tel}</td><td>${r.mail}</td><td>${r.pref}</td>
       <td>${r.maker}</td><td>${r.model}</td><td>${r.size}</td><td>${r.condition}</td><td>${r.menu}</td><td>${yen(r.total)}</td>
@@ -1370,7 +1370,7 @@ async function adOpenDetail(no,keep){
       <dl><dt>お客様情報</dt><dd>${r.name}<br>${r.tel}<br>${r.mail}<br>${r.pref}</dd></dl>
       <dl><dt>車両情報</dt><dd>${r.maker} ${r.model}<br>サイズ：${r.size} ／ ${r.condition}</dd></dl>
       <dl><dt>施工内容</dt><dd>${r.menu}（耐久${r.years}年）</dd><dt>オプション</dt><dd>${r.options.length?r.options.join("<br>"):"なし"}</dd></dl>
-      <dl><dt>概算金額</dt><dd style="font-size:20px;font-weight:700;color:#2563eb">${yen(r.total)}</dd>
+      <dl><dt>概算金額（税別）</dt><dd style="font-size:20px;font-weight:700;color:#2563eb">${yen(r.total)}</dd>
         <dt>ステータス</dt><dd><select onchange="adSetStatus('${r.no}',this.value)">${STATUSES.map(s=>`<option ${r.status===s?"selected":""}>${s}</option>`).join("")}</select></dd></dl>
     </div>
     <div style="margin-top:14px">
@@ -1410,7 +1410,7 @@ async function adDeleteRec(no){
 }
 async function adExportCSV(){
   const list=await adGetEstimates();
-  const head=["見積番号","日時","名前","電話番号","メール","都道府県","メーカー","車種","サイズ","車両状態","メニュー","耐久年数","オプション","見積金額","ステータス","メモ"];
+  const head=["見積番号","日時","名前","電話番号","メール","都道府県","メーカー","車種","サイズ","車両状態","メニュー","耐久年数","オプション","見積金額(税別)","ステータス","メモ"];
   const esc=v=>`"${String(v==null?"":v).replace(/"/g,'""')}"`;
   const rows=list.map(r=>[r.no,new Date(r.at).toLocaleString("ja-JP"),r.name,r.tel,r.mail,r.pref,r.maker,r.model,r.size,r.condition,r.menu,r.years+"年",r.options.join(" / "),r.total,r.status,r.memo].map(esc).join(","));
   const csv="\uFEFF"+head.map(esc).join(",")+"\n"+rows.join("\n");
@@ -1451,7 +1451,7 @@ function adRenderPrice(){
       <td><input style="width:100%;text-align:left" value="${esc(m.desc)}" onchange="DATA.menus[${mi}].desc=this.value"></td>
     </tr>`).join("")}</tbody></table></div>
   </div>
-  <div class="ad-card" style="margin-top:16px"><h3>コーティングメニュー価格（税込）</h3>
+  <div class="ad-card" style="margin-top:16px"><h3>コーティングメニュー価格（税別）</h3>
   <div class="ad-table-wrap"><table class="ad price-table">
     <thead><tr><th>メニュー</th><th>耐久</th>${SIZES.map(s=>`<th>${s} 新車</th><th>${s} 経年</th>`).join("")}</tr></thead>
     <tbody>${DATA.menus.map((m,mi)=>`<tr>
@@ -1466,7 +1466,7 @@ function adRenderPrice(){
 /* 価格編集：オプション */
 function adRenderOpt(){
   const el=document.getElementById("tab-opt");
-  el.innerHTML=`<div class="ad-card"><h3>オプション価格（税込）</h3>
+  el.innerHTML=`<div class="ad-card"><h3>オプション価格（税別）</h3>
   <div class="ad-table-wrap"><table class="ad price-table">
     <thead><tr><th>オプション</th><th>S / M</th><th>L / LL / 3L</th></tr></thead>
     <tbody>${DATA.options.map((o,i)=>`<tr>
