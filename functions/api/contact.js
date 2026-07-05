@@ -30,19 +30,34 @@ export async function onRequestPost(context) {
   const mail = str(body.mail, 200);
   const msg = str(body.msg, 4000);
   const estimateNo = str(body.estimateNo, 40);
+  const source = body.source === "campaign" ? "campaign" : "normal";
+  const campaignName = str(body.campaignName, 100);
+  const normalPrice = Number(body.normalPrice) || 0;
+  const campaignPrice = Number(body.campaignPrice) || 0;
 
   if (!name || !tel || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail)) {
     return json({ message: "入力内容に不備があります" }, 400);
   }
 
-  const subject = `【AI見積】お問い合わせ｜${name}様${estimateNo ? `（${estimateNo}）` : ""}`;
+  const yen = n => "¥" + Number(n).toLocaleString("ja-JP");
+  const isCamp = source === "campaign";
+  const subject = `【AI見積${isCamp ? "・キャンペーン" : ""}】お問い合わせ｜${name}様${estimateNo ? `（${estimateNo}）` : ""}`;
+  const campLines = isCamp
+    ? `■流入タイプ：キャンペーン
+■キャンペーン名：${campaignName || "—"}
+■通常価格：${yen(normalPrice)}（税別）
+■キャンペーン価格：${campaignPrice ? yen(campaignPrice) + "（税別）" : "—（期間外・通常価格を表示）"}
+■割引額：${campaignPrice ? yen(normalPrice - campaignPrice) : "¥0"}
+`
+    : `■流入タイプ：通常
+`;
   const text =
 `UNCUORE AI見積LPからお問い合わせがありました。
 
 ■お名前：${name}
 ■電話番号：${tel}
 ■メール：${mail}
-${estimateNo ? `■見積番号：${estimateNo}\n` : ""}■送信日時：${new Date().toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" })}
+${estimateNo ? `■見積番号：${estimateNo}\n` : ""}${campLines}■送信日時：${new Date().toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" })}
 
 ――― お問い合わせ内容 ―――
 ${msg || "（本文なし）"}

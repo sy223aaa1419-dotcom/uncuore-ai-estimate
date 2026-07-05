@@ -302,6 +302,10 @@ body.admin-mode #lpRoot,body.admin-mode .mobile-bar{display:none}
 .ad-tabs{display:flex;gap:6px;flex-wrap:wrap}
 .ad-tabs button{background:transparent;border:1px solid rgba(255,255,255,.2);color:#cdd9f0;padding:7px 16px;border-radius:20px;font-size:12px}
 .ad-tabs button.on{background:var(--blue);border-color:var(--blue);color:#fff}
+.ad-src{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.06em;padding:3px 9px;border-radius:12px;background:#e7edf6;color:#4a5c7d;white-space:nowrap}
+.ad-src.camp{background:linear-gradient(90deg,#f59e0b,#ef4444);color:#fff}
+.ad-lbl{display:block;font-size:11px;color:#7387ad;margin-bottom:4px}
+.ad-inp{width:100%;border:1px solid #cbd5e6;border-radius:4px;padding:9px 10px;font-size:13.5px}
 .ad-body{max-width:1200px;margin:0 auto;padding:24px 16px 80px}
 .ad-card{background:#fff;border:1px solid #dde4f0;border-radius:8px;padding:20px;margin-bottom:20px}
 .ad-card h3{font-size:15px;letter-spacing:.08em;margin-bottom:14px;color:#1d3461}
@@ -414,6 +418,81 @@ table.ad tr:hover td{background:#f7faff}
 </div>
 </div><!-- /lpRoot -->
 
+<!-- ============ キャンペーン版LP（?mode=campaign） ============ -->
+<style>
+/* キャンペーン版：スマホファースト（Meta広告流入向け） */
+#campRoot{display:none;min-height:100vh;flex-direction:column;background:
+  radial-gradient(1000px 500px at 80% -10%,rgba(37,99,235,.22),transparent),
+  linear-gradient(175deg,#0a1020,#070b16 60%)}
+#campRoot.on{display:flex}
+.cp-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid rgba(255,255,255,.08)}
+.cp-head .lg{font-family:var(--serif);letter-spacing:.28em;font-size:15px;color:#eef2fa}
+.cp-head .lg small{display:block;font-size:8.5px;letter-spacing:.34em;color:var(--muted);margin-top:3px}
+.cp-head a{font-size:11px;color:#22c55e;border:1px solid rgba(34,197,94,.5);border-radius:20px;padding:7px 14px;text-decoration:none;letter-spacing:.08em}
+.cp-main{width:100%;max-width:560px;margin:0 auto;padding:18px 16px 70px;flex:1}
+.cp-card{background:linear-gradient(160deg,rgba(14,23,48,.9),rgba(7,11,22,.94));border:1px solid rgba(120,150,220,.22);border-radius:14px;padding:24px 18px;margin-bottom:16px;box-shadow:0 10px 40px rgba(0,0,0,.35)}
+.cp-kicker{text-align:center;font-size:15px;letter-spacing:.14em;color:#7fb0ff;font-weight:700;margin-bottom:12px}
+.cp-title{font-family:var(--serif);text-align:center;font-size:clamp(20px,6vw,26px);line-height:1.55;letter-spacing:.08em;margin-bottom:16px}
+.cp-title .cp-plus{color:var(--blue);display:inline-block;padding:0 2px}
+.cp-h2{font-size:16.5px;letter-spacing:.1em;margin-bottom:8px;text-align:center;font-weight:700}
+.cp-note{font-size:12.5px;color:var(--muted);line-height:1.8;margin-bottom:14px;text-align:center}
+.cp-pricebox{text-align:center;background:rgba(37,99,235,.08);border:1px solid rgba(90,140,255,.3);border-radius:12px;padding:18px 12px;margin:14px 0}
+.cp-plabel{font-size:12px;letter-spacing:.16em;color:var(--muted)}
+.cp-plabel.blue{color:#7fb0ff;font-weight:700}
+.cp-price-normal{font-size:22px;color:#98a7c4;text-decoration:line-through;text-decoration-color:rgba(239,68,68,.85);text-decoration-thickness:2px;margin:2px 0 4px}
+.cp-price-normal small,.cp-price-camp small{font-size:.45em;font-weight:400;color:var(--muted);text-decoration:none}
+.cp-arrow{font-size:20px;color:#7fb0ff;margin:2px 0}
+.cp-price-camp{font-size:clamp(34px,11vw,44px);font-weight:800;color:#fff;letter-spacing:.02em;margin:2px 0 6px;
+  text-shadow:0 0 26px rgba(59,130,246,.55)}
+.cp-off{display:inline-block;background:linear-gradient(90deg,#f59e0b,#ef4444);color:#fff;font-size:13.5px;font-weight:700;letter-spacing:.08em;border-radius:20px;padding:7px 18px;margin-top:6px}
+.cp-btn{display:flex;align-items:center;justify-content:center;width:100%;min-height:56px;border:none;border-radius:12px;
+  font-size:17px;font-weight:700;letter-spacing:.08em;margin-top:12px;cursor:pointer;text-decoration:none;
+  background:rgba(255,255,255,.08);color:#eef2fa;border:1px solid rgba(255,255,255,.25)}
+.cp-btn.go{background:linear-gradient(90deg,#2563eb,#3b82f6);border:none;color:#fff;box-shadow:0 8px 26px rgba(37,99,235,.45)}
+.cp-btn.go.big{min-height:62px;font-size:18px}
+.cp-btn.sub{background:transparent}
+.cp-btn.line{background:#16a34a;border:none;color:#fff}
+.cp-btn:disabled{opacity:.5}
+.cp-textlink{display:block;width:100%;background:none;border:none;color:var(--muted);font-size:13px;text-decoration:underline;margin-top:16px;padding:10px;cursor:pointer}
+.cp-prev{margin:0 auto 6px;max-width:340px;border-radius:10px;overflow:hidden;border:1px solid rgba(120,150,220,.3)}
+.cp-prev img{width:100%;display:block}
+.cp-err{display:block;color:#fda4a4;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.4);border-radius:8px;font-size:13px;line-height:1.7;padding:10px 12px;margin-top:12px}
+.cp-steps{list-style:none;margin:14px 0 18px}
+.cp-steps li{display:flex;align-items:center;gap:12px;font-size:15px;letter-spacing:.05em;padding:11px 4px;color:#5a6c8f;transition:color .3s}
+.cp-steps li .ic{width:22px;height:22px;border-radius:50%;border:2px solid #38507e;flex:none;position:relative}
+.cp-steps li.act{color:#dbe7ff}
+.cp-steps li.act .ic{border-color:#3b82f6;border-top-color:transparent;animation:cpSpin .8s linear infinite}
+.cp-steps li.done{color:#8fa8d8}
+.cp-steps li.done .ic{border-color:#22c55e;background:#22c55e}
+.cp-steps li.done .ic::after{content:"✓";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:700}
+@keyframes cpSpin{to{transform:rotate(360deg)}}
+.cp-judge{background:rgba(255,255,255,.04);border:1px solid rgba(120,150,220,.25);border-radius:10px;padding:6px 16px;margin:10px 0 16px}
+.cp-judge dl{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px dashed rgba(120,150,220,.2)}
+.cp-judge dl:last-child{border-bottom:none}
+.cp-judge dt{font-size:12px;color:var(--muted);letter-spacing:.12em}
+.cp-judge dd{font-size:16.5px;font-weight:700;letter-spacing:.04em}
+.cp-judge.slim dl{padding:8px 0}
+.cp-or{display:flex;align-items:center;gap:14px;color:var(--muted);font-size:12px;letter-spacing:.2em;margin:22px 0 16px}
+.cp-or::before,.cp-or::after{content:"";flex:1;height:1px;background:rgba(120,150,220,.25)}
+.cp-field{margin-bottom:12px}
+.cp-field label{display:block;font-size:12px;color:var(--muted);letter-spacing:.1em;margin-bottom:6px}
+.cp-field input{width:100%;min-height:52px;font-size:16px;padding:12px 14px;border-radius:10px;border:1px solid rgba(120,150,220,.35);background:rgba(255,255,255,.05);color:#eef2fa}
+.cp-estno{text-align:center;font-size:12.5px;color:#7fb0ff;letter-spacing:.1em;margin-bottom:10px}
+.cp-foot{text-align:center;font-size:10.5px;color:var(--muted);padding:20px;letter-spacing:.14em}
+/* スマホでの問い合わせモーダル入力最適化（iOSズーム防止・タップ領域拡大） */
+.modal input,.modal textarea{font-size:16px;min-height:48px}
+.modal textarea{min-height:auto}
+.modal #cSendBtn{min-height:54px;font-size:16.5px}
+</style>
+<div id="campRoot">
+  <header class="cp-head">
+    <div class="lg">UNCUORE<small>CAR COATING — YOKOHAMA</small></div>
+    <a href="https://line.me/ti/p/@271goter" target="_blank" rel="noopener">LINE相談</a>
+  </header>
+  <main class="cp-main" id="campBody"></main>
+  <footer class="cp-foot">© UNCUORE All Rights Reserved.</footer>
+</div>
+
 <!-- お問い合わせモーダル -->
 <div class="modal-veil" id="contactModal">
   <div class="modal">
@@ -459,6 +538,7 @@ table.ad tr:hover td{background:#f7faff}
         <button data-tab="price" onclick="adTab('price')">メニュー価格</button>
         <button data-tab="opt" onclick="adTab('opt')">オプション価格</button>
         <button data-tab="veh" onclick="adTab('veh')">車種データベース</button>
+        <button data-tab="camp" onclick="adTab('camp')">キャンペーン</button>
         <button onclick="adminLogout()">ログアウト</button>
       </div>
     </div>
@@ -468,6 +548,7 @@ table.ad tr:hover td{background:#f7faff}
       <div id="tab-price" style="display:none"></div>
       <div id="tab-opt" style="display:none"></div>
       <div id="tab-veh" style="display:none"></div>
+      <div id="tab-camp" style="display:none"></div>
     </div>
   </div>
 </div>
@@ -575,8 +656,18 @@ function sizeCarSVG(size){
 
 /* ストレージは廃止：全データはサーバー共有（/api/* → Cloudflare KV）に保存 */
 
-/* 設定（メニュー・オプション・車種）読込：サーバー共有データから取得 */
-let DATA = {menus:DEFAULT_MENUS, options:DEFAULT_OPTIONS, vehicles:DEFAULT_VEHICLES};
+/* キャンペーン設定の初期値（管理画面から変更可・KVに保存） */
+const DEFAULT_CAMPAIGN = {
+  enabled: true,
+  name: "AI見積もりキャンペーン",
+  desc: "オリジナルセラミック\n＋\nウィンドウコートセット",
+  normalPrice: 120000,
+  campaignPrice: 60000,
+  discountLabel: "✨ 半額キャンペーン実施中 ✨",
+  start: "", end: ""
+};
+/* 設定（メニュー・オプション・車種・キャンペーン）読込：サーバー共有データから取得 */
+let DATA = {menus:DEFAULT_MENUS, options:DEFAULT_OPTIONS, vehicles:DEFAULT_VEHICLES, campaign:JSON.parse(JSON.stringify(DEFAULT_CAMPAIGN))};
 const SETTINGS_VER = 2; // 車種DB更新時に上げる
 async function loadSettings(){
   try{
@@ -584,6 +675,7 @@ async function loadSettings(){
     if(res.ok){
       const {settings:saved} = await res.json();
       if(saved && saved.menus && saved.options && saved.vehicles && saved.ver===SETTINGS_VER) DATA = saved;
+      if(!DATA.campaign) DATA.campaign = JSON.parse(JSON.stringify(DEFAULT_CAMPAIGN));
     }
   }catch(e){ /* 取得失敗時は既定値で表示 */ }
 }
@@ -602,12 +694,22 @@ async function apiAdmin(method, action, body){
   if(!res.ok) throw new Error(data.message||("HTTP "+res.status));
   return data;
 }
+/* キャンペーンが現在有効か（ON かつ 期間内） */
+function campaignActive(){
+  const c = DATA.campaign;
+  if(!c || !c.enabled) return false;
+  const today = new Date(Date.now()+9*3600e3).toISOString().slice(0,10); // JST
+  if(c.start && today < c.start) return false;
+  if(c.end && today > c.end) return false;
+  return true;
+}
 
 /* ---------- 見積状態 ---------- */
 const state = {
   step:1, maker:null, model:null, size:null, sizeAuto:false, notFound:false,
   condition:null, menuId:null, options:[], customer:{name:"",tel:"",mail:"",pref:""}, photoJudged:false, photoData:null,
-  estimateNo:null, total:0
+  estimateNo:null, total:0,
+  source:"normal", campaignName:"", normalPrice:0, campaignPrice:0
 };
 const STEP_NAMES = {1:"車両情報",2:"車両サイズ",3:"車両状態",4:"コーティングメニュー",5:"オプション",6:"AI解析",7:"見積結果"};
 
@@ -752,13 +854,8 @@ function setPhotoStatus(msg,cls,spin){
   el.className = "photo-status "+(cls||"");
   el.innerHTML = (spin?'<span class="spin"></span>':'')+msg;
 }
-async function runPhotoAI(){
-  if(!state.photoData) return;
-  const btn = document.getElementById("photoRun");
-  btn.disabled = true;
-  setPhotoStatus("AIが車両を解析しています…","",true);
-  try{
-    const b64 = state.photoData.split(",")[1];
+/* AI車両判定の共通コア（通常版・キャンペーン版の両方から使用） */
+async function aiDetectVehicle(b64){
     let res;
     try{
       res = await fetch("/api/estimate",{
@@ -807,9 +904,16 @@ async function runPhotoAI(){
         if(score > bestScore){ bestScore = score; dbSize = v[1]; dbMaker = mk; }
       }
     }
-    state.maker = dbMaker || r.maker || "—";
-    state.model = r.model || "（車種不明）";
-    state.size = dbSize || r.size;
+    return { maker: dbMaker || r.maker || "—", model: r.model || "（車種不明）", size: dbSize || r.size };
+}
+async function runPhotoAI(){
+  if(!state.photoData) return;
+  const btn = document.getElementById("photoRun");
+  btn.disabled = true;
+  setPhotoStatus("AIが車両を解析しています…","",true);
+  try{
+    const r = await aiDetectVehicle(state.photoData.split(",")[1]);
+    state.maker = r.maker; state.model = r.model; state.size = r.size;
     state.sizeAuto = true; state.notFound = false; state.photoJudged = true;
     setPhotoStatus(`判定完了：${state.maker} ${state.model}（${state.size}サイズ）`,"ok");
     setTimeout(()=>go(2),700);
@@ -974,8 +1078,10 @@ async function finalizeEstimate(){
     condition:state.condition==="new"?"新車":"経年車",
     menu:m?m.name:"", years:m?m.years:"",
     options:state.options.map(id=>{const o=DATA.options.find(x=>x.id===id);return o?o.name:id;}),
-    total:state.total
+    total:state.total,
+    source:"normal", campaignName:"", normalPrice:0, campaignPrice:0
   };
+  state.source="normal"; state.campaignName=""; state.normalPrice=0; state.campaignPrice=0;
   // サーバーに保存し見積番号を採番（管理画面に即時反映される）
   try{
     const res = await fetch("/api/record",{
@@ -1121,6 +1227,9 @@ function restart(){
 
 /* ---------- お問い合わせ ---------- */
 function openContact(customMsg){
+  // 前回のエラー表示をリセット（開いた時点ではエラーを出さない）
+  document.querySelectorAll("#contactForm .field.invalid").forEach(f=>f.classList.remove("invalid"));
+  const _se=document.getElementById("cSendErr"); if(_se)_se.style.display="none";
   // 見積番号・見積内容を自動記載
   const noField = document.getElementById("fEstNo");
   if(customMsg){
@@ -1148,6 +1257,17 @@ function openContact(customMsg){
   document.getElementById("contactModal").classList.add("open");
 }
 function closeContact(){ document.getElementById("contactModal").classList.remove("open"); }
+/* 入力欄のエラー表示は「送信ボタンを押した時だけ」表示し、入力した瞬間にリアルタイムで消す */
+function initContactValidation(){
+  ["cName","cTel","cMail"].forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el) return;
+    el.addEventListener("input",()=>{
+      el.closest(".field").classList.remove("invalid");
+      const se=document.getElementById("cSendErr"); if(se)se.style.display="none";
+    });
+  });
+}
 async function submitContact(){
   const name=document.getElementById("cName").value.trim();
   const tel=document.getElementById("cTel").value.trim();
@@ -1170,6 +1290,10 @@ async function submitContact(){
       body:JSON.stringify({
         name, tel, mail, msg,
         estimateNo: state.estimateNo || "",
+        source: state.source || "normal",
+        campaignName: state.campaignName || "",
+        normalPrice: state.normalPrice || 0,
+        campaignPrice: state.campaignPrice || 0,
         website: document.getElementById("cWebsite").value
       })
     });
@@ -1303,8 +1427,8 @@ async function adHealthCheck(){
 function adminLogout(){ adminAuthed=false; adminPass=""; document.getElementById("adPass").value=""; checkAdminRoute(); }
 function adTab(t){
   document.querySelectorAll(".ad-tabs button[data-tab]").forEach(b=>b.classList.toggle("on",b.dataset.tab===t));
-  ["list","inq","price","opt","veh"].forEach(x=>document.getElementById("tab-"+x).style.display=(x===t?"block":"none"));
-  if(t==="list")adRenderList(); if(t==="inq")adRenderInq(); if(t==="price")adRenderPrice(); if(t==="opt")adRenderOpt(); if(t==="veh")adRenderVeh();
+  ["list","inq","price","opt","veh","camp"].forEach(x=>document.getElementById("tab-"+x).style.display=(x===t?"block":"none"));
+  if(t==="list")adRenderList(); if(t==="inq")adRenderInq(); if(t==="price")adRenderPrice(); if(t==="opt")adRenderOpt(); if(t==="veh")adRenderVeh(); if(t==="camp")adRenderCamp();
 }
 function adRender(){ adTab(document.querySelector(".ad-tabs button.on")?.dataset.tab||"list"); }
 
@@ -1349,13 +1473,14 @@ async function adRenderList(){
     </div>
   </div>
   <div class="ad-card"><div class="ad-table-wrap"><table class="ad">
-    <thead><tr><th>見積番号</th><th>日時</th><th>名前</th><th>電話</th><th>メール</th><th>都道府県</th><th>メーカー</th><th>車種</th><th>サイズ</th><th>状態</th><th>メニュー</th><th>金額(税別)</th><th>ステータス</th><th></th></tr></thead>
+    <thead><tr><th>流入</th><th>見積番号</th><th>日時</th><th>名前</th><th>電話</th><th>メール</th><th>都道府県</th><th>メーカー</th><th>車種</th><th>サイズ</th><th>状態</th><th>メニュー</th><th>金額(税別)</th><th>ステータス</th><th></th></tr></thead>
     <tbody>${rows.map(r=>`<tr>
+      <td><span class="ad-src ${r.source==="campaign"?"camp":""}">${r.source==="campaign"?"キャンペーン":"通常"}</span></td>
       <td>${r.no}</td><td>${new Date(r.at).toLocaleString("ja-JP")}</td><td>${r.name}</td><td>${r.tel}</td><td>${r.mail}</td><td>${r.pref}</td>
       <td>${r.maker}</td><td>${r.model}</td><td>${r.size}</td><td>${r.condition}</td><td>${r.menu}</td><td>${yen(r.total)}</td>
       <td><span class="st st-${r.status}">${r.status}</span></td>
       <td><button class="ad-btn" onclick="adOpenDetail('${r.no}')">詳細</button></td>
-    </tr>`).join("")||`<tr><td colspan="14" style="text-align:center;color:#98a7c4;padding:30px">見積データはまだありません</td></tr>`}</tbody>
+    </tr>`).join("")||`<tr><td colspan="15" style="text-align:center;color:#98a7c4;padding:30px">見積データはまだありません</td></tr>`}</tbody>
   </table></div></div>
   <div id="adDetail"></div>`;
   if(adDetailNo) adOpenDetail(adDetailNo,true);
@@ -1369,7 +1494,9 @@ async function adOpenDetail(no,keep){
     <div class="ad-detail-grid">
       <dl><dt>お客様情報</dt><dd>${r.name}<br>${r.tel}<br>${r.mail}<br>${r.pref}</dd></dl>
       <dl><dt>車両情報</dt><dd>${r.maker} ${r.model}<br>サイズ：${r.size} ／ ${r.condition}</dd></dl>
-      <dl><dt>施工内容</dt><dd>${r.menu}（耐久${r.years}年）</dd><dt>オプション</dt><dd>${r.options.length?r.options.join("<br>"):"なし"}</dd></dl>
+      <dl><dt>流入タイプ</dt><dd><span class="ad-src ${r.source==="campaign"?"camp":""}">${r.source==="campaign"?"キャンペーン":"通常"}</span>${r.source==="campaign"&&r.campaignName?`<br>${r.campaignName}`:""}</dd>
+        ${r.source==="campaign"?`<dt>価格内訳</dt><dd>通常価格：${yen(r.normalPrice||0)}<br>キャンペーン価格：${r.campaignPrice?yen(r.campaignPrice):"—（期間外）"}<br>割引額：${r.campaignPrice?yen((r.normalPrice||0)-r.campaignPrice):"¥0"}<br>最終表示価格：<b>${yen(r.total)}</b></dd>`:""}</dl>
+      <dl><dt>施工内容</dt><dd>${r.menu}${r.years?`（耐久${r.years}年）`:""}</dd><dt>オプション</dt><dd>${r.options.length?r.options.join("<br>"):"なし"}</dd></dl>
       <dl><dt>概算金額（税別）</dt><dd style="font-size:20px;font-weight:700;color:#2563eb">${yen(r.total)}</dd>
         <dt>ステータス</dt><dd><select onchange="adSetStatus('${r.no}',this.value)">${STATUSES.map(s=>`<option ${r.status===s?"selected":""}>${s}</option>`).join("")}</select></dd></dl>
     </div>
@@ -1410,9 +1537,14 @@ async function adDeleteRec(no){
 }
 async function adExportCSV(){
   const list=await adGetEstimates();
-  const head=["見積番号","日時","名前","電話番号","メール","都道府県","メーカー","車種","サイズ","車両状態","メニュー","耐久年数","オプション","見積金額(税別)","ステータス","メモ"];
+  const head=["流入タイプ","見積番号","日時","名前","電話番号","メール","都道府県","メーカー","車種","サイズ","車両状態","メニュー","耐久年数","オプション","見積金額(税別)","キャンペーン名","通常価格(税別)","キャンペーン価格(税別)","割引額","最終表示価格(税別)","ステータス","メモ"];
   const esc=v=>`"${String(v==null?"":v).replace(/"/g,'""')}"`;
-  const rows=list.map(r=>[r.no,new Date(r.at).toLocaleString("ja-JP"),r.name,r.tel,r.mail,r.pref,r.maker,r.model,r.size,r.condition,r.menu,r.years+"年",r.options.join(" / "),r.total,r.status,r.memo].map(esc).join(","));
+  const rows=list.map(r=>{
+    const isC=r.source==="campaign";
+    return [isC?"キャンペーン":"通常",r.no,new Date(r.at).toLocaleString("ja-JP"),r.name,r.tel,r.mail,r.pref,r.maker,r.model,r.size,r.condition,r.menu,r.years?r.years+"年":"",r.options.join(" / "),r.total,
+      isC?(r.campaignName||""):"", isC?(r.normalPrice||0):"", isC&&r.campaignPrice?r.campaignPrice:"", isC&&r.campaignPrice?(r.normalPrice||0)-r.campaignPrice:"", r.total,
+      r.status,r.memo].map(esc).join(",");
+  });
   const csv="\uFEFF"+head.map(esc).join(",")+"\n"+rows.join("\n");
   const a=document.createElement("a");
   a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));
@@ -1439,6 +1571,34 @@ async function adRenderInq(){
 }
 
 /* 価格編集：メニュー */
+/* キャンペーン設定タブ */
+function adRenderCamp(){
+  const el=document.getElementById("tab-camp");
+  if(!DATA.campaign) DATA.campaign = JSON.parse(JSON.stringify(DEFAULT_CAMPAIGN));
+  const c=DATA.campaign;
+  const esc=s=>String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");
+  const active=campaignActive();
+  el.innerHTML=`<div class="ad-card"><h3>キャンペーン設定（?mode=campaign のLPに即時反映）</h3>
+  <p style="font-size:12px;margin-bottom:14px">現在の状態：<b style="color:${active?"#16a34a":"#ef4444"}">${active?"公開中（キャンペーン価格を表示）":"停止中／期間外（通常価格のみ表示）"}</b></p>
+  <div style="display:grid;gap:12px;max-width:560px">
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700">
+      <input type="checkbox" style="width:18px;height:18px" ${c.enabled?"checked":""} onchange="DATA.campaign.enabled=this.checked"> キャンペーンを有効にする
+    </label>
+    <div><label class="ad-lbl">キャンペーン名</label><input class="ad-inp" value="${esc(c.name)}" onchange="DATA.campaign.name=this.value"></div>
+    <div><label class="ad-lbl">キャンペーン説明文（セット内容・改行可）</label><textarea class="ad-inp" rows="3" onchange="DATA.campaign.desc=this.value">${esc(c.desc)}</textarea></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div><label class="ad-lbl">通常価格（税別）</label><input class="ad-inp" type="number" value="${c.normalPrice}" onchange="DATA.campaign.normalPrice=Number(this.value)||0"></div>
+      <div><label class="ad-lbl">キャンペーン価格（税別）</label><input class="ad-inp" type="number" value="${c.campaignPrice}" onchange="DATA.campaign.campaignPrice=Number(this.value)||0"></div>
+    </div>
+    <div><label class="ad-lbl">割引表示（バッジ文言）</label><input class="ad-inp" value="${esc(c.discountLabel)}" onchange="DATA.campaign.discountLabel=this.value"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div><label class="ad-lbl">開始日（空欄=制限なし）</label><input class="ad-inp" type="date" value="${esc(c.start)}" onchange="DATA.campaign.start=this.value"></div>
+      <div><label class="ad-lbl">終了日（空欄=制限なし）</label><input class="ad-inp" type="date" value="${esc(c.end)}" onchange="DATA.campaign.end=this.value"></div>
+    </div>
+  </div>
+  <div class="ad-actions"><button class="ad-btn pri" onclick="adSaveAll().then(()=>adRenderCamp())">キャンペーン設定を保存</button></div>
+  <p class="ad-note">キャンペーンLPのURL：<b>${location.origin+location.pathname}?mode=campaign</b>（Meta広告のリンク先に設定してください）</p></div>`;
+}
 function adRenderPrice(){
   const el=document.getElementById("tab-price");
   const esc=s=>String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");
@@ -1535,11 +1695,221 @@ async function adSaveAll(silent){
 }
 
 /* ---------- 起動 ---------- */
+
+/* ============ キャンペーン版フロー（?mode=campaign） ============ */
+const IS_CAMPAIGN = new URLSearchParams(location.search).get("mode")==="campaign";
+const cstate = {step:1, photoData:null, maker:"", model:"", size:"", err:""};
+const cbody = ()=>document.getElementById("campBody");
+const cesc = s=>String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;");
+function cgo(n){ cstate.step=n; crender(); window.scrollTo({top:0,behavior:"smooth"}); }
+function crender(){
+  const s=cstate.step;
+  if(s===1) cRenderTop();
+  else if(s===3) cRenderConfirm();
+  else if(s===4) cRenderRetry();
+  else if(s===5) cRenderResult();
+}
+/* 価格比較ブロック（キャンペーン無効・期間外は通常価格のみ表示） */
+function cPriceBlock(){
+  const c = DATA.campaign || DEFAULT_CAMPAIGN;
+  if(!campaignActive()){
+    return `<div class="cp-pricebox"><p class="cp-plabel">セット価格</p>
+      <p class="cp-price-camp">${yen(c.normalPrice)}<small>（税別）</small></p></div>`;
+  }
+  return `<div class="cp-pricebox">
+    <p class="cp-plabel">通常価格</p>
+    <p class="cp-price-normal">${yen(c.normalPrice)}<small>（税別）</small></p>
+    <div class="cp-arrow">↓</div>
+    <p class="cp-plabel blue">${cesc(c.name)}価格</p>
+    <p class="cp-price-camp">${yen(c.campaignPrice)}<small>（税別）</small></p>
+    <p class="cp-off">${cesc(c.discountLabel)}</p>
+  </div>`;
+}
+/* ① トップ：キャンペーン訴求＋写真アップロード */
+function cRenderTop(){
+  const c = DATA.campaign || DEFAULT_CAMPAIGN;
+  cbody().innerHTML = `<div class="cp-card">
+    <p class="cp-kicker">🎉 ${cesc(c.name)}</p>
+    <h1 class="cp-title">${cesc(c.desc).replace(/\n/g,"<br>").replace(/＋/g,'<span class="cp-plus">＋</span>')}</h1>
+    ${cPriceBlock()}
+  </div>
+  <div class="cp-card">
+    <h2 class="cp-h2">お車の写真を1枚アップロード</h2>
+    <p class="cp-note">AIが車種を自動判定し、その場でお見積りします（約10秒）</p>
+    <input type="file" id="cpFile" accept="image/*" style="display:none" onchange="cPhotoPicked(this)">
+    <div id="cpPrev" class="cp-prev" style="display:none"><img id="cpImg" alt="車両写真"></div>
+    <button class="cp-btn go" id="cpUpBtn" onclick="document.getElementById('cpFile').click()">📷 写真をアップロード</button>
+    <button class="cp-btn go" id="cpRunBtn" style="display:none" onclick="cAnalyze()">AI見積もりスタート</button>
+    <button class="cp-textlink" onclick="cstate.err='';cgo(4)">写真がない方はこちら（車種を直接入力）</button>
+  </div>`;
+  if(cstate.photoData){
+    document.getElementById("cpImg").src = cstate.photoData;
+    document.getElementById("cpPrev").style.display = "block";
+    document.getElementById("cpRunBtn").style.display = "flex";
+    const up = document.getElementById("cpUpBtn");
+    up.textContent = "📷 写真を選び直す"; up.classList.remove("go"); up.classList.add("sub");
+  }
+}
+function cPhotoPicked(input){
+  const f = input.files && input.files[0]; if(!f) return;
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    const img = new Image();
+    img.onload = ()=>{
+      const max = 1024, scale = Math.min(1, max/Math.max(img.width,img.height));
+      const cv = document.createElement("canvas");
+      cv.width = Math.round(img.width*scale); cv.height = Math.round(img.height*scale);
+      cv.getContext("2d").drawImage(img,0,0,cv.width,cv.height);
+      cstate.photoData = cv.toDataURL("image/jpeg",0.85);
+      cRenderTop();
+      const btn = document.getElementById("cpRunBtn");
+      if(btn) btn.scrollIntoView({behavior:"smooth",block:"center"});
+    };
+    img.src = reader.result;
+  };
+  reader.readAsDataURL(f);
+}
+/* ② AI解析（ChatGPT風の段階演出） */
+async function cAnalyze(){
+  if(!cstate.photoData) return;
+  cstate.step = 2;
+  const stages = ["AIが車両を解析しています…","メーカーを判定しています…","車種を判定しています…","サイズを判定しています…","AI見積書を作成しています…"];
+  cbody().innerHTML = `<div class="cp-card">
+    <h2 class="cp-h2">AI解析中</h2>
+    <ul class="cp-steps">${stages.map((t,i)=>`<li id="cpS${i}" class="${i===0?"act":""}"><span class="ic"></span>${t}</li>`).join("")}</ul>
+    <div class="cp-prev"><img src="${cstate.photoData}" alt=""></div>
+  </div>`;
+  window.scrollTo({top:0,behavior:"smooth"});
+  let cur = 0;
+  const advance = ()=>{
+    if(cur < stages.length-1){
+      const d = document.getElementById("cpS"+cur); if(d) d.className = "done";
+      cur++;
+      const a = document.getElementById("cpS"+cur); if(a) a.className = "act";
+    }
+  };
+  const timer = setInterval(advance, 1100);
+  try{
+    const r = await aiDetectVehicle(cstate.photoData.split(",")[1]);
+    clearInterval(timer);
+    while(cur < stages.length-1){ advance(); await new Promise(res=>setTimeout(res,260)); }
+    const last = document.getElementById("cpS"+cur); if(last) last.className = "done";
+    cstate.maker = r.maker; cstate.model = r.model; cstate.size = r.size; cstate.err = "";
+    setTimeout(()=>cgo(3), 550);
+  }catch(e){
+    clearInterval(timer);
+    cstate.err = e.message || "AI判定に失敗しました";
+    cgo(4);
+  }
+}
+/* ③ AI判定結果の確認 */
+function cRenderConfirm(){
+  cbody().innerHTML = `<div class="cp-card">
+    <p class="cp-kicker">✅ AIが車両を判定しました</p>
+    <div class="cp-judge">
+      <dl><dt>メーカー</dt><dd>${cesc(cstate.maker)}</dd></dl>
+      <dl><dt>車種</dt><dd>${cesc(cstate.model)}</dd></dl>
+      <dl><dt>サイズ</dt><dd>${cesc(cstate.size)}サイズ</dd></dl>
+    </div>
+    <p class="cp-note">この内容でよろしいですか？</p>
+    <button class="cp-btn go big" onclick="cConfirmYes(this)">はい、この車です</button>
+    <button class="cp-btn sub" onclick="cstate.err='';cgo(4)">違います</button>
+  </div>`;
+}
+async function cConfirmYes(btn){
+  btn.disabled = true; btn.textContent = "AI見積を作成中…";
+  await cFinalize(); cgo(5);
+}
+/* ③b 誤判定・失敗時：再判定 or 直接入力（離脱させない導線） */
+function cRenderRetry(){
+  cbody().innerHTML = `<div class="cp-card">
+    ${cstate.err ? `<p class="cp-err">⚠ ${cesc(cstate.err)}</p>` : `<p class="cp-note">AIの判定は100%ではありません。以下のどちらかをお選びください。</p>`}
+    <button class="cp-btn" onclick="cRetryPhoto()">📷 もう一度AI判定する</button>
+    <div class="cp-or">または</div>
+    <h2 class="cp-h2">メーカー・車種を直接入力</h2>
+    <div class="cp-field"><label>メーカー</label><input id="cpMaker" type="text" placeholder="例：トヨタ" value="${cesc(cstate.maker==="—"?"":cstate.maker)}" oninput="document.getElementById('cpManErr').style.display='none'"></div>
+    <div class="cp-field"><label>車種</label><input id="cpModel" type="text" placeholder="例：ヴォクシー" value="${cesc(cstate.model==="（車種不明）"?"":cstate.model)}" oninput="document.getElementById('cpManErr').style.display='none'"></div>
+    <p id="cpManErr" class="cp-err" style="display:none">メーカーと車種を入力してください</p>
+    <button class="cp-btn go big" onclick="cManualGo(this)">この内容で見積へ進む</button>
+  </div>`;
+}
+function cRetryPhoto(){ cstate.photoData = null; cstate.err = ""; cgo(1); }
+async function cManualGo(btn){
+  const mk = document.getElementById("cpMaker").value.trim();
+  const md = document.getElementById("cpModel").value.trim();
+  if(!mk || !md){ document.getElementById("cpManErr").style.display = "block"; return; }
+  btn.disabled = true; btn.textContent = "AI見積を作成中…";
+  cstate.maker = mk; cstate.model = md; cstate.size = cstate.size || "—"; cstate.err = "";
+  await cFinalize(); cgo(5);
+}
+/* 見積レコード作成（共通KVへ保存・流入=キャンペーン） */
+async function cFinalize(){
+  const c = DATA.campaign || DEFAULT_CAMPAIGN;
+  const active = campaignActive();
+  const finalPrice = active ? c.campaignPrice : c.normalPrice;
+  state.source = "campaign";
+  state.campaignName = c.name;
+  state.normalPrice = c.normalPrice;
+  state.campaignPrice = active ? c.campaignPrice : 0;
+  state.maker = cstate.maker || "—"; state.model = cstate.model || "（車種不明）"; state.size = cstate.size || "—";
+  state.total = finalPrice;
+  const rec = {
+    at:new Date().toISOString(), name:"", tel:"", mail:"", pref:"",
+    maker:state.maker, model:state.model, size:state.size,
+    condition:"—", menu:(c.desc||c.name).replace(/\n/g,"").slice(0,60), years:0,
+    options:[], total:finalPrice,
+    source:"campaign", campaignName:c.name,
+    normalPrice:c.normalPrice, campaignPrice: active ? c.campaignPrice : 0
+  };
+  try{
+    const res = await fetch("/api/record",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(rec)});
+    if(res.ok){ state.estimateNo = (await res.json()).no; return; }
+  }catch(e){}
+  const d = new Date();
+  const ymd = d.getFullYear()+String(d.getMonth()+1).padStart(2,"0")+String(d.getDate()).padStart(2,"0");
+  state.estimateNo = `UC-${ymd}-T${String(Math.floor(Math.random()*9000)+1000)}`;
+}
+/* ④ 見積結果＋問い合わせ導線 */
+function cRenderResult(){
+  const c = DATA.campaign || DEFAULT_CAMPAIGN;
+  cbody().innerHTML = `<div class="cp-card">
+    <p class="cp-kicker">📋 AI見積が完了しました</p>
+    ${state.estimateNo?`<p class="cp-estno">見積番号：${cesc(state.estimateNo)}</p>`:""}
+    <div class="cp-judge slim"><dl><dt>お車</dt><dd>${cesc(cstate.maker)} ${cesc(cstate.model)}${cstate.size&&cstate.size!=="—"?`（${cesc(cstate.size)}サイズ）`:""}</dd></dl></div>
+    <h2 class="cp-h2">${cesc(c.desc).replace(/\n/g,"<br>")}</h2>
+    ${cPriceBlock()}
+    <button class="cp-btn go big" onclick="cOpenContact()">この価格で問い合わせる</button>
+    <a class="cp-btn line" href="https://line.me/ti/p/@271goter" target="_blank" rel="noopener">LINEで相談する</a>
+    <p class="cp-note" style="margin-top:14px;margin-bottom:0">※ 表示価格は税別・概算です。車両の状態により変動する場合があります。</p>
+  </div>`;
+}
+function cOpenContact(){
+  const c = DATA.campaign || DEFAULT_CAMPAIGN;
+  const active = campaignActive();
+  openContact(
+`【見積番号】${state.estimateNo||"—"}
+【キャンペーン】${c.name}
+【車両】${cstate.maker||"—"} ${cstate.model||""}${cstate.size&&cstate.size!=="—"?`（${cstate.size}サイズ）`:""}
+【セット内容】${(c.desc||"").replace(/\n/g," ")}
+${active?`【通常価格】${yen(c.normalPrice)}（税別）
+【キャンペーン価格】${yen(c.campaignPrice)}（税別）`:`【価格】${yen(c.normalPrice)}（税別）`}
+――――――――――
+この価格で問い合わせます。`);
+}
+
 (async function init(){
   await loadSettings();
   document.querySelectorAll('.logo-img').forEach(el=>el.src=LOGO_LIGHT);
-  initHero(); initScroll();
-  setProgress(1); render();
+  initContactValidation();
+  if(IS_CAMPAIGN){
+    document.getElementById("lpRoot").style.display = "none";
+    document.getElementById("campRoot").classList.add("on");
+    document.title = (DATA.campaign?DATA.campaign.name:"AI見積もりキャンペーン") + "｜UNCUORE";
+    crender();
+  }else{
+    initHero(); initScroll();
+    setProgress(1); render();
+  }
   checkAdminRoute();
 })();
 </script>

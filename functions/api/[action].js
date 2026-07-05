@@ -160,6 +160,10 @@ function sanitizeEstimate(b) {
     maker: s(b.maker, 60), model: s(b.model, 100), size: s(b.size, 4),
     condition: s(b.condition, 10), menu: s(b.menu, 100), years: Number(b.years) || 0,
     options: arr, total: Number(b.total) || 0,
+    source: b.source === "campaign" ? "campaign" : "normal",
+    campaignName: s(b.campaignName, 100),
+    normalPrice: Number(b.normalPrice) || 0,
+    campaignPrice: Number(b.campaignPrice) || 0,
     status: "未対応", memo: "", history: [],
   };
 }
