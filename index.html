@@ -523,6 +523,27 @@ table.ad tr:hover td{background:#f7faff}
 .modal #cSendBtn{min-height:54px;font-size:16.5px}
 </style>
 
+<!-- 見積書画像の表示オーバーレイ（スマホ: 長押し保存・共有保存） -->
+<style>
+.img-overlay{display:none;position:fixed;inset:0;z-index:1000;background:rgba(4,7,14,.92);align-items:center;justify-content:center;padding:20px;overflow:auto}
+.img-overlay-in{max-width:520px;width:100%;text-align:center}
+.img-overlay-in .t{color:#dbe7ff;font-size:13.5px;line-height:1.8;margin-bottom:12px}
+.img-overlay-in img{width:100%;border-radius:12px;border:1px solid rgba(120,150,220,.4);-webkit-touch-callout:default}
+.img-overlay-in .row{display:flex;gap:10px;justify-content:center;margin-top:14px;flex-wrap:wrap}
+.img-overlay-in .row button{min-height:48px;padding:0 22px;border-radius:10px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.08);color:#eef2fa;font-size:14.5px;cursor:pointer;display:inline-flex;align-items:center}
+.img-overlay-in .row button#imgShareBtn{background:linear-gradient(90deg,#2563eb,#3b82f6);border:none}
+</style>
+<div id="imgOverlay" class="img-overlay" onclick="if(event.target===this)closeImgOverlay()">
+  <div class="img-overlay-in">
+    <p class="t">画像を<b>長押し</b>して「"写真"に保存」を選ぶか、<br>「共有して保存」から保存できます。</p>
+    <img id="imgOverlayPic" alt="UNCUORE AI見積書">
+    <div class="row">
+      <button id="imgShareBtn" onclick="shareEstimateImage()">共有して保存</button>
+      <button onclick="closeImgOverlay()">閉じる</button>
+    </div>
+  </div>
+</div>
+
 <!-- お問い合わせモーダル -->
 <div class="modal-veil" id="contactModal">
   <div class="modal">
@@ -1309,101 +1330,177 @@ function renderResult(){
     </div>
     <div class="nav-row" style="justify-content:center;gap:14px;flex-wrap:wrap">
       <button class="btn" onclick="go(3)">← 戻る</button>
-      <button class="btn" onclick="saveEstimateImage()">📷 見積を画像で保存</button>
+      <button class="btn" onclick="saveEstimateImage(this)">📷 見積を画像で保存</button>
       <button class="btn" onclick="restart()">最初からやり直す</button>
     </div>
+    <p id="imgSaveMsg" class="cp-err" style="display:none;text-align:center"></p>
   </div>`;
 }
 
-async function saveEstimateImage(){
-  const m = DATA.menus.find(x=>x.id===state.menuId);
-  const optLines = state.options.map(id=>{const o=DATA.options.find(x=>x.id===id);return o?`${o.name}  +${yen(optPrice(o,state.size))}`:"";});
-  const W=1080, pad=72;
-  const rows=[
-    ["メーカー", state.maker||"—"],
-    ["車種", state.model||"手動サイズ選択"],
-    ["サイズ", state.size],
-    ["車両状態", state.condition==="new"?"新車（登録1か月以内）":"経年車（登録1か月以上）"],
-    ["施工メニュー", m.name+"（耐久"+m.years+"年）"],
-  ];
-  const rowH=76, optH=optLines.length?46+optLines.length*44:76;
-  const carImg = await loadImg(SIZE_IMAGES[state.size]).catch(()=>null);
-  const logoImg = await loadImg(LOGO_LIGHT).catch(()=>null);
-  const carH = carImg ? Math.round((W-pad*2)*carImg.height/carImg.width*0.62) : 0;
-  const H = 300 + carH + 40 + rows.length*rowH + optH + 210 + 150;
-  const cv=document.createElement("canvas"); cv.width=W; cv.height=H;
-  const c=cv.getContext("2d");
+/* ============ 見積書の画像保存 ============
+   Canvas描画で見積書PNGを生成（外部ライブラリ不要・Safari対応・canvas汚染なし）
+   PC: 自動ダウンロード ／ スマホ: 画像を表示して長押し保存・共有保存 */
+function buildEstimateImage(){
+  const W = 1000, pad = 60;
+  const menus = lpVisibleMenus();
+  const optLines = state.options.map(id=>{const o=DATA.options.find(x=>x.id===id);return o?`${o.name}　+${yen(optPrice(o,state.size))}`:"";}).filter(Boolean);
+  const optCount = Math.max(optLines.length, 1);
+  // 高さを内容に合わせて計算
+  const H = 300 + 3*58 + 46 + optCount*44 + 40 + menus.length*172 + 150 + 120;
+  const cv = document.createElement("canvas");
+  cv.width = W*2; cv.height = H*2;
+  const c = cv.getContext("2d");
+  c.scale(2,2);
   // 背景
-  c.fillStyle="#04060c"; c.fillRect(0,0,W,H);
-  const g=c.createRadialGradient(W/2,H*0.15,50,W/2,H*0.15,W);
-  g.addColorStop(0,"rgba(37,99,235,.18)"); g.addColorStop(1,"transparent");
-  c.fillStyle=g; c.fillRect(0,0,W,H);
-  // コーナー飾り
-  c.strokeStyle="#4da3ff"; c.lineWidth=2;
-  const cs=60, mg=28;
-  c.beginPath();c.moveTo(mg,mg+cs);c.lineTo(mg,mg);c.lineTo(mg+cs,mg);c.stroke();
-  c.beginPath();c.moveTo(W-mg,H-mg-cs);c.lineTo(W-mg,H-mg);c.lineTo(W-mg-cs,H-mg);c.stroke();
-  c.strokeStyle="rgba(110,165,255,.35)";c.lineWidth=1;
-  c.strokeRect(mg+14,mg+14,W-(mg+14)*2,H-(mg+14)*2);
-  let y=110;
-  // ロゴ
-  if(logoImg){const lw=250,lh=lw*logoImg.height/logoImg.width;c.drawImage(logoImg,(W-lw)/2,y-40,lw,lh);y+=lh+8;}
-  c.fillStyle="#7db4ff"; c.font="500 22px 'Zen Kaku Gothic New',sans-serif"; c.textAlign="center";
-  c.letterSpacing="8px";
-  c.fillText("CAR COATING — YOKOHAMA", W/2, y); y+=64;
-  c.fillStyle="#eaf1fd"; c.font="600 46px 'Shippori Mincho',serif";
-  c.fillText("AI お見積結果", W/2, y); y+=48;
-  c.fillStyle="#4da3ff"; c.font="500 26px 'Zen Kaku Gothic New',sans-serif";
-  c.fillText(state.estimateNo, W/2, y); y+=36;
-  // 車両画像
-  if(carImg){
-    const iw=Math.round((W-pad*2)*0.62), ih=Math.round(iw*carImg.height/carImg.width);
-    const ix=(W-iw)/2;
-    c.fillStyle="#f2f4f7";
-    c.beginPath(); c.roundRect(ix-14,y,iw+28,ih+24,10); c.fill();
-    c.drawImage(carImg,ix,y+12,iw,ih);
-    y+=ih+24+40;
-  }else y+=20;
-  // 明細
-  c.textAlign="left"; c.letterSpacing="2px";
-  rows.forEach(([k,v])=>{
-    c.strokeStyle="rgba(110,165,255,.2)"; c.beginPath(); c.moveTo(pad,y+rowH-18); c.lineTo(W-pad,y+rowH-18); c.stroke();
-    c.fillStyle="#93a7c9"; c.font="500 24px 'Zen Kaku Gothic New',sans-serif";
-    c.fillText(k, pad, y+30);
-    c.fillStyle="#eaf1fd"; c.font="500 28px 'Zen Kaku Gothic New',sans-serif"; c.textAlign="right";
-    c.fillText(v, W-pad, y+32); c.textAlign="left";
-    y+=rowH;
-  });
+  const bg = c.createLinearGradient(0,0,0,H);
+  bg.addColorStop(0,"#0d1526"); bg.addColorStop(1,"#070b16");
+  c.fillStyle = bg; c.fillRect(0,0,W,H);
+  c.fillStyle = "rgba(37,99,235,.12)"; c.fillRect(0,0,W,210);
+  // ヘッダー（店舗ロゴ）
+  c.fillStyle = "#eef2fa"; c.textAlign = "center";
+  c.font = "600 46px 'Times New Roman', serif";
+  c.fillText("U N C U O R E", W/2, 92);
+  c.font = "12px sans-serif"; c.fillStyle = "#8fa3c8";
+  c.fillText("C A R   C O A T I N G   —   Y O K O H A M A", W/2, 122);
+  c.font = "bold 22px sans-serif"; c.fillStyle = "#7fb0ff";
+  c.fillText("AI お 見 積 書", W/2, 172);
+  // 見積番号・日付
+  c.textAlign = "left"; c.font = "15px sans-serif"; c.fillStyle = "#98a7c4";
+  c.fillText(`ESTIMATE No. ${state.estimateNo||"—"}`, pad, 232);
+  c.textAlign = "right";
+  c.fillText(new Date().toLocaleDateString("ja-JP"), W-pad, 232);
+  c.textAlign = "left";
+  let y = 262;
+  const line = ()=>{ c.strokeStyle="rgba(120,150,220,.3)"; c.beginPath(); c.moveTo(pad,y); c.lineTo(W-pad,y); c.stroke(); y+=26; };
+  line();
+  // 車両情報
+  const row = (k,v)=>{
+    c.font = "14px sans-serif"; c.fillStyle = "#8fa3c8"; c.fillText(k, pad, y+8);
+    c.font = "bold 21px sans-serif"; c.fillStyle = "#eef2fa"; c.fillText(v, pad+170, y+10);
+    y += 58;
+  };
+  row("車　両", `${state.maker||"—"} ${state.model||""}`);
+  row("サイズ", `${state.size||"—"} サイズ`);
+  row("車両状態", state.condition==="new" ? "新車（登録1か月以内）" : "経年車（登録1か月以上）");
   // オプション
-  c.fillStyle="#93a7c9"; c.font="500 24px 'Zen Kaku Gothic New',sans-serif";
-  c.fillText("オプション", pad, y+30);
-  c.textAlign="right"; c.fillStyle="#eaf1fd"; c.font="500 26px 'Zen Kaku Gothic New',sans-serif";
-  if(optLines.length){ optLines.forEach((t,i)=>c.fillText(t, W-pad, y+32+i*44)); y+=46+optLines.length*44; }
-  else{ c.fillText("なし", W-pad, y+32); y+=rowH; }
-  c.textAlign="left";
-  c.strokeStyle="rgba(110,165,255,.2)"; c.beginPath(); c.moveTo(pad,y-14); c.lineTo(W-pad,y-14); c.stroke();
-  y+=26;
-  // 合計
-  const bh=130;
-  const bg=c.createLinearGradient(pad,y,W-pad,y+bh);
-  bg.addColorStop(0,"rgba(37,99,235,.35)"); bg.addColorStop(1,"rgba(77,163,255,.12)");
-  c.fillStyle=bg; c.beginPath(); c.roundRect(pad,y,W-pad*2,bh,8); c.fill();
-  c.strokeStyle="rgba(110,165,255,.5)"; c.stroke();
-  c.fillStyle="#7dd3fc"; c.font="500 24px 'Zen Kaku Gothic New',sans-serif";
-  c.fillText("概算お見積金額", pad+34, y+56);
-  c.textAlign="right"; c.fillStyle="#ffffff"; c.font="600 58px 'Shippori Mincho',serif";
-  c.fillText(yen(state.total)+"（税別）", W-pad-34, y+84); c.textAlign="left";
-  y+=bh+50;
-  c.fillStyle="#93a7c9"; c.font="400 19px 'Zen Kaku Gothic New',sans-serif";
-  c.fillText("※AIによる概算です。正式なお見積は現車確認のうえご提示いたします。", pad, y);
-  c.fillText("発行日：" + new Date().toLocaleDateString("ja-JP"), pad, y+34);
-  c.textAlign="right"; c.fillStyle="#4da3ff";
-  c.fillText("UNCUORE ｜ LINE @271goter", W-pad, y+34); c.textAlign="left";
-  // ダウンロード
-  const a=document.createElement("a");
-  a.href=cv.toDataURL("image/png");
-  a.download=state.estimateNo+".png";
-  a.click();
+  c.font = "14px sans-serif"; c.fillStyle = "#8fa3c8"; c.fillText("オプション", pad, y+8);
+  c.font = "17px sans-serif"; c.fillStyle = "#dbe7ff";
+  if(optLines.length){
+    optLines.forEach(t=>{ c.fillText(t, pad+170, y+9); y += 44; });
+  }else{
+    c.fillText("なし", pad+170, y+9); y += 44;
+  }
+  y += 14; line();
+  // メニューごとの見積金額（施工メニュー＋オプションの合計）
+  menus.forEach(e=>{
+    const m = e.m;
+    const ribbon = [e.recommend?"おすすめ":null, e.no1?"人気No.1":null].filter(Boolean).join("・");
+    const boxTop = y;
+    c.fillStyle = e.highlight ? "rgba(245,158,11,.10)" : "rgba(255,255,255,.04)";
+    c.strokeStyle = e.highlight ? "rgba(245,158,11,.65)" : "rgba(120,150,220,.35)";
+    roundRect(c, pad, boxTop, W-pad*2, 150, 12); c.fill(); c.stroke();
+    if(ribbon){
+      c.fillStyle = "#f59e0b";
+      roundRect(c, pad+22, boxTop-13, 14+ribbon.length*13+(e.ai?0:0)+70, 26, 13); c.fill();
+      c.fillStyle = "#fff"; c.font = "bold 13px sans-serif";
+      c.fillText(`👑 ${ribbon}`, pad+34, boxTop+5);
+    }
+    c.fillStyle = "#eef2fa"; c.font = "bold 24px sans-serif";
+    c.fillText(m.name + (e.ai ? "　🤖AI推奨" : ""), pad+30, boxTop+62);
+    c.font = "13px sans-serif"; c.fillStyle = "#8fa3c8";
+    c.fillText(`耐久年数：${m.years}年`, pad+30, boxTop+92);
+    c.textAlign = "right";
+    c.fillStyle = "#7fb0ff"; c.font = "bold 40px sans-serif";
+    c.fillText(yen(menuTotal(m)), W-pad-30, boxTop+80);
+    c.font = "13px sans-serif"; c.fillStyle = "#8fa3c8";
+    c.fillText("（税別・概算）", W-pad-30, boxTop+112);
+    c.textAlign = "left";
+    y += 172;
+  });
+  // 注意書き・フッター
+  c.font = "13px sans-serif"; c.fillStyle = "#8fa3c8";
+  c.fillText("※ 各金額は「施工メニュー＋選択オプション」の合計（税別・概算）です。", pad, y+16);
+  c.fillText("※ 車両の状態により金額が変わる場合がございます。正式なお見積は現車確認のうえご提示いたします。", pad, y+44);
+  y += 92;
+  c.strokeStyle="rgba(120,150,220,.3)"; c.beginPath(); c.moveTo(pad,y); c.lineTo(W-pad,y); c.stroke();
+  c.textAlign = "center"; c.fillStyle = "#dbe7ff"; c.font = "15px sans-serif";
+  c.fillText("UNCUORE（アンクオーレ）｜カーコーティング専門店・横浜", W/2, y+40);
+  c.fillStyle = "#8fa3c8"; c.font = "13px sans-serif";
+  c.fillText("お問い合わせ・LINE相談はLPからお気軽にどうぞ", W/2, y+68);
+  c.textAlign = "left";
+  return cv.toDataURL("image/png");
+}
+function roundRect(c,x,y,w,h,r){
+  c.beginPath();
+  c.moveTo(x+r,y); c.arcTo(x+w,y,x+w,y+h,r); c.arcTo(x+w,y+h,x,y+h,r);
+  c.arcTo(x,y+h,x,y,r); c.arcTo(x,y,x+w,y,r); c.closePath();
+}
+async function saveEstimateImage(btn){
+  const msgEl = document.getElementById("imgSaveMsg");
+  if(msgEl) msgEl.style.display = "none";
+  let orig = null;
+  if(btn){ orig = btn.textContent; btn.disabled = true; btn.textContent = "画像を作成中…"; }
+  try{
+    // 描画を反映してから生成（「画像を作成中…」を表示するため1フレーム待つ）
+    await new Promise(r=>setTimeout(r,50));
+    const url = buildEstimateImage();
+    if(!url || typeof url !== "string" || !url.startsWith("data:image")) throw new Error("gen failed");
+    lastEstimateImage = url;
+    const isTouch = ("ontouchstart" in window) || (navigator.maxTouchPoints||0) > 0;
+    if(isTouch){
+      // スマホ: その場で画像を表示（長押し保存・共有保存。外部アプリへは遷移しない）
+      showImgOverlay(url);
+    }else{
+      // PC: PNGを自動ダウンロード
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `UNCUORE_AI見積_${state.estimateNo||"estimate"}.png`;
+      document.body.appendChild(a); a.click(); a.remove();
+    }
+  }catch(e){
+    if(msgEl){
+      msgEl.textContent = "画像保存に失敗しました。スクリーンショットで保存してください。";
+      msgEl.style.display = "block";
+    }
+  }finally{
+    if(btn){ btn.disabled = false; btn.textContent = orig; }
+  }
+}
+let lastEstimateImage = null;
+function showImgOverlay(url){
+  const ov = document.getElementById("imgOverlay");
+  document.getElementById("imgOverlayPic").src = url;
+  // Web Share APIが使える端末のみ「共有して保存」を表示（シェアシートはOS標準UI）
+  const sb = document.getElementById("imgShareBtn");
+  if(sb){
+    let ok = false;
+    try{
+      if(navigator.share && navigator.canShare){
+        const f = dataUrlToFile(url, "uncuore-estimate.png");
+        ok = f ? navigator.canShare({files:[f]}) : false;
+      }
+    }catch(e){ ok = false; }
+    sb.style.display = ok ? "inline-flex" : "none";
+  }
+  ov.style.display = "flex";
+}
+function closeImgOverlay(){ document.getElementById("imgOverlay").style.display = "none"; }
+function dataUrlToFile(url,name){
+  try{
+    const [meta,b64] = url.split(",");
+    const mime = (meta.match(/data:(.*?);/)||[])[1] || "image/png";
+    const bin = atob(b64);
+    const arr = new Uint8Array(bin.length);
+    for(let i=0;i<bin.length;i++) arr[i] = bin.charCodeAt(i);
+    return new File([arr], name, {type:mime});
+  }catch(e){ return null; }
+}
+async function shareEstimateImage(){
+  if(!lastEstimateImage) return;
+  try{
+    const f = dataUrlToFile(lastEstimateImage, "uncuore-estimate.png");
+    if(f && navigator.share) await navigator.share({ files:[f], title:"UNCUORE AI見積書" });
+  }catch(e){ /* ユーザーによるキャンセル等は無視 */ }
 }
 
 function restart(){
