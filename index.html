@@ -674,6 +674,12 @@ function sizeCarSVG(size){
 
 /* ストレージは廃止：全データはサーバー共有（/api/* → Cloudflare KV）に保存 */
 
+/* 通常版（Aパターン）で表示するメニューの初期設定（管理画面から変更可・KVに保存）
+   order=配列順、selected=初期選択、recommend=おすすめ、no1=人気No.1、ai=AI推奨、highlight=強調表示 */
+const DEFAULT_LP_MENUS = [
+  { id:"russo",    selected:true,  recommend:true,  no1:true,  ai:true,  highlight:true  },
+  { id:"original", selected:false, recommend:false, no1:false, ai:false, highlight:false }
+];
 /* キャンペーン設定の初期値（管理画面から変更可・KVに保存） */
 const DEFAULT_CAMPAIGN = {
   ver: 2,
@@ -689,7 +695,7 @@ const DEFAULT_CAMPAIGN = {
   start: "", end: ""
 };
 /* 設定（メニュー・オプション・車種・キャンペーン）読込：サーバー共有データから取得 */
-let DATA = {menus:DEFAULT_MENUS, options:DEFAULT_OPTIONS, vehicles:DEFAULT_VEHICLES, campaign:JSON.parse(JSON.stringify(DEFAULT_CAMPAIGN))};
+let DATA = {menus:DEFAULT_MENUS, options:DEFAULT_OPTIONS, vehicles:DEFAULT_VEHICLES, campaign:JSON.parse(JSON.stringify(DEFAULT_CAMPAIGN)), lpMenus:JSON.parse(JSON.stringify(DEFAULT_LP_MENUS))};
 const SETTINGS_VER = 2; // 車種DB更新時に上げる
 async function loadSettings(){
   try{
@@ -705,6 +711,8 @@ async function loadSettings(){
       for(const k of Object.keys(DEFAULT_CAMPAIGN)){
         if(DATA.campaign[k]===undefined && k!=="ver") DATA.campaign[k]=JSON.parse(JSON.stringify(DEFAULT_CAMPAIGN[k]));
       }
+      // 通常版メニュー表示設定の補完（保存済み設定に無い場合は初期設定）
+      if(!Array.isArray(DATA.lpMenus) || !DATA.lpMenus.length) DATA.lpMenus = JSON.parse(JSON.stringify(DEFAULT_LP_MENUS));
       // 車種DBの補完: アルファード・ヴェルファイア（保存済み設定に含まれない場合のみ追加）
       if(DATA.vehicles && Array.isArray(DATA.vehicles.TOYOTA)){
         [["アルファード","LL"],["ヴェルファイア","LL"]].forEach(v=>{
@@ -1109,25 +1117,30 @@ function selCond(c){ state.condition=c; renderCondition(); }
 function renderMenu(){
   const idx = sizeIdx(state.size);
   // Aパターン（高単価獲得）: AIが最適なコーティングを提案する見せ方。
-  // 表示は上位2メニュー（クオーレルッソコート＝おすすめ・人気No.1／クオーレコート）のみ。低価格メニューは表示しない。
-  const ids = ["russo","cuore"];
-  const list = ids.map(id=>DATA.menus.find(m=>m.id===id)).filter(Boolean);
-  const menus = list.length ? list : DATA.menus.slice(0,2);
-  if(!state.menuId || !menus.some(m=>m.id===state.menuId)) state.menuId = menus[0].id; // AIのおすすめを初期選択
+  // 表示メニュー・表示順・初期選択・バッジ・強調は管理画面「通常版メニュー表示」設定（KV保存）に従う。
+  const conf = (Array.isArray(DATA.lpMenus)&&DATA.lpMenus.length ? DATA.lpMenus : DEFAULT_LP_MENUS)
+    .map(e=>({ ...e, m: DATA.menus.find(x=>x.id===e.id) }))
+    .filter(e=>e.m);
+  const menus = conf.length ? conf : DATA.menus.slice(0,2).map(m=>({id:m.id, m}));
+  if(!state.menuId || !menus.some(e=>e.id===state.menuId)){
+    const sel = menus.find(e=>e.selected) || menus[0];
+    state.menuId = sel.id; // 管理画面で指定した初期選択メニュー
+  }
   let html = `<div class="step">
     <p class="cp-kicker">🤖 AIがあなたのお車に最適なコーティングを選定しました。</p>
     <p class="step-desc" style="text-align:center">${state.size}サイズ・${state.condition==="new"?"新車":"経年車"}のお車に合わせたご提案です。</p>
     <div class="menu-list">`;
-  menus.forEach((m,i)=>{
+  menus.forEach(e=>{
+    const m = e.m;
     const price = (state.condition==="new"?m.priceNew:m.priceUsed)[idx];
-    const best = i===0;
-    html += `<button class="menu-card ${best?'best':''} ${state.menuId===m.id?'sel':''}" onclick="selMenu('${m.id}')">
-      ${best?`<span class="best-ribbon">おすすめ・人気No.1</span>`:""}
+    const ribbon = [e.recommend?"おすすめ":null, e.no1?"人気No.1":null].filter(Boolean).join("・");
+    html += `<button class="menu-card ${e.highlight?'best':''} ${state.menuId===m.id?'sel':''}" onclick="selMenu('${m.id}')">
+      ${ribbon?`<span class="best-ribbon">${ribbon}</span>`:""}
       <div>
         <div class="mname">${m.name}</div>
         <div class="mkana">${m.kana||""}</div>
         <div class="mdesc">${m.desc||""}</div>
-        <span class="badge">耐久年数：${m.years}年</span>${best?`<span class="badge ai">AI推奨</span>`:""}
+        <span class="badge">耐久年数：${m.years}年</span>${e.ai?`<span class="badge ai">AI推奨</span>`:""}
       </div>
       <div class="mprice"><span class="yen">${yen(price)}</span><small>税別・概算</small></div>
     </button>`;
@@ -1757,10 +1770,62 @@ function adRenderCamp(){
   <p class="ad-note">通常価格は「対象メニュー＋特典オプション」の合計（サイズ別・新車/経年車別）で自動算出され、その合計に割引（既定40%OFF）が適用されます。画面上は特典として表示され「＋オプション」表記はされません。<br>
   キャンペーンLPのURL：<b>${location.origin+location.pathname}?mode=campaign</b>（Meta広告のリンク先に設定してください）</p></div>`;
 }
+/* 通常版（Aパターン）メニュー表示設定 */
+function adRenderLpMenus(){
+  const box=document.getElementById("lpMenuCard");
+  if(!box) return;
+  if(!Array.isArray(DATA.lpMenus)) DATA.lpMenus=JSON.parse(JSON.stringify(DEFAULT_LP_MENUS));
+  const esc=s=>String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");
+  const visible=DATA.lpMenus;
+  box.innerHTML=`<h3>通常版メニュー表示（AI提案画面）</h3>
+  <p style="font-size:12px;margin-bottom:12px">通常版LPの「AIがあなたのお車に最適なコーティングを選定しました。」画面に表示するメニューと見せ方を設定します。保存すると即時反映されます。</p>
+  <div class="ad-table-wrap"><table class="ad" style="min-width:760px">
+    <thead><tr><th>メニュー</th><th style="width:64px">表示</th><th style="width:80px">表示順</th><th style="width:76px">初期選択</th><th style="width:80px">おすすめ</th><th style="width:80px">人気No.1</th><th style="width:76px">AI推奨</th><th style="width:80px">強調表示</th></tr></thead>
+    <tbody>${DATA.menus.map(m=>{
+      const pos=visible.findIndex(e=>e.id===m.id);
+      const e=pos>=0?visible[pos]:null;
+      return `<tr>
+        <td>${esc(m.name)}</td>
+        <td style="text-align:center"><input type="checkbox" ${e?"checked":""} onchange="adLpToggle('${m.id}',this.checked)"></td>
+        <td>${e?`<input type="number" min="1" max="${visible.length}" value="${pos+1}" style="width:60px" onchange="adLpOrder('${m.id}',Number(this.value))">`:"—"}</td>
+        <td style="text-align:center">${e?`<input type="radio" name="lpSel" ${e.selected?"checked":""} onchange="adLpSelected('${m.id}')">`:"—"}</td>
+        <td style="text-align:center">${e?`<input type="checkbox" ${e.recommend?"checked":""} onchange="adLpFlag('${m.id}','recommend',this.checked)">`:"—"}</td>
+        <td style="text-align:center">${e?`<input type="checkbox" ${e.no1?"checked":""} onchange="adLpFlag('${m.id}','no1',this.checked)">`:"—"}</td>
+        <td style="text-align:center">${e?`<input type="checkbox" ${e.ai?"checked":""} onchange="adLpFlag('${m.id}','ai',this.checked)">`:"—"}</td>
+        <td style="text-align:center">${e?`<input type="checkbox" ${e.highlight?"checked":""} onchange="adLpFlag('${m.id}','highlight',this.checked)">`:"—"}</td>
+      </tr>`;}).join("")}</tbody>
+  </table></div>
+  <p class="ad-note">おすすめ／人気No.1はカード上部のリボンに（両方ONで「おすすめ・人気No.1」）、AI推奨はバッジ、強調表示はカードの装飾に反映されます。初期選択のメニューは画面表示時に選択済みになります。下の「すべて保存」で反映されます。</p>`;
+}
+function adLpToggle(id,checked){
+  if(checked){
+    if(!DATA.lpMenus.some(e=>e.id===id)) DATA.lpMenus.push({id, selected:false, recommend:false, no1:false, ai:false, highlight:false});
+  }else{
+    DATA.lpMenus=DATA.lpMenus.filter(e=>e.id!==id);
+  }
+  if(DATA.lpMenus.length && !DATA.lpMenus.some(e=>e.selected)) DATA.lpMenus[0].selected=true;
+  adRenderLpMenus();
+}
+function adLpOrder(id,n){
+  const i=DATA.lpMenus.findIndex(e=>e.id===id);
+  if(i<0) return;
+  const [e]=DATA.lpMenus.splice(i,1);
+  const to=Math.min(Math.max((Number(n)||1)-1,0),DATA.lpMenus.length);
+  DATA.lpMenus.splice(to,0,e);
+  adRenderLpMenus();
+}
+function adLpSelected(id){
+  DATA.lpMenus.forEach(e=>e.selected=(e.id===id));
+  adRenderLpMenus();
+}
+function adLpFlag(id,flag,checked){
+  const e=DATA.lpMenus.find(x=>x.id===id);
+  if(e) e[flag]=checked;
+}
 function adRenderPrice(){
   const el=document.getElementById("tab-price");
   const esc=s=>String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");
-  el.innerHTML=`<div class="ad-card"><h3>メニュー名・説明文</h3>
+  el.innerHTML=`<div class="ad-card" id="lpMenuCard"></div><div class="ad-card"><h3>メニュー名・説明文</h3>
   <div class="ad-table-wrap"><table class="ad" style="min-width:760px">
     <thead><tr><th style="width:220px">メニュー名</th><th style="width:200px">ふりがな</th><th>説明文（LPのメニューカードに表示）</th></tr></thead>
     <tbody>${DATA.menus.map((m,mi)=>`<tr>
@@ -1779,7 +1844,8 @@ function adRenderPrice(){
       <td><input value="${m.priceUsed[si]}" onchange="DATA.menus[${mi}].priceUsed[${si}]=Number(this.value)||0"></td>`).join("")}
     </tr>`).join("")}</tbody></table></div>
   <div class="ad-actions"><button class="ad-btn pri" onclick="adSaveAll()">メニュー・価格を保存</button></div>
-  <p class="ad-note">保存するとLPの表示（メニュー名・説明文・価格）に即時反映されます。</p></div>`;
+  <p class="ad-note">保存するとLPの表示（メニュー名・説明文・価格・通常版メニュー表示設定）に即時反映されます。</p></div>`;
+  adRenderLpMenus();
 }
 /* 価格編集：オプション */
 function adRenderOpt(){
