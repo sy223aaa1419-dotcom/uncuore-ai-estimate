@@ -480,8 +480,16 @@ table.ad tr:hover td{background:#f7faff}
 .cp-field select{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9'%3E%3Cpath d='M1 1l6 6 6-6' stroke='%237fb0ff' stroke-width='2' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center}
 .cp-field select:disabled{opacity:.45}
 .cp-field select option{background:#0d1526;color:#eef2fa}
+.menu-card{position:relative}
+.menu-card.best{border-color:rgba(245,158,11,.75);box-shadow:0 0 0 1px rgba(245,158,11,.45),0 12px 36px rgba(245,158,11,.16);background:linear-gradient(160deg,rgba(245,158,11,.10),rgba(14,23,48,.9))}
+.menu-card.best .mname{font-size:1.12em}
+.best-ribbon{position:absolute;top:-11px;left:14px;background:linear-gradient(90deg,#f59e0b,#ef4444);color:#fff;font-size:11px;font-weight:700;letter-spacing:.1em;border-radius:14px;padding:4px 14px;box-shadow:0 4px 14px rgba(239,68,68,.35)}
+.badge.ai{margin-left:6px;background:rgba(37,99,235,.2);border:1px solid rgba(59,130,246,.5);color:#9cc2ff}
 .cp-estno{text-align:center;font-size:12.5px;color:#7fb0ff;letter-spacing:.1em;margin-bottom:10px}
 .cp-banner{background:linear-gradient(90deg,#f59e0b,#ef4444);color:#fff;text-align:center;font-size:13px;letter-spacing:.08em;padding:10px 14px;font-weight:600;position:relative;z-index:60}
+.cp-tokuten{background:rgba(245,158,11,.10);border:1px dashed rgba(245,158,11,.55);border-radius:12px;padding:14px 16px;margin:14px 0;text-align:center}
+.cp-tokuten-t{display:block;color:#fbbf24;font-size:13px;font-weight:700;letter-spacing:.12em;margin-bottom:6px}
+.cp-tokuten-i{display:block;color:#fde9c8;font-size:15.5px;font-weight:700;letter-spacing:.06em;line-height:1.7}
 .cp-hero-badge{display:inline-block;margin-top:16px;background:linear-gradient(90deg,#f59e0b,#ef4444);color:#fff;font-size:12.5px;font-weight:700;letter-spacing:.1em;border-radius:20px;padding:8px 20px;box-shadow:0 6px 20px rgba(239,68,68,.35)}
 .cp-chips{display:flex;gap:8px;flex-wrap:wrap}
 .cp-chip{min-width:56px;min-height:46px;border-radius:10px;border:1px solid rgba(120,150,220,.4);background:rgba(255,255,255,.05);color:#dbe7ff;font-size:15px;font-weight:700;cursor:pointer}
@@ -659,15 +667,16 @@ function sizeCarSVG(size){
 
 /* キャンペーン設定の初期値（管理画面から変更可・KVに保存） */
 const DEFAULT_CAMPAIGN = {
+  ver: 2,
   enabled: true,
   name: "AI見積もりキャンペーン",
-  desc: "オリジナルセラミック\n＋\nウィンドウコートセット",
+  desc: "オリジナルセラミック",
   menuId: "original",            // 対象メニュー（通常の見積ロジックで通常価格を算出）
-  optionIds: ["win_all"],        // セットに含めるオプション
-  priceBasis: "used",            // 通常価格の基準: new=新車価格 / used=経年車価格
+  optionIds: ["win_all"],        // キャンペーン特典（無料プレゼント・価格には加算しない）
+  priceBasis: "used",            // 新車/経年車が未選択の場合の既定
   discountType: "percent",       // 割引方法: percent=割引率 / amount=値引き額 / fixed=固定価格
-  discountValue: 50,
-  discountLabel: "✨ 半額キャンペーン実施中 ✨",
+  discountValue: 40,
+  discountLabel: "✨ 40%OFFキャンペーン実施中 ✨",
   start: "", end: ""
 };
 /* 設定（メニュー・オプション・車種・キャンペーン）読込：サーバー共有データから取得 */
@@ -685,7 +694,15 @@ async function loadSettings(){
         DATA.campaign.discountType="fixed"; DATA.campaign.discountValue=Number(DATA.campaign.campaignPrice);
       }
       for(const k of Object.keys(DEFAULT_CAMPAIGN)){
-        if(DATA.campaign[k]===undefined) DATA.campaign[k]=JSON.parse(JSON.stringify(DEFAULT_CAMPAIGN[k]));
+        if(DATA.campaign[k]===undefined && k!=="ver") DATA.campaign[k]=JSON.parse(JSON.stringify(DEFAULT_CAMPAIGN[k]));
+      }
+      if(DATA.campaign.ver!==2){
+        // 仕様変更（議事録対応）: 特典方式・40%OFFへ更新（キャンペーン名・期間・ON/OFFは保持）
+        DATA.campaign.desc = "オリジナルセラミック";
+        DATA.campaign.discountType = "percent";
+        DATA.campaign.discountValue = 40;
+        DATA.campaign.discountLabel = "✨ 40%OFFキャンペーン実施中 ✨";
+        DATA.campaign.ver = 2;
       }
     }
   }catch(e){ /* 取得失敗時は既定値で表示 */ }
@@ -778,7 +795,7 @@ function renderVehicle(){
 
     <div class="photo-panel">
       <div class="pp-head">PHOTO AI — 写真からAI判定</div>
-      <p class="pp-desc">お車の写真を撮影またはアップロードすると、AIが車種とサイズを自動で判定します。</p>
+      <p class="pp-desc">写真1枚で、あなたのお車に最適なコーティングをAIが自動見積。撮影またはアップロードするだけで車種とサイズを自動判定します。</p>
       <div class="photo-actions">
         <input type="file" id="photoIn" accept="image/*" style="display:none" onchange="onPhotoPicked(this)">
         <button class="photo-btn" onclick="document.getElementById('photoIn').click()">📷 写真を選択・撮影</button>
@@ -921,23 +938,22 @@ function dbMatchVehicle(model){
   }
   return best;
 }
-/* キャンペーン価格の算出（通常版と同じ見積ロジック：メニュー価格＋オプション価格） */
+/* キャンペーン価格の算出（通常版と同じ見積ロジック：対象メニューのサイズ別・新車/経年車別価格）
+   特典（optionIds）は無料プレゼントのため価格には加算しない */
 function cCalcPrices(size){
   const c = DATA.campaign || DEFAULT_CAMPAIGN;
   const m = DATA.menus.find(x=>x.id===c.menuId) || DATA.menus[0];
   const sz = SIZES.includes(size) ? size : "M";
-  const arr = c.priceBasis==="new" ? m.priceNew : m.priceUsed;
+  const basis = (cstate.condition==="new"||cstate.condition==="used") ? cstate.condition : (c.priceBasis==="new"?"new":"used");
+  const arr = basis==="new" ? m.priceNew : m.priceUsed;
   let normal = arr[sizeIdx(sz)] || 0;
-  (c.optionIds||[]).forEach(id=>{
-    const o = DATA.options.find(x=>x.id===id);
-    if(o) normal += optPrice(o, sz);
-  });
   let camp = normal;
   if(c.discountType==="percent") camp = normal * (100 - Number(c.discountValue||0)) / 100;
   else if(c.discountType==="amount") camp = normal - Number(c.discountValue||0);
   else if(c.discountType==="fixed") camp = Number(c.discountValue||0);
   camp = Math.max(0, Math.round(camp/100)*100); // 100円単位に丸め
-  return { normal, camp, discount: normal - camp, menuName: m.name };
+  return { normal, camp, discount: normal - camp, menuName: m.name, basis,
+    tokuten: (c.optionIds||[]).map(id=>{const o=DATA.options.find(x=>x.id===id);return o?o.name:id;}) };
 }
 async function runPhotoAI(){
   if(!state.photoData) return;
@@ -973,7 +989,8 @@ function renderAiConfirm(){
 }
 async function aiConfirmYes(btn){
   if(IS_CAMPAIGN){
-    cgo(0); // キャンペーン版: 車種確認OK → お客様情報の入力へ
+    if(btn){ btn.disabled = true; btn.textContent = "AI見積書を作成中…"; }
+    await cFinalize(); cgo(5); // 個人情報は見積表示後（問い合わせフォーム）で入力
   }else{
     go(2); // 通常版：これまで通り サイズ確認 → 状態 → メニュー → オプション → 見積へ
   }
@@ -1070,18 +1087,26 @@ function selCond(c){ state.condition=c; renderCondition(); }
 /* STEP4: メニュー */
 function renderMenu(){
   const idx = sizeIdx(state.size);
+  // Aパターン（高単価獲得）: AIが最適なコーティングを提案する見せ方。
+  // 表示は上位2メニュー（クオーレルッソコート＝おすすめ・人気No.1／クオーレコート）のみ。低価格メニューは表示しない。
+  const ids = ["russo","cuore"];
+  const list = ids.map(id=>DATA.menus.find(m=>m.id===id)).filter(Boolean);
+  const menus = list.length ? list : DATA.menus.slice(0,2);
+  if(!state.menuId || !menus.some(m=>m.id===state.menuId)) state.menuId = menus[0].id; // AIのおすすめを初期選択
   let html = `<div class="step">
-    <h3 class="step-title">コーティングメニューをお選びください</h3>
-    <p class="step-desc">${state.size}サイズ・${state.condition==="new"?"新車":"経年車"}価格を表示しています。</p>
+    <p class="cp-kicker">🤖 AIがあなたのお車に最適なコーティングを選定しました。</p>
+    <p class="step-desc" style="text-align:center">${state.size}サイズ・${state.condition==="new"?"新車":"経年車"}のお車に合わせたご提案です。</p>
     <div class="menu-list">`;
-  DATA.menus.forEach(m=>{
+  menus.forEach((m,i)=>{
     const price = (state.condition==="new"?m.priceNew:m.priceUsed)[idx];
-    html += `<button class="menu-card ${state.menuId===m.id?'sel':''}" onclick="selMenu('${m.id}')">
+    const best = i===0;
+    html += `<button class="menu-card ${best?'best':''} ${state.menuId===m.id?'sel':''}" onclick="selMenu('${m.id}')">
+      ${best?`<span class="best-ribbon">おすすめ・人気No.1</span>`:""}
       <div>
         <div class="mname">${m.name}</div>
         <div class="mkana">${m.kana||""}</div>
         <div class="mdesc">${m.desc||""}</div>
-        <span class="badge">耐久年数：${m.years}年</span>
+        <span class="badge">耐久年数：${m.years}年</span>${best?`<span class="badge ai">AI推奨</span>`:""}
       </div>
       <div class="mprice"><span class="yen">${yen(price)}</span><small>税別・概算</small></div>
     </button>`;
@@ -1663,19 +1688,19 @@ function adRenderCamp(){
       <input type="checkbox" style="width:18px;height:18px" ${c.enabled?"checked":""} onchange="DATA.campaign.enabled=this.checked"> キャンペーンを有効にする
     </label>
     <div><label class="ad-lbl">キャンペーン名</label><input class="ad-inp" value="${esc(c.name)}" onchange="DATA.campaign.name=this.value"></div>
-    <div><label class="ad-lbl">キャンペーン内容（セット内容・改行可）</label><textarea class="ad-inp" rows="3" onchange="DATA.campaign.desc=this.value">${esc(c.desc)}</textarea></div>
+    <div><label class="ad-lbl">キャンペーン内容（表示するメニュー名・改行可）</label><textarea class="ad-inp" rows="3" onchange="DATA.campaign.desc=this.value">${esc(c.desc)}</textarea></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
       <div><label class="ad-lbl">対象メニュー（通常価格の算出元）</label>
         <select class="ad-inp" onchange="DATA.campaign.menuId=this.value">
           ${DATA.menus.map(m=>`<option value="${m.id}" ${c.menuId===m.id?"selected":""}>${esc(m.name)}</option>`).join("")}
         </select></div>
-      <div><label class="ad-lbl">価格の基準</label>
+      <div><label class="ad-lbl">価格の基準（お客様が新車/経年車を未選択の場合の既定）</label>
         <select class="ad-inp" onchange="DATA.campaign.priceBasis=this.value">
           <option value="used" ${c.priceBasis!=="new"?"selected":""}>経年車価格</option>
           <option value="new" ${c.priceBasis==="new"?"selected":""}>新車価格</option>
         </select></div>
     </div>
-    <div><label class="ad-lbl">セットに含めるオプション（通常価格に加算）</label>
+    <div><label class="ad-lbl">キャンペーン特典（無料プレゼント・価格には加算しません）</label>
       <div style="display:flex;flex-wrap:wrap;gap:8px 16px">
         ${DATA.options.map(o=>`<label style="display:flex;align-items:center;gap:5px;font-size:12.5px">
           <input type="checkbox" ${(c.optionIds||[]).includes(o.id)?"checked":""}
@@ -1688,7 +1713,7 @@ function adRenderCamp(){
           <option value="amount" ${c.discountType==="amount"?"selected":""}>値引き額（円引き）</option>
           <option value="fixed" ${c.discountType==="fixed"?"selected":""}>キャンペーン価格を直接指定</option>
         </select></div>
-      <div><label class="ad-lbl">値（率は「50」で半額／額・固定は円）</label>
+      <div><label class="ad-lbl">値（割引率は「40」で40%OFF／額・固定は円）</label>
         <input class="ad-inp" type="number" value="${Number(c.discountValue)||0}" onchange="DATA.campaign.discountValue=Number(this.value)||0"></div>
     </div>
     <div><label class="ad-lbl">割引表示（バッジ文言）</label><input class="ad-inp" value="${esc(c.discountLabel)}" onchange="DATA.campaign.discountLabel=this.value"></div>
@@ -1698,7 +1723,7 @@ function adRenderCamp(){
     </div>
   </div>
   <div class="ad-actions"><button class="ad-btn pri" onclick="adSaveAll().then(()=>adRenderCamp())">キャンペーン設定を保存</button></div>
-  <p class="ad-note">通常価格は通常版と同じ見積ロジック（対象メニュー＋オプションのサイズ別価格）で自動算出されます。<br>
+  <p class="ad-note">通常価格は通常版と同じ見積ロジック（対象メニューのサイズ別・新車/経年車別価格）で自動算出されます。特典は価格に加算されず、無料プレゼントとして表示されます。<br>
   キャンペーンLPのURL：<b>${location.origin+location.pathname}?mode=campaign</b>（Meta広告のリンク先に設定してください）</p></div>`;
 }
 function adRenderPrice(){
@@ -1800,7 +1825,7 @@ async function adSaveAll(silent){
 
 /* ============ キャンペーン版フロー（?mode=campaign／LPデザインは通常版を共有） ============ */
 const IS_CAMPAIGN = new URLSearchParams(location.search).get("mode")==="campaign";
-const cstate = { step:1, photoData:null };
+const cstate = { step:1, photoData:null, condition:null, from:"photo" };
 const cesc = s=>String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;");
 function cSetHead(pct,label,name){
   const b=document.getElementById("progressBar"); if(b) b.style.width=pct+"%";
@@ -1814,67 +1839,24 @@ function cgo(n){
 }
 function crender(){
   const s=cstate.step;
-  if(s===0) cRenderLead();
-  else if(s===1) cRenderPhoto();
+  if(s===1) cRenderPhoto();
+  else if(s===6) cRenderCond();
   else if(s===3){ cSetHead(75,"CONFIRM","AI判定結果の確認"); renderAiConfirm(); }
   else if(s===4) cRenderManual();
   else if(s===5) cRenderResult();
 }
-/* ③ お客様情報の入力（キャンペーン版のみ：車種確認後・AI見積書の表示前に取得） */
-function cRenderLead(){
-  const c = DATA.campaign || DEFAULT_CAMPAIGN;
-  cSetHead(85,"STEP 3","お客様情報");
-  const cu = state.customer;
-  body().innerHTML = `<div class="step">
-    <p class="cp-kicker">✅ AI見積書の準備ができました</p>
-    <div class="cp-judge slim"><dl><dt>お車</dt><dd>${cesc(state.maker||"—")} ${cesc(state.model||"")}${state.size&&state.size!=="—"?`（${cesc(state.size)}サイズ）`:""}</dd></dl></div>
-    <h3 class="step-title" style="text-align:center">AI見積書を表示するために<br>お客様情報をご入力ください</h3>
-    <div class="cp-field" id="cpFName"><label>お名前 <em class="cp-req">必須</em></label>
-      <input id="cpName" type="text" placeholder="山田 太郎" value="${cesc(cu.name)}" oninput="cLeadClearErr('cpFName')"></div>
-    <div class="cp-field" id="cpFTel"><label>電話番号 <em class="cp-req">必須</em></label>
-      <input id="cpTel" type="tel" placeholder="090-0000-0000" value="${cesc(cu.tel)}" oninput="cLeadClearErr('cpFTel')"></div>
-    <div class="cp-field" id="cpFMail"><label>メールアドレス <em class="cp-req">必須</em></label>
-      <input id="cpMail" type="email" placeholder="example@mail.com" value="${cesc(cu.mail)}" oninput="cLeadClearErr('cpFMail')"></div>
-    <p id="cpLeadErr" class="cp-err" style="display:none"></p>
-    <button class="cp-btn go big" onclick="cLeadGo(this)">AI見積書を表示する</button>
-    <p class="cp-note" style="margin-top:12px;margin-bottom:0">ご入力いただいた情報はお見積り・ご相談への対応のみに使用いたします。</p>
-  </div>`;
-}
-function cLeadClearErr(fieldId){
-  const f=document.getElementById(fieldId); if(f) f.classList.remove("invalid");
-  const e=document.getElementById("cpLeadErr"); if(e) e.style.display="none";
-}
-async function cLeadGo(btn){
-  const name=document.getElementById("cpName").value.trim();
-  const tel=document.getElementById("cpTel").value.trim();
-  const mail=document.getElementById("cpMail").value.trim();
-  // 送信ボタンを押した時だけエラー表示（問い合わせフォームと同じ検証ルール）
-  const checks=[["cpFName",!name],["cpFTel",!/^[0-9+\-() ]{10,}$/.test(tel)],["cpFMail",!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail)]];
-  let ok=true;
-  checks.forEach(([id,bad])=>{const f=document.getElementById(id); if(f)f.classList.toggle("invalid",bad); if(bad)ok=false;});
-  if(!ok){
-    const e=document.getElementById("cpLeadErr");
-    e.textContent="入力内容をご確認ください（お名前・電話番号・メールアドレスは必須です）";
-    e.style.display="block";
-    return;
-  }
-  state.customer.name=name; state.customer.tel=tel; state.customer.mail=mail;
-  if(btn){ btn.disabled = true; btn.textContent = "AI見積書を作成中…"; }
-  await cFinalize(); // お客様情報を含めて管理画面（KV）へ保存
-  cgo(5);
-}
 /* ① 写真アップロード（ファーストビューでは価格を表示しない） */
 function cRenderPhoto(){
   const c = DATA.campaign || DEFAULT_CAMPAIGN;
-  cSetHead(25,"STEP 1","写真アップロード");
+  cSetHead(20,"STEP 1","写真アップロード");
   body().innerHTML = `<div class="step">
     <p class="cp-kicker">🎉 ${cesc(c.name)}</p>
-    <h3 class="step-title" style="text-align:center">お車の写真を1枚アップロード</h3>
-    <p class="step-desc" style="text-align:center">AIが車種を自動判定し、その場でキャンペーンお見積りをご案内します（約10秒）</p>
+    <h3 class="step-title" style="text-align:center">写真1枚でAIが自動見積</h3>
+    <p class="step-desc" style="text-align:center">写真1枚で、あなたのお車に最適なコーティングをAIが自動でお見積り。その場でキャンペーン価格をご案内します。</p>
     <input type="file" id="cpFile" accept="image/*" style="display:none" onchange="cPhotoPicked(this)">
     <div id="cpPrev" class="cp-prev" style="display:none"><img id="cpImg" alt="車両写真"></div>
     <button class="cp-btn go" id="cpUpBtn" onclick="document.getElementById('cpFile').click()">📷 写真をアップロード</button>
-    <button class="cp-btn go big" id="cpRunBtn" style="display:none" onclick="cAnalyze()">AI見積もりスタート</button>
+    <button class="cp-btn go big" id="cpRunBtn" style="display:none" onclick="cstate.from='photo';cgo(6)">AI見積もりスタート</button>
     <button class="cp-textlink" onclick="cRenderManual()">写真がない方はこちら（車種を直接入力）</button>
   </div>`;
   if(cstate.photoData){
@@ -1904,12 +1886,40 @@ function cPhotoPicked(input){
   };
   reader.readAsDataURL(f);
 }
-/* ② AI解析（段階演出） → ③ 共通の確認画面へ */
+/* ② 新車／経年車の選択（価格計算に反映） */
+function cRenderCond(){
+  cSetHead(35,"STEP 2","車両の状態");
+  body().innerHTML = `<div class="step">
+    <h3 class="step-title" style="text-align:center">車両の状態をお選びください</h3>
+    <p class="step-desc" style="text-align:center">新車・経年車で最適な下地処理と価格が変わります。</p>
+    <button class="cp-btn go big" onclick="cPickCond('new')">新車<small style="display:block;font-size:12px;font-weight:400;margin-top:3px;opacity:.85">登録から1か月以内</small></button>
+    <button class="cp-btn go big" onclick="cPickCond('used')">経年車<small style="display:block;font-size:12px;font-weight:400;margin-top:3px;opacity:.85">登録から1か月以上</small></button>
+    <button class="cp-textlink" onclick="cgo(${IS_CAMPAIGN&&cstate.from==="manual"?4:1})">← 戻る</button>
+  </div>`;
+}
+async function cPickCond(cond,btn){
+  cstate.condition = cond;
+  if(cstate.from === "manual"){
+    if(btn){ btn.disabled = true; }
+    await cFinalize(); cgo(5); // 直接入力経路: AI解析は済んでいないためそのまま見積書へ
+  }else{
+    cAnalyze(); // 写真経路: AI解析（新車/経年車も演出に反映）へ
+  }
+}
+/* ③ AI解析（段階演出） → ④ 共通の確認画面へ */
 async function cAnalyze(){
   if(!cstate.photoData) return;
   cstate.step = 2;
   cSetHead(55,"AI ANALYSIS","AI解析中");
-  const stages = ["AIが車両を解析しています…","メーカーを判定しています…","車種を判定しています…","サイズを判定しています…","AI見積書を作成しています…"];
+  const stages = [
+    "AIが車両を解析しています…",
+    "メーカーを判定しています…",
+    "車種を判定しています…",
+    "サイズを判定しています…",
+    "新車／経年車を反映しています…",
+    "最適なコーティングを選定しています…",
+    "AI見積書を作成しています…"
+  ];
   body().innerHTML = `<div class="step">
     <h3 class="step-title" style="text-align:center">AI解析中</h3>
     <ul class="cp-steps">${stages.map((t,i)=>`<li id="cpS${i}" class="${i===0?"act":""}"><span class="ic"></span>${t}</li>`).join("")}</ul>
@@ -1923,11 +1933,11 @@ async function cAnalyze(){
       const a = document.getElementById("cpS"+cur); if(a) a.className = "act";
     }
   };
-  const timer = setInterval(advance, 1100);
+  const timer = setInterval(advance, 1000);
   try{
     const r = await aiDetectVehicle(cstate.photoData.split(",")[1]);
     clearInterval(timer);
-    while(cur < stages.length-1){ advance(); await new Promise(res=>setTimeout(res,260)); }
+    while(cur < stages.length-1){ advance(); await new Promise(res=>setTimeout(res,300)); }
     const last = document.getElementById("cpS"+cur); if(last) last.className = "done";
     state.maker = r.maker; state.model = r.model; state.size = r.size; state.photoJudged = true;
     setTimeout(()=>cgo(3), 550);
@@ -2013,7 +2023,8 @@ async function cManualGo(btn){
     const v = (DATA.vehicles[mkSel]||[])[Number(mdSel)];
     state.maker = mkSel; state.model = v ? v[0] : "（車種不明）"; state.size = v ? v[1] : null;
   }
-  cgo(0); // 車両確定 → お客様情報の入力へ
+  cstate.from = "manual";
+  cgo(6); // 車両確定 → 新車/経年車の選択へ
 }
 /* サイズが判定できているか */
 function cSizeKnown(){ return SIZES.includes(state.size); }
@@ -2053,14 +2064,15 @@ async function cFinalize(){
   state.normalPrice = p.normal;
   state.campaignPrice = (known && active) ? p.camp : 0;
   state.total = finalPrice;
+  const cond = cstate.condition==="new" ? "新車" : cstate.condition==="used" ? "経年車" : (c.priceBasis==="new"?"新車":"経年車");
   const rec = {
     at:new Date().toISOString(),
-    name:state.customer.name||"", tel:state.customer.tel||"", mail:state.customer.mail||"", pref:"",
+    name:"", tel:"", mail:"", pref:"",
     maker:state.maker||"—", model:state.model||"（車種不明）", size:state.size||"—",
-    condition: c.priceBasis==="new" ? "新車" : "経年車",
+    condition: cond,
     menu:(c.desc||c.name).replace(/\n/g,"").slice(0,60),
     years:(m&&m.years)||0,
-    options:(c.optionIds||[]).map(id=>{const o=DATA.options.find(x=>x.id===id);return o?o.name:id;}),
+    options:(c.optionIds||[]).map(id=>{const o=DATA.options.find(x=>x.id===id);return o?("【特典】"+o.name):id;}),
     total:finalPrice,
     source:"campaign", campaignName:c.name,
     normalPrice:p.normal, campaignPrice: (known && active) ? p.camp : 0
@@ -2081,9 +2093,13 @@ function cRenderResult(){
     <p class="cp-kicker">🎉 ${cesc(c.name)}</p>
     ${state.estimateNo?`<p class="cp-estno">見積番号：${cesc(state.estimateNo)}</p>`:""}
     <div class="cp-judge slim">
-      <dl><dt>お車</dt><dd>${cesc(state.maker)} ${cesc(state.model)}${state.size&&state.size!=="—"?`（${cesc(state.size)}サイズ）`:""}</dd></dl>
-      <dl><dt>セット内容</dt><dd style="font-size:14.5px;line-height:1.6">${cesc(c.desc).replace(/\n/g," ")}</dd></dl>
+      <dl><dt>お車</dt><dd>${cesc(state.maker)} ${cesc(state.model)}${state.size&&state.size!=="—"?`（${cesc(state.size)}サイズ）`:""}${cstate.condition?`・${cstate.condition==="new"?"新車":"経年車"}`:""}</dd></dl>
+      <dl><dt>メニュー</dt><dd style="font-size:14.5px;line-height:1.6">${cesc(c.desc).replace(/\n/g," ")}</dd></dl>
     </div>
+    ${(()=>{const tk=cCalcPrices(state.size).tokuten; return (campaignActive()&&tk.length)?`<div class="cp-tokuten">
+      <span class="cp-tokuten-t">🎁 ${cesc(c.name)}特典</span>
+      ${tk.map(t=>`<span class="cp-tokuten-i">${cesc(t)}　プレゼント</span>`).join("")}
+    </div>`:"";})()}
     ${cPriceBlock()}
     <button class="cp-btn go big" onclick="cOpenContact()">${cSizeKnown()?"この価格で問い合わせる":"この内容で正式見積を依頼する"}</button>
     <a class="cp-btn line" href="https://line.me/ti/p/@271goter" target="_blank" rel="noopener">LINEで相談する</a>
@@ -2094,18 +2110,14 @@ function cOpenContact(){
   const c = DATA.campaign || DEFAULT_CAMPAIGN;
   const active = campaignActive();
   const known = cSizeKnown();
-  const p = known ? cCalcPrices(state.size) : null;
-  // 見積開始時に入力済みのお客様情報をプリフィル（再入力不要）
-  const cu = state.customer;
-  if(cu.name) document.getElementById("cName").value = cu.name;
-  if(cu.tel) document.getElementById("cTel").value = cu.tel;
-  if(cu.mail) document.getElementById("cMail").value = cu.mail;
+  const p = cCalcPrices(state.size);
+  const cond = cstate.condition==="new" ? "新車" : cstate.condition==="used" ? "経年車" : "";
   openContact(
 `【見積番号】${state.estimateNo||"—"}
 【キャンペーン】${c.name}
-【車両】${state.maker||"—"} ${state.model||""}${known?`（${state.size}サイズ）`:""}
-【セット内容】${(c.desc||"").replace(/\n/g," ")}
-${!known?`【価格】サイズ判定不可のため、担当者確認のうえ正式見積をご案内`:active?`【通常価格】${yen(p.normal)}（税別）
+【車両】${state.maker||"—"} ${state.model||""}${known?`（${state.size}サイズ）`:""}${cond?`・${cond}`:""}
+【メニュー】${(c.desc||"").replace(/\n/g," ")}
+${active&&p.tokuten.length?`【${c.name}特典】${p.tokuten.join(" / ")} プレゼント\n`:""}${!known?`【価格】サイズ判定不可のため、担当者確認のうえ正式見積をご案内`:active?`【通常価格】${yen(p.normal)}（税別）
 【キャンペーン価格】${yen(p.camp)}（税別）`:`【価格】${yen(p.normal)}（税別）`}
 ――――――――――
 ${known?"この価格で問い合わせます。":"正式なお見積りを希望します。"}`);
