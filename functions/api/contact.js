@@ -30,6 +30,7 @@ export async function onRequestPost(context) {
   const mail = str(body.mail, 200);
   const msg = str(body.msg, 4000);
   const estimateNo = str(body.estimateNo, 40);
+  const wishMenu = str(body.wishMenu, 100);
   const source = body.source === "campaign" ? "campaign" : "normal";
   const campaignName = str(body.campaignName, 100);
   const normalPrice = Number(body.normalPrice) || 0;
@@ -57,7 +58,7 @@ export async function onRequestPost(context) {
 ■お名前：${name}
 ■電話番号：${tel}
 ■メール：${mail}
-${estimateNo ? `■見積番号：${estimateNo}\n` : ""}${campLines}■送信日時：${new Date().toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" })}
+${estimateNo ? `■見積番号：${estimateNo}\n` : ""}${wishMenu ? `■希望メニュー：${wishMenu}\n` : ""}${campLines}■送信日時：${new Date().toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" })}
 
 ――― お問い合わせ内容 ―――
 ${msg || "（本文なし）"}
@@ -96,13 +97,14 @@ ${msg || "（本文なし）"}
       const at = new Date().toISOString();
       await env.UC_KV.put(
         "inq:" + at + "-" + Math.random().toString(36).slice(2, 8),
-        JSON.stringify({ at, estimateNo, name, tel, mail, msg })
+        JSON.stringify({ at, estimateNo, name, tel, mail, msg, wishMenu })
       );
       if (estimateNo) {
         const raw = await env.UC_KV.get("est:" + estimateNo);
         if (raw) {
           const rec = JSON.parse(raw);
           rec.name = rec.name || name; rec.tel = rec.tel || tel; rec.mail = rec.mail || mail;
+          if (wishMenu) rec.wishMenu = wishMenu;
           rec.history = rec.history || [];
           rec.history.push(`[${new Date().toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" })}] お問い合わせフォーム送信（${name}）`);
           await env.UC_KV.put("est:" + estimateNo, JSON.stringify(rec));
