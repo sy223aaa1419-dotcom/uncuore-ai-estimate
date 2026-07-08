@@ -1941,21 +1941,13 @@ function cRenderManual(){
   cSetHead(40,"STEP","車両情報の入力");
   body().innerHTML = `<div class="step">
     <h3 class="step-title">メーカー・車種を直接入力</h3>
-    <p class="step-desc">車種からサイズをAIが自動判定します。分かる場合はサイズもお選びください。</p>
+    <p class="step-desc">サイズはご入力いただいた車種からシステムが自動判定します。</p>
     <div class="cp-field"><label>メーカー</label><input id="cpMaker" type="text" placeholder="例：トヨタ" value="${cesc(state.maker&&state.maker!=="—"?state.maker:"")}" oninput="document.getElementById('cpManErr').style.display='none'"></div>
     <div class="cp-field"><label>車種</label><input id="cpModel" type="text" placeholder="例：ヴォクシー" value="${cesc(state.model&&state.model!=="（車種不明）"?state.model:"")}" oninput="document.getElementById('cpManErr').style.display='none'"></div>
-    <div class="cp-field"><label>サイズ（任意）</label>
-      <div class="cp-chips">${SIZES.map(s=>`<button type="button" class="cp-chip ${state.size===s?"on":""}" onclick="cPickSize('${s}',this)">${s}</button>`).join("")}</div>
-    </div>
     <p id="cpManErr" class="cp-err" style="display:none"></p>
     <button class="cp-btn go big" onclick="cManualGo(this)">この内容で見積へ進む</button>
     <button class="cp-textlink" onclick="cgo(1)">← 写真アップロードに戻る</button>
   </div>`;
-}
-function cPickSize(s,btn){
-  state.size = s;
-  document.querySelectorAll(".cp-chip").forEach(b=>b.classList.toggle("on", b===btn));
-  const e=document.getElementById("cpManErr"); if(e) e.style.display="none";
 }
 async function cManualGo(btn){
   const mk = document.getElementById("cpMaker").value.trim();
@@ -1963,19 +1955,22 @@ async function cManualGo(btn){
   const errEl = document.getElementById("cpManErr");
   if(!mk || !md){ errEl.textContent="メーカーと車種を入力してください"; errEl.style.display="block"; return; }
   state.maker = mk; state.model = md;
-  if(!state.size || !SIZES.includes(state.size)){
-    const hit = dbMatchVehicle(md); // 車種DBからサイズ自動判定
-    if(hit) state.size = hit.size;
-  }
-  if(!state.size || !SIZES.includes(state.size)){
-    errEl.textContent = "サイズを判定できませんでした。上のサイズからお選びください（分からない場合はMをお選びください）";
-    errEl.style.display = "block"; return;
-  }
+  // サイズはユーザーに選ばせず、車種DBから自動判定（判定不可の場合は担当者確認扱いで進める）
+  const hit = dbMatchVehicle(md);
+  state.size = hit ? hit.size : null;
   cgo(0); // 車両確定 → お客様情報の入力へ
 }
+/* サイズが判定できているか */
+function cSizeKnown(){ return SIZES.includes(state.size); }
 /* 価格ブロック（通常版と同じ見積ロジックで算出。停止中・期間外は通常価格のみ） */
 function cPriceBlock(){
   const c = DATA.campaign || DEFAULT_CAMPAIGN;
+  if(!cSizeKnown()){
+    return `<div class="cp-pricebox">
+      <p class="cp-plabel">お見積金額</p>
+      <p style="font-size:15px;line-height:1.9;margin:10px 0 4px;color:#dbe7ff">サイズ判定ができませんでした。<br>担当者が確認のうえ、正式なお見積りをご案内いたします。</p>
+    </div>`;
+  }
   const p = cCalcPrices(state.size);
   if(!campaignActive()){
     return `<div class="cp-pricebox"><p class="cp-plabel">お見積金額</p>
@@ -1994,13 +1989,14 @@ function cPriceBlock(){
 async function cFinalize(){
   const c = DATA.campaign || DEFAULT_CAMPAIGN;
   const active = campaignActive();
-  const p = cCalcPrices(state.size);
-  const finalPrice = active ? p.camp : p.normal;
+  const known = cSizeKnown();
+  const p = known ? cCalcPrices(state.size) : { normal:0, camp:0, discount:0 };
+  const finalPrice = known ? (active ? p.camp : p.normal) : 0;
   const m = DATA.menus.find(x=>x.id===c.menuId);
   state.source = "campaign";
   state.campaignName = c.name;
   state.normalPrice = p.normal;
-  state.campaignPrice = active ? p.camp : 0;
+  state.campaignPrice = (known && active) ? p.camp : 0;
   state.total = finalPrice;
   const rec = {
     at:new Date().toISOString(),
@@ -2012,7 +2008,7 @@ async function cFinalize(){
     options:(c.optionIds||[]).map(id=>{const o=DATA.options.find(x=>x.id===id);return o?o.name:id;}),
     total:finalPrice,
     source:"campaign", campaignName:c.name,
-    normalPrice:p.normal, campaignPrice: active ? p.camp : 0
+    normalPrice:p.normal, campaignPrice: (known && active) ? p.camp : 0
   };
   try{
     const res = await fetch("/api/record",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(rec)});
@@ -2034,7 +2030,7 @@ function cRenderResult(){
       <dl><dt>セット内容</dt><dd style="font-size:14.5px;line-height:1.6">${cesc(c.desc).replace(/\n/g," ")}</dd></dl>
     </div>
     ${cPriceBlock()}
-    <button class="cp-btn go big" onclick="cOpenContact()">この価格で問い合わせる</button>
+    <button class="cp-btn go big" onclick="cOpenContact()">${cSizeKnown()?"この価格で問い合わせる":"この内容で正式見積を依頼する"}</button>
     <a class="cp-btn line" href="https://line.me/ti/p/@271goter" target="_blank" rel="noopener">LINEで相談する</a>
     <p class="cp-note" style="margin-top:14px;margin-bottom:0">※ 表示価格は税別・概算です。車両の状態により変動する場合があります。</p>
   </div>`;
@@ -2042,7 +2038,8 @@ function cRenderResult(){
 function cOpenContact(){
   const c = DATA.campaign || DEFAULT_CAMPAIGN;
   const active = campaignActive();
-  const p = cCalcPrices(state.size);
+  const known = cSizeKnown();
+  const p = known ? cCalcPrices(state.size) : null;
   // 見積開始時に入力済みのお客様情報をプリフィル（再入力不要）
   const cu = state.customer;
   if(cu.name) document.getElementById("cName").value = cu.name;
@@ -2051,12 +2048,12 @@ function cOpenContact(){
   openContact(
 `【見積番号】${state.estimateNo||"—"}
 【キャンペーン】${c.name}
-【車両】${state.maker||"—"} ${state.model||""}${state.size&&state.size!=="—"?`（${state.size}サイズ）`:""}
+【車両】${state.maker||"—"} ${state.model||""}${known?`（${state.size}サイズ）`:""}
 【セット内容】${(c.desc||"").replace(/\n/g," ")}
-${active?`【通常価格】${yen(p.normal)}（税別）
+${!known?`【価格】サイズ判定不可のため、担当者確認のうえ正式見積をご案内`:active?`【通常価格】${yen(p.normal)}（税別）
 【キャンペーン価格】${yen(p.camp)}（税別）`:`【価格】${yen(p.normal)}（税別）`}
 ――――――――――
-この価格で問い合わせます。`);
+${known?"この価格で問い合わせます。":"正式なお見積りを希望します。"}`);
 }
 
 (async function init(){
