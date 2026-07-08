@@ -970,8 +970,7 @@ function renderAiConfirm(){
 }
 async function aiConfirmYes(btn){
   if(IS_CAMPAIGN){
-    if(btn){ btn.disabled = true; btn.textContent = "AI見積を作成中…"; }
-    await cFinalize(); cgo(5);
+    cgo(0); // キャンペーン版: 車種確認OK → お客様情報の入力へ
   }else{
     go(2); // 通常版：これまで通り サイズ確認 → 状態 → メニュー → オプション → 見積へ
   }
@@ -1798,7 +1797,7 @@ async function adSaveAll(silent){
 
 /* ============ キャンペーン版フロー（?mode=campaign／LPデザインは通常版を共有） ============ */
 const IS_CAMPAIGN = new URLSearchParams(location.search).get("mode")==="campaign";
-const cstate = { step:0, photoData:null };
+const cstate = { step:1, photoData:null };
 const cesc = s=>String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;");
 function cSetHead(pct,label,name){
   const b=document.getElementById("progressBar"); if(b) b.style.width=pct+"%";
@@ -1818,15 +1817,15 @@ function crender(){
   else if(s===4) cRenderManual();
   else if(s===5) cRenderResult();
 }
-/* ⓪ お客様情報の入力（キャンペーン版のみ：見積開始前に取得） */
+/* ③ お客様情報の入力（キャンペーン版のみ：車種確認後・AI見積書の表示前に取得） */
 function cRenderLead(){
   const c = DATA.campaign || DEFAULT_CAMPAIGN;
-  cSetHead(15,"STEP 1","お客様情報");
+  cSetHead(85,"STEP 3","お客様情報");
   const cu = state.customer;
   body().innerHTML = `<div class="step">
-    <p class="cp-kicker">🎉 ${cesc(c.name)}</p>
-    <h3 class="step-title" style="text-align:center">まずはお客様情報をご入力ください</h3>
-    <p class="step-desc" style="text-align:center">ご入力後、写真1枚でAIがその場でキャンペーンお見積りをご案内します。</p>
+    <p class="cp-kicker">✅ AI見積書の準備ができました</p>
+    <div class="cp-judge slim"><dl><dt>お車</dt><dd>${cesc(state.maker||"—")} ${cesc(state.model||"")}${state.size&&state.size!=="—"?`（${cesc(state.size)}サイズ）`:""}</dd></dl></div>
+    <h3 class="step-title" style="text-align:center">AI見積書を表示するために<br>お客様情報をご入力ください</h3>
     <div class="cp-field" id="cpFName"><label>お名前 <em class="cp-req">必須</em></label>
       <input id="cpName" type="text" placeholder="山田 太郎" value="${cesc(cu.name)}" oninput="cLeadClearErr('cpFName')"></div>
     <div class="cp-field" id="cpFTel"><label>電話番号 <em class="cp-req">必須</em></label>
@@ -1834,7 +1833,7 @@ function cRenderLead(){
     <div class="cp-field" id="cpFMail"><label>メールアドレス <em class="cp-req">必須</em></label>
       <input id="cpMail" type="email" placeholder="example@mail.com" value="${cesc(cu.mail)}" oninput="cLeadClearErr('cpFMail')"></div>
     <p id="cpLeadErr" class="cp-err" style="display:none"></p>
-    <button class="cp-btn go big" onclick="cLeadGo()">AI見積もりを開始する</button>
+    <button class="cp-btn go big" onclick="cLeadGo(this)">AI見積書を表示する</button>
     <p class="cp-note" style="margin-top:12px;margin-bottom:0">ご入力いただいた情報はお見積り・ご相談への対応のみに使用いたします。</p>
   </div>`;
 }
@@ -1842,7 +1841,7 @@ function cLeadClearErr(fieldId){
   const f=document.getElementById(fieldId); if(f) f.classList.remove("invalid");
   const e=document.getElementById("cpLeadErr"); if(e) e.style.display="none";
 }
-function cLeadGo(){
+async function cLeadGo(btn){
   const name=document.getElementById("cpName").value.trim();
   const tel=document.getElementById("cpTel").value.trim();
   const mail=document.getElementById("cpMail").value.trim();
@@ -1857,12 +1856,14 @@ function cLeadGo(){
     return;
   }
   state.customer.name=name; state.customer.tel=tel; state.customer.mail=mail;
-  cgo(1);
+  if(btn){ btn.disabled = true; btn.textContent = "AI見積書を作成中…"; }
+  await cFinalize(); // お客様情報を含めて管理画面（KV）へ保存
+  cgo(5);
 }
 /* ① 写真アップロード（ファーストビューでは価格を表示しない） */
 function cRenderPhoto(){
   const c = DATA.campaign || DEFAULT_CAMPAIGN;
-  cSetHead(35,"STEP 2","写真アップロード");
+  cSetHead(25,"STEP 1","写真アップロード");
   body().innerHTML = `<div class="step">
     <p class="cp-kicker">🎉 ${cesc(c.name)}</p>
     <h3 class="step-title" style="text-align:center">お車の写真を1枚アップロード</h3>
@@ -1970,8 +1971,7 @@ async function cManualGo(btn){
     errEl.textContent = "サイズを判定できませんでした。上のサイズからお選びください（分からない場合はMをお選びください）";
     errEl.style.display = "block"; return;
   }
-  btn.disabled = true; btn.textContent = "AI見積を作成中…";
-  await cFinalize(); cgo(5);
+  cgo(0); // 車両確定 → お客様情報の入力へ
 }
 /* 価格ブロック（通常版と同じ見積ロジックで算出。停止中・期間外は通常価格のみ） */
 function cPriceBlock(){
