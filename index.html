@@ -483,6 +483,8 @@ table.ad tr:hover td{background:#f7faff}
 .cp-chips{display:flex;gap:8px;flex-wrap:wrap}
 .cp-chip{min-width:56px;min-height:46px;border-radius:10px;border:1px solid rgba(120,150,220,.4);background:rgba(255,255,255,.05);color:#dbe7ff;font-size:15px;font-weight:700;cursor:pointer}
 .cp-chip.on{background:linear-gradient(90deg,#2563eb,#3b82f6);border-color:transparent;color:#fff}
+.cp-req{display:inline-block;background:#ef4444;color:#fff;font-size:10px;font-style:normal;border-radius:3px;padding:2px 6px;margin-left:6px;letter-spacing:.08em;vertical-align:1px}
+.cp-field.invalid input{border-color:var(--danger);background:rgba(239,68,68,.08)}
 /* スマホでの問い合わせモーダル入力最適化（iOSズーム防止・タップ領域拡大） */
 .modal input,.modal textarea{font-size:16px;min-height:48px}
 .modal textarea{min-height:auto}
@@ -1796,7 +1798,7 @@ async function adSaveAll(silent){
 
 /* ============ キャンペーン版フロー（?mode=campaign／LPデザインは通常版を共有） ============ */
 const IS_CAMPAIGN = new URLSearchParams(location.search).get("mode")==="campaign";
-const cstate = { step:1, photoData:null };
+const cstate = { step:0, photoData:null };
 const cesc = s=>String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;");
 function cSetHead(pct,label,name){
   const b=document.getElementById("progressBar"); if(b) b.style.width=pct+"%";
@@ -1810,15 +1812,57 @@ function cgo(n){
 }
 function crender(){
   const s=cstate.step;
-  if(s===1) cRenderPhoto();
+  if(s===0) cRenderLead();
+  else if(s===1) cRenderPhoto();
   else if(s===3){ cSetHead(75,"CONFIRM","AI判定結果の確認"); renderAiConfirm(); }
   else if(s===4) cRenderManual();
   else if(s===5) cRenderResult();
 }
+/* ⓪ お客様情報の入力（キャンペーン版のみ：見積開始前に取得） */
+function cRenderLead(){
+  const c = DATA.campaign || DEFAULT_CAMPAIGN;
+  cSetHead(15,"STEP 1","お客様情報");
+  const cu = state.customer;
+  body().innerHTML = `<div class="step">
+    <p class="cp-kicker">🎉 ${cesc(c.name)}</p>
+    <h3 class="step-title" style="text-align:center">まずはお客様情報をご入力ください</h3>
+    <p class="step-desc" style="text-align:center">ご入力後、写真1枚でAIがその場でキャンペーンお見積りをご案内します。</p>
+    <div class="cp-field" id="cpFName"><label>お名前 <em class="cp-req">必須</em></label>
+      <input id="cpName" type="text" placeholder="山田 太郎" value="${cesc(cu.name)}" oninput="cLeadClearErr('cpFName')"></div>
+    <div class="cp-field" id="cpFTel"><label>電話番号 <em class="cp-req">必須</em></label>
+      <input id="cpTel" type="tel" placeholder="090-0000-0000" value="${cesc(cu.tel)}" oninput="cLeadClearErr('cpFTel')"></div>
+    <div class="cp-field" id="cpFMail"><label>メールアドレス <em class="cp-req">必須</em></label>
+      <input id="cpMail" type="email" placeholder="example@mail.com" value="${cesc(cu.mail)}" oninput="cLeadClearErr('cpFMail')"></div>
+    <p id="cpLeadErr" class="cp-err" style="display:none"></p>
+    <button class="cp-btn go big" onclick="cLeadGo()">AI見積もりを開始する</button>
+    <p class="cp-note" style="margin-top:12px;margin-bottom:0">ご入力いただいた情報はお見積り・ご相談への対応のみに使用いたします。</p>
+  </div>`;
+}
+function cLeadClearErr(fieldId){
+  const f=document.getElementById(fieldId); if(f) f.classList.remove("invalid");
+  const e=document.getElementById("cpLeadErr"); if(e) e.style.display="none";
+}
+function cLeadGo(){
+  const name=document.getElementById("cpName").value.trim();
+  const tel=document.getElementById("cpTel").value.trim();
+  const mail=document.getElementById("cpMail").value.trim();
+  // 送信ボタンを押した時だけエラー表示（問い合わせフォームと同じ検証ルール）
+  const checks=[["cpFName",!name],["cpFTel",!/^[0-9+\-() ]{10,}$/.test(tel)],["cpFMail",!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail)]];
+  let ok=true;
+  checks.forEach(([id,bad])=>{const f=document.getElementById(id); if(f)f.classList.toggle("invalid",bad); if(bad)ok=false;});
+  if(!ok){
+    const e=document.getElementById("cpLeadErr");
+    e.textContent="入力内容をご確認ください（お名前・電話番号・メールアドレスは必須です）";
+    e.style.display="block";
+    return;
+  }
+  state.customer.name=name; state.customer.tel=tel; state.customer.mail=mail;
+  cgo(1);
+}
 /* ① 写真アップロード（ファーストビューでは価格を表示しない） */
 function cRenderPhoto(){
   const c = DATA.campaign || DEFAULT_CAMPAIGN;
-  cSetHead(25,"STEP 1 / 3","写真アップロード");
+  cSetHead(35,"STEP 2","写真アップロード");
   body().innerHTML = `<div class="step">
     <p class="cp-kicker">🎉 ${cesc(c.name)}</p>
     <h3 class="step-title" style="text-align:center">お車の写真を1枚アップロード</h3>
@@ -1959,7 +2003,8 @@ async function cFinalize(){
   state.campaignPrice = active ? p.camp : 0;
   state.total = finalPrice;
   const rec = {
-    at:new Date().toISOString(), name:"", tel:"", mail:"", pref:"",
+    at:new Date().toISOString(),
+    name:state.customer.name||"", tel:state.customer.tel||"", mail:state.customer.mail||"", pref:"",
     maker:state.maker||"—", model:state.model||"（車種不明）", size:state.size||"—",
     condition: c.priceBasis==="new" ? "新車" : "経年車",
     menu:(c.desc||c.name).replace(/\n/g,"").slice(0,60),
@@ -1998,6 +2043,11 @@ function cOpenContact(){
   const c = DATA.campaign || DEFAULT_CAMPAIGN;
   const active = campaignActive();
   const p = cCalcPrices(state.size);
+  // 見積開始時に入力済みのお客様情報をプリフィル（再入力不要）
+  const cu = state.customer;
+  if(cu.name) document.getElementById("cName").value = cu.name;
+  if(cu.tel) document.getElementById("cTel").value = cu.tel;
+  if(cu.mail) document.getElementById("cMail").value = cu.mail;
   openContact(
 `【見積番号】${state.estimateNo||"—"}
 【キャンペーン】${c.name}
