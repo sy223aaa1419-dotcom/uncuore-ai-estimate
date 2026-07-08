@@ -476,7 +476,10 @@ table.ad tr:hover td{background:#f7faff}
 .cp-or::before,.cp-or::after{content:"";flex:1;height:1px;background:rgba(120,150,220,.25)}
 .cp-field{margin-bottom:12px}
 .cp-field label{display:block;font-size:12px;color:var(--muted);letter-spacing:.1em;margin-bottom:6px}
-.cp-field input{width:100%;min-height:52px;font-size:16px;padding:12px 14px;border-radius:10px;border:1px solid rgba(120,150,220,.35);background:rgba(255,255,255,.05);color:#eef2fa}
+.cp-field input,.cp-field select{width:100%;min-height:52px;font-size:16px;padding:12px 14px;border-radius:10px;border:1px solid rgba(120,150,220,.35);background:rgba(255,255,255,.05);color:#eef2fa}
+.cp-field select{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9'%3E%3Cpath d='M1 1l6 6 6-6' stroke='%237fb0ff' stroke-width='2' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center}
+.cp-field select:disabled{opacity:.45}
+.cp-field select option{background:#0d1526;color:#eef2fa}
 .cp-estno{text-align:center;font-size:12.5px;color:#7fb0ff;letter-spacing:.1em;margin-bottom:10px}
 .cp-banner{background:linear-gradient(90deg,#f59e0b,#ef4444);color:#fff;text-align:center;font-size:13px;letter-spacing:.08em;padding:10px 14px;font-weight:600;position:relative;z-index:60}
 .cp-hero-badge{display:inline-block;margin-top:16px;background:linear-gradient(90deg,#f59e0b,#ef4444);color:#fff;font-size:12.5px;font-weight:700;letter-spacing:.1em;border-radius:20px;padding:8px 20px;box-shadow:0 6px 20px rgba(239,68,68,.35)}
@@ -1940,24 +1943,76 @@ function cRenderManual(){
   cstate.step = 4;
   cSetHead(40,"STEP","車両情報の入力");
   body().innerHTML = `<div class="step">
-    <h3 class="step-title">メーカー・車種を直接入力</h3>
-    <p class="step-desc">サイズはご入力いただいた車種からシステムが自動判定します。</p>
-    <div class="cp-field"><label>メーカー</label><input id="cpMaker" type="text" placeholder="例：トヨタ" value="${cesc(state.maker&&state.maker!=="—"?state.maker:"")}" oninput="document.getElementById('cpManErr').style.display='none'"></div>
-    <div class="cp-field"><label>車種</label><input id="cpModel" type="text" placeholder="例：ヴォクシー" value="${cesc(state.model&&state.model!=="（車種不明）"?state.model:"")}" oninput="document.getElementById('cpManErr').style.display='none'"></div>
+    <h3 class="step-title">お車を選択してください</h3>
+    <p class="step-desc">サイズは選択された車種からシステムが自動判定します。</p>
+    <div class="cp-field"><label>メーカー</label>
+      <select id="cpMakerSel" onchange="cMakerChanged()">
+        <option value="">選択してください</option>
+        ${Object.keys(DATA.vehicles).map(m=>`<option value="${cesc(m)}" ${state.maker===m?"selected":""}>${cesc(m)}</option>`).join("")}
+        <option value="__other__">その他（リストにないメーカー）</option>
+      </select></div>
+    <div class="cp-field"><label>車種</label>
+      <select id="cpModelSel" disabled onchange="cModelChanged()">
+        <option value="">メーカーを選択してください</option>
+      </select></div>
+    <div class="cp-field" id="cpOtherWrap" style="display:none"><label>車種名（任意）</label>
+      <input id="cpOtherName" type="text" placeholder="例：ヴォクシー"></div>
     <p id="cpManErr" class="cp-err" style="display:none"></p>
     <button class="cp-btn go big" onclick="cManualGo(this)">この内容で見積へ進む</button>
     <button class="cp-textlink" onclick="cgo(1)">← 写真アップロードに戻る</button>
   </div>`;
+  if(state.maker && DATA.vehicles[state.maker]) cMakerChanged(); // 戻ってきた場合はメーカーに応じた車種リストを復元
+}
+/* メーカー選択→車種リストを連動して更新 */
+function cMakerChanged(){
+  const mk = document.getElementById("cpMakerSel").value;
+  const sel = document.getElementById("cpModelSel");
+  const other = document.getElementById("cpOtherWrap");
+  const err = document.getElementById("cpManErr"); if(err) err.style.display="none";
+  if(!mk){
+    sel.disabled = true;
+    sel.innerHTML = `<option value="">メーカーを選択してください</option>`;
+    other.style.display = "none";
+    return;
+  }
+  if(mk === "__other__"){
+    sel.disabled = true;
+    sel.innerHTML = `<option value="__other__" selected>—（担当者が確認します）</option>`;
+    other.style.display = "block";
+    return;
+  }
+  const list = DATA.vehicles[mk] || [];
+  sel.disabled = false;
+  sel.innerHTML = `<option value="">選択してください</option>`
+    + list.map((v,i)=>`<option value="${i}">${cesc(v[0])}</option>`).join("")
+    + `<option value="__other__">その他（リストにない車種）</option>`;
+  other.style.display = "none";
+}
+function cModelChanged(){
+  const err = document.getElementById("cpManErr"); if(err) err.style.display="none";
+  const v = document.getElementById("cpModelSel").value;
+  document.getElementById("cpOtherWrap").style.display = (v==="__other__") ? "block" : "none";
 }
 async function cManualGo(btn){
-  const mk = document.getElementById("cpMaker").value.trim();
-  const md = document.getElementById("cpModel").value.trim();
+  const mkSel = document.getElementById("cpMakerSel").value;
+  const mdSel = document.getElementById("cpModelSel").value;
   const errEl = document.getElementById("cpManErr");
-  if(!mk || !md){ errEl.textContent="メーカーと車種を入力してください"; errEl.style.display="block"; return; }
-  state.maker = mk; state.model = md;
-  // サイズはユーザーに選ばせず、車種DBから自動判定（判定不可の場合は担当者確認扱いで進める）
-  const hit = dbMatchVehicle(md);
-  state.size = hit ? hit.size : null;
+  if(!mkSel || !mdSel){ errEl.textContent="メーカーと車種をお選びください"; errEl.style.display="block"; return; }
+  const otherName = ((document.getElementById("cpOtherName")||{}).value||"").trim();
+  if(mkSel === "__other__"){
+    // リストにないメーカー → 担当者確認（任意入力の車種名でDB照合は試みる）
+    state.maker = "その他"; state.model = otherName || "（リストにない車種）";
+    const hit = otherName ? dbMatchVehicle(otherName) : null;
+    state.size = hit ? hit.size : null;
+  }else if(mdSel === "__other__"){
+    // リストにない車種 → 任意入力名でDB照合を試み、ダメなら担当者確認
+    state.maker = mkSel; state.model = otherName || "（リストにない車種）";
+    const hit = otherName ? dbMatchVehicle(otherName) : null;
+    state.size = hit ? hit.size : null;
+  }else{
+    const v = (DATA.vehicles[mkSel]||[])[Number(mdSel)];
+    state.maker = mkSel; state.model = v ? v[0] : "（車種不明）"; state.size = v ? v[1] : null;
+  }
   cgo(0); // 車両確定 → お客様情報の入力へ
 }
 /* サイズが判定できているか */
