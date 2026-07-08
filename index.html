@@ -1291,10 +1291,11 @@ function renderResult(){
         const m = e.m;
         const ribbon = [e.recommend?"おすすめ":null, e.no1?"人気No.1":null].filter(Boolean).join("・");
         return `<div class="menu-card rslt ${e.highlight?'best':''}">
-          ${ribbon?`<span class="best-ribbon">${ribbon}</span>`:""}
+          ${ribbon?`<span class="best-ribbon">👑 ${ribbon}</span>`:""}
           <div>
             <div class="mname">${m.name}</div>
             <div class="mkana">${m.kana||""}</div>
+            <div class="mdesc">${m.desc||""}</div>
             <span class="badge">耐久年数：${m.years}年</span>${e.ai?`<span class="badge ai">AI推奨</span>`:""}
           </div>
           <div class="mprice"><span class="yen">${yen(menuTotal(m))}</span><small>税別・概算</small></div>
@@ -1857,7 +1858,7 @@ function adRenderLpMenus(){
         <td style="text-align:center">${e?`<input type="checkbox" ${e.inquiry!==false?"checked":""} onchange="adLpFlag('${m.id}','inquiry',this.checked)">`:"—"}</td>
       </tr>`;}).join("")}</tbody>
   </table></div>
-  <p class="ad-note">表示ONのメニューがAI見積結果に表示順どおり同時表示され、各カードには「施工メニュー＋選択オプション」の合計金額が表示されます。おすすめ／人気No.1はリボン、AI推奨はバッジ、強調表示はカード装飾。「初期表示」は問い合わせフォームの希望メニューで最初に選択される項目、「問い合わせ表示」は希望メニューの選択肢に含めるかどうかです（「お店で相談して決める」は常に表示）。</p>`;
+  <p class="ad-note">表示ONのメニューがAI見積結果に表示順どおり同時表示され、各カードには説明文と「施工メニュー＋選択オプション」の合計金額が表示されます。メニュー名・説明文は下の「メニュー名・説明文」表から編集できます。おすすめ／人気No.1はリボン、AI推奨はバッジ、強調表示はカード装飾。「初期表示」は問い合わせフォームの希望メニューで最初に選択される項目、「問い合わせ表示」は希望メニューの選択肢に含めるかどうかです（「お店で相談して決める」は常に表示）。</p>`;
 }
 function adLpToggle(id,checked){
   if(checked){
