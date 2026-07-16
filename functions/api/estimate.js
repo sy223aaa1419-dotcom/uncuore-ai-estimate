@@ -26,6 +26,16 @@ export async function onRequestPost(context) {
   if (!env.ANTHROPIC_API_KEY) {
     return json({ message: "サーバー設定エラー（APIキー未設定）" }, 500);
   }
+  if (!sameOrigin(request)) return json({ message: "不正なリクエストです" }, 403);
+  if (env.UC_KV) {
+    const ip = (request.headers.get("CF-Connecting-IP") || "unknown").slice(0,80);
+    const key = "rl:ai:" + ip;
+    try {
+      const n = Number(await env.UC_KV.get(key) || 0);
+      if (n >= 15) return json({ message: "短時間のAI判定回数が多すぎます。しばらく時間をおいてください。" }, 429);
+      await env.UC_KV.put(key, String(n + 1), { expirationTtl: 600 });
+    } catch (_) {}
+  }
 
   let body;
   try {
@@ -94,12 +104,22 @@ export async function onRequest(context) {
   return json({ message: "Method Not Allowed" }, 405);
 }
 
+function sameOrigin(request) {
+  const origin = request.headers.get("Origin");
+  if (!origin) return true;
+  try { return new URL(origin).host === new URL(request.url).host; } catch (_) { return false; }
+}
+
 function json(obj, status) {
   return new Response(JSON.stringify(obj), {
     status,
     headers: {
       "Content-Type": "application/json; charset=utf-8",
       "Cache-Control": "no-store",
+      "X-Content-Type-Options": "nosniff",
+      "X-Frame-Options": "DENY",
+      "Referrer-Policy": "strict-origin-when-cross-origin",
+      "Permissions-Policy": "camera=(self), microphone=(), geolocation=()",
     },
   });
 }

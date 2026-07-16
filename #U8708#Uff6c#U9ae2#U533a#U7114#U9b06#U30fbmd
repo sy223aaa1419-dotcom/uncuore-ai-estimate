@@ -1,0 +1,137 @@
+# UNCUORE AI見積LP 公開手順（Cloudflare Pages）
+
+## 構成
+
+```
+uncuore-lp/
+├── index.html                  … LP本体（画像埋め込み済み・これ1枚で表示可能）
+└── functions/
+    └── api/
+        ├── estimate.js         … AI見積の中継サーバー（APIキーを安全に保持）
+        ├── contact.js          … 問い合わせメール送信（uncuore02@gmail.com 宛）
+        └── [action].js         … 見積・問い合わせ・価格設定の共有データベースAPI
+                                   （/api/record, /api/records, /api/login,
+                                     /api/inquiries, /api/settings を処理）
+```
+
+## 事前に用意するもの
+
+1. **Cloudflareアカウント**（無料） … https://dash.cloudflare.com/sign-up
+2. **Anthropic APIキー** … https://console.anthropic.com で発行
+   - 「API Keys」→「Create Key」
+   - 従量課金（クレジットのプリペイド購入）。1回の判定は1円未満〜数円程度
+   - 使いすぎ防止に、Console の「Limits」で月額上限の設定を推奨
+3. **Resend APIキー**（問い合わせメール用・無料） … https://resend.com
+   - ⚠️ **必ず uncuore02@gmail.com でアカウント登録すること**
+     （無料プランは「登録した自分のメールアドレス宛」のみ送信可能なため。
+       宛先＝自分のGmailなのでこの制約内で問題なく運用できます）
+   - 登録後「API Keys」→「Create API Key」（権限は Sending access でOK）
+   - 無料枠: 1日100通／月3,000通まで（問い合わせ用途には十分）
+4. **管理画面パスワードを決めておく**（後述のSecretに設定。HTMLには書かれません）
+
+## 公開手順（ダッシュボードから・約10分）
+
+### 1. プロジェクト作成
+
+1. Cloudflare ダッシュボード →「Workers & Pages」→「Create」→「Pages」
+2. 「Upload assets（Direct Upload）」を選択
+3. プロジェクト名を入力（例: `uncuore-lp`）
+4. この `uncuore-lp` フォルダ**ごと**ドラッグ&ドロップしてデプロイ
+   - ⚠️ `index.html` 単体ではなく、`functions` フォルダを含めてアップロードすること
+
+### 2. APIキーの設定（重要）
+
+1. デプロイしたプロジェクトの「Settings」→「Variables and Secrets」
+2. 「Add」で以下を**3つ**追加:
+   - Type: **Secret** / Variable name: `ANTHROPIC_API_KEY` / Value: Anthropicのキー（`sk-ant-...`）
+   - Type: **Secret** / Variable name: `RESEND_API_KEY` / Value: Resendのキー（`re_...`）
+   - Type: **Secret** / Variable name: `ADMIN_PASSWORD` / Value: 管理画面のログインパスワード（自分で決めた文字列）
+
+### 2-2. データベース（KV）の設定（重要：見積・価格の共有保存に必須）
+
+1. Cloudflareダッシュボード →「Storage & Databases」→「KV」→「Create a namespace」
+   - 名前は自由（例: `uncuore-data`）
+2. Pagesプロジェクトの「Settings」→「Bindings」→「Add」→「KV namespace」
+   - Variable name: `UC_KV` （**この名前は変更不可**）
+   - KV namespace: 手順1で作ったものを選択
+3. 保存後、**再デプロイ**（Deployments → 最新のデプロイ → Retry、または再アップロード）
+   - Secret・KVバインドはどちらも再デプロイ後に反映されます
+
+### 3. 動作確認
+
+1. 発行されたURL（`https://uncuore-lp.pages.dev` など）を開く
+2. AI見積 → 車の写真をアップロード →「AIで判定する」→ 車種・サイズが表示されればOK
+3. 問い合わせフォームからテスト送信 → uncuore02@gmail.com に
+   件名「【AI見積】お問い合わせ｜○○様（見積番号）」のメールが届けばOK
+   - ⚠️ **初回は迷惑メールフォルダに入ることがあります。** 届いていたら
+     「迷惑メールではない」に指定してください。以後は受信トレイに届きやすくなります
+   - メールの差出人は当面 `onboarding@resend.dev` になります。お客様のアドレスが
+     返信先（Reply-To）に入っているので、**そのまま返信すればお客様に届きます**
+4. LPで見積を1件作成 → 別の端末やブラウザで `（公開URL）#admin` を開き、
+   `ADMIN_PASSWORD` に設定したパスワードでログイン → 見積一覧に表示されればOK
+5. 管理画面の「価格」タブでメニュー名・説明文・価格を編集して保存 →
+   LPを開き直して反映されていればOK（全ての訪問者に共有されます）
+
+### メールの差出人を独自ドメインにしたい場合（任意・後からでOK）
+
+独自ドメイン（例: uncuore.jp）を取得したら、Resendの「Domains」でドメインを検証し、
+Cloudflareの環境変数に `CONTACT_FROM` = `UNCUORE <info@uncuore.jp>` を追加して再デプロイすると、
+差出人が独自ドメインになり迷惑メール判定もされにくくなります。
+
+### 4. 独自ドメイン（任意）
+
+「Custom domains」→「Set up a custom domain」でお持ちのドメインを接続できます。
+接続後、`index.html` 内の JSON-LD の `"url": ""` に公開URLを入れておくとSEO上望ましいです。
+
+## 更新方法
+
+LPを修正したら、同じプロジェクトに再度フォルダをアップロードするだけです。
+
+## セキュリティ・コストについて
+
+- APIキーはサーバー側（Secret）のみに存在し、HTMLには含まれません
+- 中継サーバーはプロンプト固定・車両判定専用のため、第三者に汎用AIとして悪用されません
+- 画像は約6MBまでに制限済み
+- 大量アクセスが心配な場合: Cloudflare「Security」→「WAF」→ Rate limiting rules で
+  `/api/estimate` へのリクエストを「同一IPから10回/分まで」等に制限できます（無料枠で1ルール可）
+
+## トラブルシューティング
+
+| 症状 | 原因と対処 |
+|---|---|
+| 「サーバー設定エラー（APIキー未設定）」 | Secret登録後に再デプロイしていない |
+| 「AI判定サービスの設定に問題があります」 | APIキーが無効。Consoleでキーを確認 |
+| 判定が返らない・502 | Anthropicのクレジット残高切れの可能性。Consoleで確認 |
+| 混雑エラー（429） | 時間をおいて再試行。頻発する場合はConsoleのRate Limitを確認 |
+
+### メールが届かない場合
+
+| 症状 | 原因と対処 |
+|---|---|
+| 「メールAPIキー未設定」エラー | Secret `RESEND_API_KEY` 登録後に再デプロイしていない |
+| 送信は成功するがメールが来ない | 迷惑メールフォルダを確認。Resendダッシュボードの「Emails」で送信ログも確認可能 |
+| 「validation_error」等のエラー | Resendのアカウント登録メールが uncuore02@gmail.com か確認（別アドレスで登録すると宛先制限で送れません） |
+
+### 管理画面・データが反映されない場合
+
+| 症状 | 原因と対処 |
+|---|---|
+| 「KVが未設定です」エラー | KVネームスペース作成とバインド（変数名 UC_KV）→ 再デプロイを確認 |
+| 「Secret ADMIN_PASSWORD が未設定です」 | Secretを追加して再デプロイ |
+| 見積一覧が空のまま | KVバインド後に作成された見積のみ表示されます（それ以前のデータは保存されていません） |
+| 価格を編集しても保存に失敗する | 一度ログアウトして再ログイン（パスワード変更後は再ログインが必要） |
+
+### ログインできない場合の調べ方（v3以降）
+
+1. `公開URL#admin` を開くと、ログイン画面の下に**接続診断**が自動表示されます
+   - 「❌ Functionsが動作していません」→ functions/ フォルダがデプロイされていません。
+     GitHub連携なら**リポジトリの最上位**に functions/ があるか確認
+     （リポジトリ直下が uncuore-lp/functions/... と一段深い場合はNG。
+       その場合はPagesの「Build settings」で Root directory を uncuore-lp に設定）
+   - ❌が付いたSecret/KVは、設定→**再デプロイ**で反映されます
+2. **ブラウザコンソール**（PC: F12 → Console）に
+   `[admin-login] POST /api/login → HTTP xxx` と実際のステータス・応答が出ます
+3. **サーバーログ**: Cloudflareダッシュボード → 対象Pagesプロジェクト →
+   「Deployments」→ 最新デプロイ → 「Functions」タブ →「Begin log stream」を押した状態で
+   ログインを試すと `[login] result=OK/NG inputLen=… expectedLen=…` が確認できます
+   - `expectedLen` が想定と違う → Secretに余計な文字が入っています（v3以降は前後の空白・改行は自動で無視されます）
