@@ -9,10 +9,12 @@
  */
 
 const DEFAULT_TO = "uncuore02@gmail.com";
-const DEFAULT_FROM = "UNCUORE AI見積 <onboarding@resend.dev>";
+const DEFAULT_FROM = "UNCUORE AI見積 <noreply@mail.un-cuore.com>";
 const MAX_BODY_BYTES = 32 * 1024;
 const RATE_WINDOW_SECONDS = 10 * 60;
 const RATE_MAX = 5;
+
+function getKV(env) { return env.UNCUORE_KV || env.UC_KV || null; }
 
 export async function onRequestPost(context) {
   const { request, env } = context;
@@ -24,8 +26,8 @@ export async function onRequestPost(context) {
   if (len > MAX_BODY_BYTES) return json({ message: "送信データが大きすぎます" }, 413);
 
   const client = clientInfo(request);
-  if (env.UC_KV) {
-    const limited = await rateLimit(env.UC_KV, `rl:contact:${client.ip || "unknown"}`, RATE_MAX, RATE_WINDOW_SECONDS);
+  if (getKV(env)) {
+    const limited = await rateLimit(getKV(env), `rl:contact:${client.ip || "unknown"}`, RATE_MAX, RATE_WINDOW_SECONDS);
     if (limited) return json({ message: "短時間に送信回数が多すぎます。しばらく時間をおいて再度お試しください。" }, 429);
   }
 
@@ -58,7 +60,7 @@ export async function onRequestPost(context) {
     return json({ message: "入力内容に不備があります" }, 400);
   }
   if ([name, tel, mail, msg, wishMenu, campaignName].some(hasDangerousMarkup)) {
-    await saveSecurityEvent(env.UC_KV, "blocked_input", client, { estimateNo, source });
+    await saveSecurityEvent(getKV(env), "blocked_input", client, { estimateNo, source });
     return json({ message: "使用できない文字列が含まれています。入力内容をご確認ください。" }, 400);
   }
 
@@ -87,8 +89,8 @@ ${msg || "（本文なし）"}
       method: "POST",
       headers: { "Content-Type": "application/json", "Authorization": `Bearer ${env.RESEND_API_KEY}` },
       body: JSON.stringify({
-        from: env.CONTACT_FROM || DEFAULT_FROM,
-        to: [env.CONTACT_TO || DEFAULT_TO],
+        from: env.FROM_EMAIL ? `UNCUORE AI見積 <${env.FROM_EMAIL}>` : (env.CONTACT_FROM || DEFAULT_FROM),
+        to: [env.NOTIFY_EMAIL || env.CONTACT_TO || DEFAULT_TO],
         reply_to: mail,
         subject,
         text,
@@ -104,10 +106,10 @@ ${msg || "（本文なし）"}
     return json({ message: detail || `メール送信に失敗しました（${res.status}）` }, 502);
   }
 
-  if (env.UC_KV) {
+  if (getKV(env)) {
     try {
       const at = new Date().toISOString();
-      await env.UC_KV.put(
+      await getKV(env).put(
         "inq:" + at + "-" + crypto.randomUUID().slice(0, 8),
         JSON.stringify({
           at, estimateNo, name, tel, mail, msg, wishMenu, source,
@@ -116,14 +118,14 @@ ${msg || "（本文なし）"}
         })
       );
       if (estimateNo) {
-        const raw = await env.UC_KV.get("est:" + estimateNo);
+        const raw = await getKV(env).get("est:" + estimateNo);
         if (raw) {
           const rec = JSON.parse(raw);
           rec.name = rec.name || name; rec.tel = rec.tel || tel; rec.mail = rec.mail || mail;
           if (wishMenu) rec.wishMenu = wishMenu;
           rec.history = Array.isArray(rec.history) ? rec.history.slice(-99) : [];
           rec.history.push(`[${new Date().toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" })}] お問い合わせフォーム送信（${name}）`);
-          await env.UC_KV.put("est:" + estimateNo, JSON.stringify(rec));
+          await getKV(env).put("est:" + estimateNo, JSON.stringify(rec));
         }
       }
     } catch (_) { /* メール送信成功を妨げない */ }

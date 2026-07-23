@@ -5,6 +5,9 @@ const LOGIN_RATE_MAX = 10;
 const PUBLIC_RECORD_RATE_MAX = 20;
 const RATE_WINDOW_SECONDS = 10 * 60;
 
+function getKV(env) { return env.UNCUORE_KV || env.UC_KV || null; }
+function siteKeyOf(env) { return env.VITE_TURNSTILE_SITE_KEY || env.TURNSTILE_SITE_KEY || ""; }
+
 export async function onRequest(context) {
   const { request, env, params } = context;
   const action = String(params.action || "");
@@ -12,39 +15,39 @@ export async function onRequest(context) {
 
   if (action === "health" && method === "GET") {
     return json({
-      ok: true, functions: true, kvBound: !!env.UC_KV,
+      ok: true, functions: true, kvBound: !!getKV(env),
       adminPasswordSet: !!env.ADMIN_PASSWORD, resendKeySet: !!env.RESEND_API_KEY,
       anthropicKeySet: !!env.ANTHROPIC_API_KEY,
-      turnstileEnabled: !!(env.TURNSTILE_SECRET_KEY && env.TURNSTILE_SITE_KEY),
+      turnstileEnabled: !!(env.TURNSTILE_SECRET_KEY && siteKeyOf(env)),
       time: new Date().toISOString(),
     }, 200);
   }
 
   // 公開設定。Site Keyは公開情報なので返してよい。
   if (action === "security-config" && method === "GET") {
-    return json({ turnstileEnabled: !!(env.TURNSTILE_SECRET_KEY && env.TURNSTILE_SITE_KEY), turnstileSiteKey: env.TURNSTILE_SITE_KEY || "" }, 200);
+    return json({ turnstileEnabled: !!(env.TURNSTILE_SECRET_KEY && siteKeyOf(env)), turnstileSiteKey: siteKeyOf(env) }, 200);
   }
 
   if (action === "login" && method === "POST") {
     if (!env.ADMIN_PASSWORD) return json({ message: "サーバー設定エラー：管理者パスワードが未設定です" }, 500);
     const client = clientInfo(request);
-    if (env.UC_KV) {
-      const limited = await rateLimit(env.UC_KV, `rl:login:${client.ip || "unknown"}`, LOGIN_RATE_MAX, RATE_WINDOW_SECONDS);
+    if (getKV(env)) {
+      const limited = await rateLimit(getKV(env), `rl:login:${client.ip || "unknown"}`, LOGIN_RATE_MAX, RATE_WINDOW_SECONDS);
       if (limited) return json({ message: "ログイン試行回数が多すぎます。しばらく時間をおいてください。" }, 429);
     }
     const b = await request.json().catch(() => ({}));
     const input = typeof b.pass === "string" ? b.pass : "";
     const expected = String(env.ADMIN_PASSWORD);
     if (!(await secureEqual(input, expected))) {
-      await saveSecurityEvent(env.UC_KV, "admin_login_failed", client, {});
+      await saveSecurityEvent(getKV(env), "admin_login_failed", client, {});
       return json({ message: "パスワードが違います" }, 401);
     }
     const token = await issueToken(expected, client.ip);
     return json({ ok: true, token, expiresIn: SESSION_TTL_MS / 1000 }, 200);
   }
 
-  if (!env.UC_KV) return json({ message: "サーバー設定エラー：KVが未設定です" }, 500);
-  const kv = env.UC_KV;
+  if (!getKV(env)) return json({ message: "サーバー設定エラー：KVが未設定です" }, 500);
+  const kv = getKV(env);
   const client = clientInfo(request);
 
   const isAdmin = await verifyAdmin(request, env.ADMIN_PASSWORD);
@@ -95,14 +98,14 @@ export async function onRequest(context) {
     if (action === "records" && method === "GET") {
       if (!isAdmin) return needAdmin();
       const list = await listAll(kv, "est:");
-      list.sort((a, b) => (String(a.no) < String(b.no) ? 1 : -1));
+      list.sort((a, b) => String(b.at || "").localeCompare(String(a.at || "")));
       return json({ list }, 200);
     }
     if (action === "record" && method === "PUT") {
       if (!isAdmin) return needAdmin();
       const b = await request.json().catch(() => null);
       const rec = b && b.record;
-      if (!rec || typeof rec.no !== "string" || !/^UC-\d{8}-\d{4}$/.test(rec.no)) return json({ message: "不正なデータです" }, 400);
+      if (!rec || typeof rec.no !== "string" || !/^UC-\d{8}-(?:\d{4}|[A-Z0-9]{6})$/.test(rec.no)) return json({ message: "不正なデータです" }, 400);
       const s = JSON.stringify(rec);
       if (s.length > 200_000) return json({ message: "データが大きすぎます" }, 413);
       await kv.put("est:" + rec.no, s);
@@ -111,7 +114,7 @@ export async function onRequest(context) {
     if (action === "record" && method === "DELETE") {
       if (!isAdmin) return needAdmin();
       const no = new URL(request.url).searchParams.get("no") || "";
-      if (!/^UC-\d{8}-\d{4}$/.test(no)) return json({ message: "不正なリクエストです" }, 400);
+      if (!/^UC-\d{8}-(?:\d{4}|[A-Z0-9]{6})$/.test(no)) return json({ message: "不正なリクエストです" }, 400);
       await kv.delete("est:" + no);
       return json({ ok: true }, 200);
     }

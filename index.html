@@ -344,6 +344,42 @@ table.ad tr:hover td{background:#f7faff}
 .ad-inline input,.ad-inline select{padding:8px;border:1px solid #cbd5e6;border-radius:4px;font-size:13px}
 .ad-note{font-size:11.5px;color:#7387ad;margin-top:8px}
 </style>
+
+<style>
+/* ---------- 通常版：AI見積メール受取フォーム ---------- */
+.lead-gate{max-width:620px;margin:0 auto}
+.lead-complete{max-width:640px;margin:0 auto;text-align:center}
+.lead-finish-icon{width:72px;height:72px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;background:rgba(55,211,154,.12);border:1px solid rgba(55,211,154,.45);color:#37d39a;font-size:34px;box-shadow:0 0 28px rgba(55,211,154,.15)}
+.lead-ready{background:linear-gradient(145deg,rgba(37,99,235,.13),rgba(77,163,255,.04));border:1px solid rgba(77,163,255,.32);border-radius:10px;padding:22px;margin:20px 0 26px;text-align:center}
+.lead-ready .ai-icon{font-size:30px;margin-bottom:6px}
+.lead-ready h4{font-family:var(--serif);font-size:20px;letter-spacing:.08em;margin-bottom:7px}
+.lead-ready p{font-size:13px;color:var(--muted);line-height:1.8}
+.lead-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0 0 24px}
+.lead-summary>div{background:rgba(255,255,255,.035);border:1px solid var(--line);border-radius:6px;padding:12px 14px}
+.lead-summary small{display:block;color:var(--muted);font-size:10px;letter-spacing:.12em;margin-bottom:3px}
+.lead-summary b{font-size:14px;letter-spacing:.04em}
+.lead-form{display:grid;gap:15px;margin-top:20px}
+.lead-field label{display:block;font-size:12px;color:#bdcbea;letter-spacing:.08em;margin-bottom:6px}
+.lead-field label em{font-style:normal;color:#fff;background:#ef4444;border-radius:3px;font-size:9px;padding:2px 5px;margin-left:7px}
+.lead-field input{width:100%;padding:14px 15px;border:1px solid rgba(120,150,220,.3);border-radius:6px;background:rgba(5,9,18,.72);color:#fff;outline:none;transition:.2s}
+.lead-field input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(77,163,255,.1)}
+.lead-field.invalid input{border-color:#ef4444}
+.lead-field .err{display:none;color:#fda4a4;font-size:11px;margin-top:5px}
+.lead-field.invalid .err{display:block}
+.lead-submit{width:100%;min-height:58px;border:none;border-radius:6px;background:linear-gradient(100deg,#1d4ed8,#4da3ff);color:#fff;font-size:16px;font-weight:700;letter-spacing:.07em;box-shadow:0 10px 30px rgba(37,99,235,.35);margin-top:4px}
+.lead-submit:disabled{opacity:.55;cursor:not-allowed}
+.lead-privacy{font-size:11px;color:var(--muted);line-height:1.7;text-align:center;margin-top:10px}
+.lead-error{display:none;color:#fecaca;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.35);border-radius:6px;padding:11px 13px;font-size:12px;line-height:1.7;margin-top:12px}
+.lead-turnstile{display:flex;justify-content:center;min-height:0;margin:4px 0}
+.lead-estno{display:inline-block;margin:16px 0 8px;padding:9px 16px;border:1px solid var(--line2);border-radius:4px;color:#a9c9ff;font-size:13px;letter-spacing:.08em}
+.lead-complete .complete-copy{color:var(--muted);font-size:14px;line-height:1.9;margin:12px auto 25px}
+.lead-complete .result-ctas{max-width:560px;margin:26px auto}
+@media(max-width:560px){
+  .lead-summary{grid-template-columns:1fr}
+  .lead-ready{padding:18px 14px}
+}
+</style>
+
 </head>
 <body>
 <!-- Google Tag Manager (noscript) -->
@@ -392,12 +428,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   <div class="container">
     <p class="eyebrow fade-up">AI Estimate Flow</p>
     <h2 class="section-title fade-up">わずか1分の、上質な見積体験</h2>
-    <p class="section-sub fade-up">車種を選ぶだけ。AIがサイズを自動判定し、最適なプランと概算金額をその場でご提示します。</p>
+    <p class="section-sub fade-up">車種を選ぶだけ。AIがサイズを自動判定し、最適なプランと概算見積をメールでお届けします。</p>
     <div class="flow-list">
       <div class="flow-item fade-up"><span class="num">01</span><div><b>車両情報の選択</b><p>メーカー・車種を選択。サイズはAIが自動判定します。</p></div></div>
       <div class="flow-item fade-up"><span class="num">02</span><div><b>車両状態・メニュー選択</b><p>新車／経年車と、ご希望のコーティングメニューをお選びください。</p></div></div>
-      <div class="flow-item fade-up"><span class="num">03</span><div><b>AI見積結果の表示</b><p>オプションを含めた概算金額を、見積番号付きで即時にご提示。</p></div></div>
-      <div class="flow-item fade-up"><span class="num">04</span><div><b>LINE相談・ご来店</b><p>見積結果をもとに、LINEまたはお問い合わせフォームからご相談ください。</p></div></div>
+      <div class="flow-item fade-up"><span class="num">03</span><div><b>AIが見積を作成</b><p>車両情報と選択内容をもとに、AIが最適なプランと概算見積を作成します。</p></div></div>
+      <div class="flow-item fade-up"><span class="num">04</span><div><b>メールで見積を受け取る</b><p>お名前・メールアドレス・電話番号を入力すると、見積結果がメールで届きます。</p></div></div>
     </div>
   </div>
 </section>
@@ -407,7 +443,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   <div class="container">
     <p class="eyebrow fade-up">AI Simulation</p>
     <h2 class="section-title fade-up">無料AI見積シミュレーション</h2>
-    <p class="section-sub fade-up">所要時間 約1分 ｜ その場で概算金額をご確認いただけます</p>
+    <p class="section-sub fade-up">所要時間 約1分 ｜ AI見積結果をメールで受け取れます</p>
 
     <div class="wizard-shell fade-up">
       <div class="progress"><div class="progress-bar" id="progressBar" style="width:12%"></div></div>
@@ -826,10 +862,11 @@ function menuTotal(m){
 const state = {
   step:1, maker:null, model:null, size:null, sizeAuto:false, notFound:false,
   condition:null, menuId:null, options:[], customer:{name:"",tel:"",mail:"",pref:""}, photoJudged:false, photoData:null,
-  estimateNo:null, total:0,
+  estimateNo:null, total:0, leadSubmitting:false, leadTurnstileToken:"",
   source:"normal", campaignName:"", normalPrice:0, campaignPrice:0
 };
-const STEP_NAMES = {1:"車両情報",2:"車両状態",3:"オプション",4:"AI解析",5:"見積結果"};
+let leadTurnstileWidgetId = null;
+const STEP_NAMES = {1:"車両情報",2:"車両状態",3:"オプション",4:"AI解析",5:"お客様情報",6:"送信完了"};
 
 const yen = n => "¥" + n.toLocaleString("ja-JP");
 const sizeIdx = s => SIZES.indexOf(s);
@@ -849,10 +886,13 @@ function calcTotal(){
 /* ---------- ウィザード描画 ---------- */
 const body = ()=>document.getElementById("wizardBody");
 function setProgress(step){
-  const pct = {1:20,2:40,3:60,4:82,5:100}[step];
+  const pct = {1:16,2:33,3:50,4:68,5:86,6:100}[step] || 100;
   document.getElementById("progressBar").style.width = pct+"%";
-  document.getElementById("stepLabel").textContent = step<=3 ? `STEP ${step} / 3` : (step===4?"AI ANALYSIS":"RESULT");
-  document.getElementById("stepName").textContent = STEP_NAMES[step];
+  document.getElementById("stepLabel").textContent =
+    step<=3 ? `STEP ${step} / 6` :
+    step===4 ? "AI ANALYSIS" :
+    step===5 ? "FINAL STEP" : "COMPLETE";
+  document.getElementById("stepName").textContent = STEP_NAMES[step] || "";
 }
 function go(step){
   state.step = step; setProgress(step); render();
@@ -864,7 +904,8 @@ function render(){
   else if(s===2) renderCondition();   // 車両状態（新車/経年車）
   else if(s===3) renderOptions();     // オプション選択
   else if(s===4) renderAnalyzing();   // AI見積判定中（演出）
-  else if(s===5) renderResult();      // AI見積結果（2メニュー同時表示）
+  else if(s===5) renderLeadGate();    // 見積完成 → お客様情報入力
+  else if(s===6) renderLeadComplete();// メール送信完了
 }
 
 function navRow(backStep,nextLabel,nextFn,disabled){
@@ -1276,77 +1317,216 @@ function renderAnalyzing(){
 }
 
 async function finalizeEstimate(){
-  // AI見積結果は2メニュー同時提示。記録には表示メニューを併記し、金額は先頭（おすすめ）メニューの合計を採用
+  // この段階では金額を画面表示・保存しない。正式な見積番号はメール送信成功時にサーバーで発番する。
   const menus = lpVisibleMenus();
-  state.menuId = menus[0].id;
-  state.total = menuTotal(menus[0].m);
-  const d = new Date();
-  const rec = {
-    at:d.toISOString(),
-    name:"", tel:"", mail:"", pref:"",
-    maker:state.maker||"（手動選択）", model:state.model||"（車種不明）", size:state.size,
-    condition:state.condition==="new"?"新車":"経年車",
-    menu:menus.map(e=>e.m.name).join(" / "), years:menus[0].m.years,
-    options:state.options.map(id=>{const o=DATA.options.find(x=>x.id===id);return o?o.name:id;}),
-    total:state.total,
-    source:"normal", campaignName:"", normalPrice:0, campaignPrice:0
-  };
-  state.source="normal"; state.campaignName=""; state.normalPrice=0; state.campaignPrice=0;
-  // サーバーに保存し見積番号を採番（管理画面に即時反映される）
-  try{
-    const res = await fetch("/api/record",{
-      method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(rec)
-    });
-    if(res.ok){ const {no} = await res.json(); state.estimateNo = no; return; }
-  }catch(e){}
-  // サーバー保存に失敗してもお客様の見積表示は継続（番号はローカル仮発番）
-  const ymd = d.getFullYear() + String(d.getMonth()+1).padStart(2,"0") + String(d.getDate()).padStart(2,"0");
-  state.estimateNo = `UC-${ymd}-T${String(Math.floor(Math.random()*9000)+1000)}`;
+  if(menus.length){
+    state.menuId = menus[0].id;
+    state.total = menuTotal(menus[0].m);
+  }else{
+    state.menuId = null;
+    state.total = 0;
+  }
+  state.estimateNo = null;
+  state.source = "normal";
+  state.campaignName = "";
+  state.normalPrice = 0;
+  state.campaignPrice = 0;
 }
 
-/* AI見積結果: 表示メニュー（管理画面設定）を同時表示。各金額 = 施工メニュー価格 + 選択オプション価格 */
-function renderResult(){
-  const menus = lpVisibleMenus();
-  const optNames = state.options.map(id=>{const o=DATA.options.find(x=>x.id===id);return o?`${o.name}（+${yen(optPrice(o,state.size))}）`:"";});
-  body().innerHTML = `<div class="step">
+/* AI見積完成 → 正確な金額を表示する前にお客様情報を取得 */
+function renderLeadGate(){
+  const optNames = state.options.map(id=>{
+    const o=DATA.options.find(x=>x.id===id);
+    return o?o.name:"";
+  }).filter(Boolean);
+
+  body().innerHTML = `<div class="step lead-gate">
     <div class="result-head">
-      <p class="no">ESTIMATE No. ${state.estimateNo}</p>
-      <h3>AI見積結果</h3>
+      <p class="no">AI ESTIMATE READY</p>
+      <h3>AI見積が完成しました</h3>
     </div>
-    <p class="cp-kicker">🤖 AIがあなたのお車に最適なコーティングを選定しました。</p>
-    <div class="result-table">
-      <div class="result-row"><span class="k">車両</span><span class="v">${state.maker||"—"} ${state.model||""}</span></div>
-      <div class="result-row"><span class="k">サイズ</span><span class="v">${state.size}</span></div>
-      <div class="result-row"><span class="k">車両状態</span><span class="v">${state.condition==="new"?"新車（登録1か月以内）":"経年車（登録1か月以上）"}</span></div>
-      <div class="result-row"><span class="k">オプション</span><span class="v">${optNames.length?optNames.join("<br>"):"なし"}</span></div>
+
+    <div class="lead-ready">
+      <div class="ai-icon">🤖</div>
+      <h4>あなたのお車に合わせた見積を作成しました</h4>
+      <p>正確な見積金額とおすすめプランを、入力いただいたメールアドレスへすぐにお送りします。</p>
     </div>
-    <div class="menu-list" style="margin-top:16px">
-      ${menus.map(e=>{
-        const m = e.m;
-        const ribbon = [e.recommend?"おすすめ":null, e.no1?"人気No.1":null].filter(Boolean).join("・");
-        return `<div class="menu-card rslt ${e.highlight?'best':''}">
-          ${ribbon?`<span class="best-ribbon">👑 ${ribbon}</span>`:""}
-          <div>
-            <div class="mname">${m.name}</div>
-            <div class="mkana">${m.kana||""}</div>
-            <div class="mdesc">${m.desc||""}</div>
-            <span class="badge">耐久年数：${m.years}年</span>${e.ai?`<span class="badge ai">AI推奨</span>`:""}
-          </div>
-          <div class="mprice"><span class="yen">${yen(menuTotal(m))}</span><small>税別・概算</small></div>
-        </div>`;
-      }).join("")}
+
+    <div class="lead-summary">
+      <div><small>VEHICLE</small><b>${escHtml(state.maker||"—")} ${escHtml(state.model||"")}</b></div>
+      <div><small>SIZE / CONDITION</small><b>${escHtml(state.size||"—")} ｜ ${state.condition==="new"?"新車":"経年車"}</b></div>
+      <div style="grid-column:1/-1"><small>OPTION</small><b>${optNames.length?optNames.map(escHtml).join(" / "):"なし"}</b></div>
     </div>
-    <p class="result-note">※各金額は「施工メニュー＋選択オプション」の合計（税別・概算）です。ご希望のメニューはお問い合わせ時にお選びいただけます。車両の状態により実際の金額が変わる場合がございます。正式なお見積は現車確認のうえご提示いたします。</p>
+
+    <p class="step-desc" style="text-align:center">見積結果を受け取るため、下記をご入力ください。</p>
+
+    <div class="lead-form">
+      <div class="lead-field" id="leadNameField">
+        <label>お名前 <em>必須</em></label>
+        <input id="leadName" autocomplete="name" maxlength="80" placeholder="例：山田 太郎" value="${escHtml(state.customer.name||"")}">
+        <p class="err">お名前を入力してください。</p>
+      </div>
+      <div class="lead-field" id="leadMailField">
+        <label>メールアドレス <em>必須</em></label>
+        <input id="leadMail" type="email" autocomplete="email" maxlength="160" placeholder="例：example@gmail.com" value="${escHtml(state.customer.mail||"")}">
+        <p class="err">正しいメールアドレスを入力してください。</p>
+      </div>
+      <div class="lead-field" id="leadTelField">
+        <label>電話番号 <em>必須</em></label>
+        <input id="leadTel" type="tel" inputmode="tel" autocomplete="tel" maxlength="30" placeholder="例：09012345678" value="${escHtml(state.customer.tel||"")}">
+        <p class="err">正しい電話番号を入力してください。</p>
+      </div>
+      <div id="leadTurnstileWrap" class="lead-turnstile"></div>
+      <button class="lead-submit" id="leadSubmitBtn" onclick="submitLeadEstimate()">無料AI見積をメールで受け取る</button>
+      <p class="lead-privacy">入力情報は、お見積の送付およびご連絡のために使用します。</p>
+      <div class="lead-error" id="leadSubmitError"></div>
+    </div>
+
+    <div class="nav-row" style="justify-content:flex-start">
+      <button class="btn" onclick="go(3)">← 戻る</button>
+    </div>
+  </div>`;
+
+  // Turnstileはセキュリティ設定が読み込まれ次第レンダリング
+  setTimeout(ensureLeadTurnstile, 0);
+}
+
+function ensureLeadTurnstile(){
+  const wrap=document.getElementById("leadTurnstileWrap");
+  if(!wrap) return;
+  wrap.style.display=turnstileEnabled?"flex":"none";
+  if(!turnstileEnabled || !turnstileSiteKey) return;
+
+  // 以前のDOMに紐づいたWidget IDは使わない
+  leadTurnstileWidgetId = null;
+  state.leadTurnstileToken = "";
+
+  let tries=0;
+  const timer=setInterval(()=>{
+    tries++;
+    if(!document.getElementById("leadTurnstileWrap")){ clearInterval(timer); return; }
+    if(window.turnstile){
+      clearInterval(timer);
+      try{
+        leadTurnstileWidgetId=window.turnstile.render("#leadTurnstileWrap",{
+          sitekey:turnstileSiteKey,
+          theme:"dark",
+          callback:(token)=>{ state.leadTurnstileToken=token||""; },
+          "expired-callback":()=>{ state.leadTurnstileToken=""; },
+          "error-callback":()=>{ state.leadTurnstileToken=""; }
+        });
+      }catch(e){
+        console.error("[lead-turnstile] render error",e);
+      }
+    }
+    if(tries>40) clearInterval(timer);
+  },200);
+}
+
+function resetLeadTurnstile(){
+  state.leadTurnstileToken="";
+  if(window.turnstile && leadTurnstileWidgetId!==null){
+    try{ window.turnstile.reset(leadTurnstileWidgetId); }catch(_){}
+  }
+}
+
+async function submitLeadEstimate(){
+  if(state.leadSubmitting) return;
+
+  const name=(document.getElementById("leadName")?.value||"").trim();
+  const mail=(document.getElementById("leadMail")?.value||"").trim();
+  const tel=(document.getElementById("leadTel")?.value||"").trim();
+
+  const nameBad=!name;
+  const mailBad=!/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(mail);
+  const telBad=!/^[0-9+\-()\s]{8,30}$/.test(tel);
+
+  document.getElementById("leadNameField")?.classList.toggle("invalid",nameBad);
+  document.getElementById("leadMailField")?.classList.toggle("invalid",mailBad);
+  document.getElementById("leadTelField")?.classList.toggle("invalid",telBad);
+  if(nameBad||mailBad||telBad) return;
+
+  const errEl=document.getElementById("leadSubmitError");
+  if(turnstileEnabled && !state.leadTurnstileToken){
+    errEl.textContent="セキュリティ確認が完了していません。少し待ってからもう一度お試しください。";
+    errEl.style.display="block";
+    return;
+  }
+
+  state.customer={name,tel,mail,pref:""};
+  state.leadSubmitting=true;
+  const btn=document.getElementById("leadSubmitBtn");
+  btn.disabled=true;
+  btn.textContent="AI見積を送信中...";
+  errEl.style.display="none";
+
+  try{
+    const res=await fetch("/api/submit-quote",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        customer:{name,email:mail,phone:tel,pref:""},
+        vehicle:{
+          maker:state.maker||"（手動選択）",
+          model:state.model||"（車種不明）",
+          size:state.size,
+          carAge:state.condition
+        },
+        optionIds:[...state.options],
+        turnstileToken:state.leadTurnstileToken||""
+      })
+    });
+
+    const result=await res.json().catch(()=>({}));
+    if(!res.ok || !result.ok || !result.id){
+      throw new Error(result.error||result.message||"見積メールの送信に失敗しました。");
+    }
+
+    state.estimateNo=result.id;
+
+    // 実際のメール送信成功後のみコンバージョンを発火
+    try{
+      if(typeof window.gtag==="function"){
+        window.gtag("event","ai_estimate_submitted",{event_label:state.estimateNo});
+        window.gtag("event","generate_lead",{event_label:state.estimateNo});
+      }
+      if(typeof window.fbq==="function") window.fbq("track","Lead");
+      if(Array.isArray(window.dataLayer)) window.dataLayer.push({event:"ai_estimate_submitted",estimate_id:state.estimateNo});
+    }catch(_){}
+
+    resetLeadTurnstile();
+    go(6);
+  }catch(e){
+    errEl.textContent="⚠ "+(e?.message||"通信エラーが発生しました。時間をおいてもう一度お試しください。");
+    errEl.style.display="block";
+    resetLeadTurnstile();
+  }finally{
+    state.leadSubmitting=false;
+    const b=document.getElementById("leadSubmitBtn");
+    if(b){ b.disabled=false; b.textContent="無料AI見積をメールで受け取る"; }
+  }
+}
+
+function renderLeadComplete(){
+  body().innerHTML=`<div class="step lead-complete">
+    <div class="lead-finish-icon">✓</div>
+    <div class="result-head">
+      <p class="no">AI ESTIMATE SENT</p>
+      <h3>AI見積をメールで送信しました</h3>
+    </div>
+    <p class="lead-estno">ESTIMATE No. ${escHtml(state.estimateNo||"—")}</p>
+    <p class="complete-copy">
+      ${escHtml(state.customer.name||"")} 様、ご利用ありがとうございます。<br>
+      <b>${escHtml(state.customer.mail||"")}</b> 宛に、見積金額とおすすめプランをお送りしました。<br>
+      メールが見当たらない場合は迷惑メールフォルダもご確認ください。
+    </p>
     <div class="result-ctas">
       <a class="rcta line-btn" href="${LINE_URL}" target="_blank" rel="noopener">LINEで相談する</a>
-      <button class="rcta" onclick="openContact()">お問い合わせする</button>
+      <a class="rcta" href="tel:0455488588">電話で相談する<br><small style="font-size:11px;opacity:.8">045-548-8588</small></a>
     </div>
-    <div class="nav-row" style="justify-content:center;gap:14px;flex-wrap:wrap">
-      <button class="btn" onclick="go(3)">← 戻る</button>
-      <button class="btn" onclick="saveEstimateImage(this)">📷 見積を画像で保存</button>
+    <div class="nav-row" style="justify-content:center">
       <button class="btn" onclick="restart()">最初からやり直す</button>
     </div>
-    <p id="imgSaveMsg" class="cp-err" style="display:none;text-align:center"></p>
   </div>`;
 }
 
@@ -1517,7 +1697,10 @@ async function shareEstimateImage(){
 }
 
 function restart(){
-  Object.assign(state,{step:1,maker:null,model:null,size:null,sizeAuto:false,notFound:false,condition:null,menuId:null,options:[],estimateNo:null,total:0,photoJudged:false,photoData:null});
+  state.leadSubmitting=false;
+  state.leadTurnstileToken="";
+  leadTurnstileWidgetId=null;
+  Object.assign(state,{step:1,maker:null,model:null,size:null,sizeAuto:false,notFound:false,condition:null,menuId:null,options:[],estimateNo:null,total:0,customer:{name:"",tel:"",mail:"",pref:""},photoJudged:false,photoData:null});
   go(1);
 }
 
@@ -1755,7 +1938,7 @@ async function adHealthCheck(){
     el.innerHTML = [
       row(true,"Functions：稼働中",""),
       row(h.adminPasswordSet,"Secret ADMIN_PASSWORD","未設定。追加後に再デプロイが必要"),
-      row(h.kvBound,"KVバインド UC_KV","未設定。バインド後に再デプロイが必要"),
+      row(h.kvBound,"KVバインド UNCUORE_KV","未設定。バインド後に再デプロイが必要"),
       row(h.resendKeySet,"Secret RESEND_API_KEY","未設定：問い合わせメールが送れません"),
       row(h.anthropicKeySet,"Secret ANTHROPIC_API_KEY","未設定：AI判定が使えません")
     ].join("<br>");

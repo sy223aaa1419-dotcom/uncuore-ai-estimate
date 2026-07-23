@@ -1,317 +1,318 @@
 /**
  * POST /api/submit-quote
+ * 既存の静的LP（index.html）専用：
+ * - 通常版のAI見積完成後にお客様情報を受け取る
+ * - KVの管理画面用 est: レコードへ保存
+ * - お客様へ見積メールを自動送信
  *
- * KVバインディング: UNCUORE_KV
+ * KV: UNCUORE_KV（旧 UC_KV も後方互換）
  * Secrets: RESEND_API_KEY, FROM_EMAIL, NOTIFY_EMAIL, TURNSTILE_SECRET_KEY
  */
 
-import { calcTotal, MENU_PRICING, OPTION_PRICING } from "../../src/shared-pricing.js";
+const SIZES = ["S","M","L","LL","3L"];
+const DEFAULT_MENUS = [
+  {id:"russo", name:"Cuore russo coat", years:5, priceNew:[190000,211000,234000,259000,288000], priceUsed:[201000,222000,244000,270000,299000]},
+  {id:"ultra", name:"CERAMIC ULTRA + Original CERAMIC", years:5, priceNew:[188000,209000,231000,257000,286000], priceUsed:[200000,221000,242000,268000,297000]},
+  {id:"hybrid", name:"HYBRID CERAMIC", years:3, priceNew:[148000,169000,191000,217000,246000], priceUsed:[160000,182000,202000,228000,257000]},
+  {id:"cuore", name:"Cuore coat", years:3, priceNew:[140000,155000,170000,188000,208000], priceUsed:[151000,166000,181000,199000,219000]},
+  {id:"original", name:"Original CERAMIC", years:1, priceNew:[105000,117000,129000,139000,151000], priceUsed:[112000,124000,135000,147000,159000]},
+  {id:"veloce", name:"Veloce Coating", years:1, priceNew:[54000,62000,69000,78000,86000], priceUsed:[58000,66000,73000,82000,92000]},
+];
+const DEFAULT_OPTIONS = [
+  {id:"win_all",name:"ウインドコート全面",sm:22000,l:26000},
+  {id:"win_fr",name:"ウインドコートフロント",sm:13000,l:17000},
+  {id:"resin",name:"樹脂パーツコーティング",sm:17000,l:24000},
+  {id:"wheel",name:"ホイールコート",sm:20000,l:25000},
+  {id:"room",name:"ルームクリーニング",sm:36000,l:42000},
+  {id:"interior",name:"インテリアコーティング",sm:38000,l:44000},
+  {id:"head",name:"ヘッドライトコーティング",sm:36000,l:38000},
+  {id:"mekki",name:"メッキモールクリーニング",sm:34000,l:41000},
+  {id:"detail",name:"細部コーティング",sm:22000,l:26000},
+  {id:"deodor",name:"脱臭",sm:8000,l:11000},
+  {id:"photocat",name:"無光触媒コーティング",sm:40000,l:48000},
+];
+const DEFAULT_LP_MENUS = [
+  {id:"russo",selected:true,recommend:true,no1:true,ai:true,highlight:true,inquiry:true},
+  {id:"veloce",selected:false,recommend:false,no1:false,ai:false,highlight:false,inquiry:true},
+];
 
-function esc(str) {
-  return String(str ?? "")
-    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+function json(obj,status=200){
+  return new Response(JSON.stringify(obj),{
+    status,
+    headers:{
+      "Content-Type":"application/json; charset=utf-8",
+      "Cache-Control":"no-store",
+      "X-Content-Type-Options":"nosniff",
+      "X-Frame-Options":"DENY",
+      "Referrer-Policy":"strict-origin-when-cross-origin",
+    }
+  });
+}
+function kvOf(env){ return env.UNCUORE_KV || env.UC_KV || null; }
+function esc(v){
+  return String(v??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+function str(v,max){ return typeof v==="string" ? v.trim().slice(0,max) : ""; }
+function sameOrigin(request){
+  const origin=request.headers.get("Origin");
+  if(!origin) return true;
+  try{return new URL(origin).host===new URL(request.url).host;}catch(_){return false;}
+}
+async function verifyTurnstile(secret,token,ip){
+  if(!secret) return true;
+  if(!token) return false;
+  try{
+    const form=new FormData();
+    form.append("secret",secret);
+    form.append("response",token);
+    if(ip) form.append("remoteip",ip);
+    const r=await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify",{method:"POST",body:form});
+    const d=await r.json();
+    return !!d.success;
+  }catch(_){return false;}
+}
+async function rateLimit(kv,key,max,ttl){
+  try{
+    const n=Number(await kv.get(key)||0);
+    if(n>=max) return true;
+    await kv.put(key,String(n+1),{expirationTtl:ttl});
+  }catch(_){}
+  return false;
+}
+function optionPrice(o,size){ return (size==="S"||size==="M") ? Number(o.sm||0) : Number(o.l||0); }
+function menuBase(m,condition,size){
+  const i=SIZES.indexOf(size);
+  if(i<0) return 0;
+  const arr=condition==="new" ? m.priceNew : m.priceUsed;
+  return Number(Array.isArray(arr) ? arr[i]||0 : 0);
+}
+async function loadPricing(kv){
+  let saved=null;
+  try{
+    const raw=await kv.get("settings");
+    if(raw) saved=JSON.parse(raw);
+  }catch(_){}
+  const menus=Array.isArray(saved?.menus)&&saved.menus.length ? saved.menus : DEFAULT_MENUS;
+  const options=Array.isArray(saved?.options)&&saved.options.length ? saved.options : DEFAULT_OPTIONS;
+  const lpMenus=Array.isArray(saved?.lpMenus)&&saved.lpMenus.length ? saved.lpMenus : DEFAULT_LP_MENUS;
+  return {menus,options,lpMenus};
+}
+function computeResults(cfg,condition,size,optionIds){
+  const selectedOptions=(Array.isArray(optionIds)?optionIds:[])
+    .map(id=>cfg.options.find(o=>o.id===id))
+    .filter(Boolean);
+  const optionTotal=selectedOptions.reduce((s,o)=>s+optionPrice(o,size),0);
+  let visible=cfg.lpMenus
+    .map(c=>({conf:c,m:cfg.menus.find(x=>x.id===c.id)}))
+    .filter(x=>x.m);
+  if(!visible.length) visible=cfg.menus.slice(0,2).map(m=>({conf:{id:m.id,inquiry:true},m}));
+  const results=visible.map(({conf,m})=>({
+    id:m.id,
+    name:m.name,
+    years:Number(m.years||0),
+    total:menuBase(m,condition,size)+optionTotal,
+    recommend:!!conf.recommend,
+    no1:!!conf.no1,
+    ai:!!conf.ai,
+    highlight:!!conf.highlight,
+  }));
+  return {
+    selectedOptions:selectedOptions.map(o=>({id:o.id,name:o.name,price:optionPrice(o,size)})),
+    optionTotal,
+    results
+  };
+}
+function makeId(){
+  const parts=new Intl.DateTimeFormat("ja-JP",{timeZone:"Asia/Tokyo",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());
+  const m=Object.fromEntries(parts.map(p=>[p.type,p.value]));
+  const rand=crypto.randomUUID().replace(/-/g,"").slice(0,6).toUpperCase();
+  return `UC-${m.year}${m.month}${m.day}-${rand}`;
+}
+async function saveRecord(kv,key,value){
+  for(let i=1;i<=3;i++){
+    try{
+      await kv.put(key,value);
+      return true;
+    }catch(e){
+      console.error(`[submit-quote] KV save ${i}/3 failed`,e?.message||e);
+      if(i<3) await new Promise(r=>setTimeout(r,1100));
+    }
+  }
+  return false;
 }
 
-const CORS = {
-  "Access-Control-Allow-Origin": "https://ai.un-cuore.com",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
-};
-
-export async function onRequestOptions() {
-  return new Response(null, { headers: CORS });
+export async function onRequestOptions(){
+  return new Response(null,{status:204,headers:{
+    "Access-Control-Allow-Origin":"https://ai.un-cuore.com",
+    "Access-Control-Allow-Methods":"POST, OPTIONS",
+    "Access-Control-Allow-Headers":"Content-Type",
+  }});
 }
 
-export async function onRequestPost(context) {
-  const { request, env } = context;
-  const headers = { ...CORS, "Content-Type": "application/json" };
+export async function onRequestPost(context){
+  const {request,env}=context;
+  const kv=kvOf(env);
+  if(!sameOrigin(request)) return json({error:"不正なリクエストです"},403);
+  if(!kv) return json({error:"現在見積機能の設定を確認中です。時間をおいてもう一度お試しください。"},503);
+  if(!env.RESEND_API_KEY) return json({error:"現在メール送信機能を準備中です。時間をおいてもう一度お試しください。"},503);
 
-  // ── RESEND_API_KEY 必須 ──
-  if (!env.RESEND_API_KEY) {
-    console.error("RESEND_API_KEY is not configured");
-    return new Response(
-      JSON.stringify({ error: "現在メール送信機能を準備中です。時間をおいてもう一度お試しください。" }),
-      { status: 503, headers }
-    );
-  }
-
-  // ── JSONパース ──
-  let data;
-  try { data = await request.json(); }
-  catch { return new Response(JSON.stringify({ error: "リクエストの形式が正しくありません" }), { status: 400, headers }); }
-
-  // ── Turnstile検証（TURNSTILE_SECRET_KEY設定時は必須） ──
-  if (env.TURNSTILE_SECRET_KEY) {
-    const token = data.turnstileToken;
-    if (!token) {
-      return new Response(
-        JSON.stringify({ error: "セキュリティ認証トークンがありません" }),
-        { status: 403, headers }
-      );
-    }
-    try {
-      const tv = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({ secret: env.TURNSTILE_SECRET_KEY, response: token }),
-      });
-      const tvResult = await tv.json();
-      if (!tvResult.success) {
-        console.warn("Turnstile failed:", tvResult["error-codes"]);
-        return new Response(
-          JSON.stringify({ error: "セキュリティ認証に失敗しました。ページを再読み込みしてお試しください。" }),
-          { status: 403, headers }
-        );
-      }
-    } catch (e) {
-      console.error("Turnstile verify error:", e);
-      return new Response(
-        JSON.stringify({ error: "セキュリティ認証の確認中にエラーが発生しました" }),
-        { status: 500, headers }
-      );
-    }
+  const ip=(request.headers.get("CF-Connecting-IP")||"unknown").slice(0,80);
+  if(await rateLimit(kv,`rl:submit-quote:${ip}`,8,600)){
+    return json({error:"短時間に送信回数が多すぎます。少し時間をおいてお試しください。"},429);
   }
 
-  // ── バリデーション ──
-  const { customer, vehicle, menu, optionIds = [] } = data;
-  if (!customer?.name?.trim() || !customer?.email?.trim() || !customer?.phone?.trim()) {
-    return new Response(JSON.stringify({ error: "お名前・メールアドレス・電話番号は必須です" }), { status: 400, headers });
-  }
-  if (!vehicle?.maker || !vehicle?.size || !vehicle?.carAge) {
-    return new Response(JSON.stringify({ error: "車両情報が不足しています" }), { status: 400, headers });
-  }
-  if (!MENU_PRICING[menu]) {
-    return new Response(JSON.stringify({ error: "無効なコーティングメニューです" }), { status: 400, headers });
-  }
-  if (!["S","M","L","LL","3L"].includes(vehicle.size)) {
-    return new Response(JSON.stringify({ error: "無効なサイズです" }), { status: 400, headers });
-  }
-  if (!["new","used"].includes(vehicle.carAge)) {
-    return new Response(JSON.stringify({ error: "無効な車両状態です" }), { status: 400, headers });
-  }
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customer.email)) {
-    return new Response(JSON.stringify({ error: "メールアドレスの形式が正しくありません" }), { status: 400, headers });
-  }
-  if (!/^[0-9\-+() ]{10,}$/.test(customer.phone)) {
-    return new Response(JSON.stringify({ error: "電話番号の形式が正しくありません" }), { status: 400, headers });
+  let body;
+  try{body=await request.json();}catch(_){return json({error:"リクエストの形式が正しくありません"},400);}
+
+  if(env.TURNSTILE_SECRET_KEY){
+    const ok=await verifyTurnstile(env.TURNSTILE_SECRET_KEY,str(body.turnstileToken,4096),ip);
+    if(!ok) return json({error:"セキュリティ確認に失敗しました。もう一度お試しください。"},403);
   }
 
-  // ── サーバー側で金額再計算 ──
-  const validOptionIds = (optionIds || []).filter(id => OPTION_PRICING[id]);
-  const { menuPrice, menuDuration, options, optionTotal, total } = calcTotal(
-    menu, vehicle.carAge, vehicle.size, validOptionIds
-  );
+  const name=str(body.customer?.name,80);
+  const email=str(body.customer?.email,160).toLowerCase();
+  const phone=str(body.customer?.phone,30);
+  const pref=str(body.customer?.pref,20);
+  const maker=str(body.vehicle?.maker,60);
+  const model=str(body.vehicle?.model,100);
+  const size=str(body.vehicle?.size,4);
+  const carAge=str(body.vehicle?.carAge,10);
 
-  // ── 見積番号生成（日本時間基準 / Intl.DateTimeFormat使用） ──
-  const nowUtc = new Date();
-  const jstParts = new Intl.DateTimeFormat("ja-JP", {
-    timeZone: "Asia/Tokyo",
-    year: "numeric", month: "2-digit", day: "2-digit",
-  }).formatToParts(nowUtc);
-  const jstMap = Object.fromEntries(jstParts.map(p => [p.type, p.value]));
-  const dateStr = `${jstMap.year}${jstMap.month}${jstMap.day}`;
-  const rand = crypto.randomUUID().replace(/-/g, "").slice(0, 6).toUpperCase();
-  const id = `UC-${dateStr}-${rand}`;
-  
+  if(!name || !/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(email) || !/^[0-9+\-()\s]{8,30}$/.test(phone)){
+    return json({error:"お名前・メールアドレス・電話番号をご確認ください。"},400);
+  }
+  if(!maker || !SIZES.includes(size) || !["new","used"].includes(carAge)){
+    return json({error:"車両情報が不足しています。最初からやり直してください。"},400);
+  }
 
-  // ── メールHTML（KV保存前に生成） ──
-  const carAgeLabel = vehicle.carAge === "new" ? "新車（登録1ヶ月以内）" : "経年車（登録1ヶ月以上）";
-  const optionsList = options.length > 0 ? options.map(o => esc(o.label)).join("、") : "なし";
-  const totalFmt = Number(total).toLocaleString("ja-JP");
-  const FROM = env.FROM_EMAIL || "noreply@mail.un-cuore.com";
-  const NOTIFY = env.NOTIFY_EMAIL || "uncuore02@gmail.com";
+  const cfg=await loadPricing(kv);
+  const calc=computeResults(cfg,carAge,size,body.optionIds);
+  if(!calc.results.length) return json({error:"見積メニューを取得できませんでした。"},500);
 
-  const html = `<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background:#f4f6f8;font-family:'Hiragino Sans','Noto Sans JP',sans-serif;">
-<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f8;padding:40px 20px;"><tr><td>
-<table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:0 auto;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
-<tr><td style="background:#0d1b2e;padding:28px 40px;text-align:center;">
-  <p style="color:#3a7bd5;font-size:11px;letter-spacing:0.3em;margin:0 0 6px;">CAR COATING SPECIALIST — YOKOHAMA</p>
-  <p style="color:#fff;font-size:22px;font-weight:700;margin:0;">Un cuore</p>
+  const id=makeId();
+  const now=new Date();
+  const conditionLabel=carAge==="new"?"新車":"経年車";
+  const fullCondition=carAge==="new"?"新車（登録1か月以内）":"経年車（登録1か月以上）";
+  const FROM=env.FROM_EMAIL||"noreply@mail.un-cuore.com";
+  const NOTIFY=env.NOTIFY_EMAIL||"uncuore02@gmail.com";
+  const optText=calc.selectedOptions.length ? calc.selectedOptions.map(o=>`${esc(o.name)}（+¥${o.price.toLocaleString("ja-JP")}）`).join("<br>") : "なし";
+
+  const menuHtml=calc.results.map((r,i)=>`
+    <tr><td style="padding:16px 0;border-bottom:1px solid #e7edf5;">
+      <div style="font-size:12px;color:#2556a8;font-weight:700;">${r.recommend||i===0?"AIおすすめプラン":"比較プラン"}</div>
+      <div style="font-size:17px;color:#17233a;font-weight:700;margin-top:3px;">${esc(r.name)}</div>
+      <div style="font-size:12px;color:#777;margin-top:2px;">耐久年数：${r.years}年</div>
+    </td><td style="padding:16px 0;border-bottom:1px solid #e7edf5;text-align:right;white-space:nowrap;">
+      <div style="font-size:24px;color:#17233a;font-weight:800;">¥${Number(r.total).toLocaleString("ja-JP")}</div>
+      <div style="font-size:11px;color:#888;">税別・概算</div>
+    </td></tr>`).join("");
+
+  const customerHtml=`<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;background:#f4f6f8;font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Noto Sans JP',sans-serif;color:#17233a;">
+<table width="100%" cellpadding="0" cellspacing="0" style="padding:32px 14px;background:#f4f6f8"><tr><td>
+<table width="100%" cellpadding="0" cellspacing="0" style="max-width:620px;margin:auto;background:#fff;border-radius:10px;overflow:hidden">
+<tr><td style="background:#0b1120;padding:26px 30px;text-align:center;color:white"><div style="font-size:22px;letter-spacing:.2em;font-weight:700">UNCUORE</div><div style="font-size:10px;color:#7fb0ff;letter-spacing:.2em;margin-top:5px">AI ESTIMATE — YOKOHAMA</div></td></tr>
+<tr><td style="padding:30px">
+<p style="font-size:16px;font-weight:700;margin:0 0 8px">${esc(name)} 様</p>
+<p style="font-size:14px;line-height:1.8;color:#56647a;margin:0 0 22px">AI見積シミュレーションをご利用いただきありがとうございます。お車に合わせた概算見積をお送りします。</p>
+<div style="background:#eef4ff;border-left:4px solid #2563eb;padding:12px 16px;margin-bottom:24px"><div style="font-size:10px;color:#2563eb">見積番号</div><div style="font-size:18px;font-weight:700;margin-top:3px">${esc(id)}</div></div>
+<table width="100%" cellpadding="0" cellspacing="0" style="font-size:13px;margin-bottom:22px">
+<tr><td style="padding:6px 0;color:#7a8799;width:120px">お車</td><td style="padding:6px 0;font-weight:600">${esc(maker)} ${esc(model)}</td></tr>
+<tr><td style="padding:6px 0;color:#7a8799">サイズ</td><td style="padding:6px 0;font-weight:600">${esc(size)}</td></tr>
+<tr><td style="padding:6px 0;color:#7a8799">車両状態</td><td style="padding:6px 0;font-weight:600">${fullCondition}</td></tr>
+<tr><td style="padding:6px 0;color:#7a8799;vertical-align:top">オプション</td><td style="padding:6px 0;font-weight:600">${optText}</td></tr>
+</table>
+<div style="font-size:13px;font-weight:700;border-bottom:2px solid #e7edf5;padding-bottom:7px">AI見積結果</div>
+<table width="100%" cellpadding="0" cellspacing="0">${menuHtml}</table>
+<p style="font-size:11px;color:#7b8798;line-height:1.7;margin:18px 0 22px">※ 各金額は施工メニューと選択オプションを含む税別の概算です。車両状態により実際の金額が変わる場合があります。正式なお見積は現車確認のうえご提示いたします。</p>
+<table width="100%" cellpadding="0" cellspacing="0"><tr>
+<td style="padding-right:5px"><a href="https://line.me/ti/p/@271goter" style="display:block;text-align:center;background:#06c755;color:#fff;text-decoration:none;padding:14px 8px;border-radius:6px;font-size:13px;font-weight:700">LINEで相談</a></td>
+<td style="padding-left:5px"><a href="tel:0455488588" style="display:block;text-align:center;background:#17233a;color:#fff;text-decoration:none;padding:14px 8px;border-radius:6px;font-size:13px;font-weight:700">045-548-8588</a></td>
+</tr></table>
 </td></tr>
-<tr><td style="padding:36px 40px;">
-  <p style="color:#1a2a3e;font-size:16px;font-weight:700;margin:0 0 6px;">${esc(customer.name)} 様</p>
-  <p style="color:#555;font-size:14px;line-height:1.8;margin:0 0 24px;">この度はUncuore AI見積シミュレーションをご利用いただきありがとうございます。<br>AIが算出したお見積結果をお届けします。</p>
-  <div style="background:#f0f4ff;border-left:4px solid #2556a8;padding:12px 16px;margin-bottom:24px;border-radius:0 4px 4px 0;">
-    <p style="margin:0;font-size:11px;color:#2556a8;letter-spacing:0.1em;">見積番号</p>
-    <p style="margin:4px 0 0;font-size:18px;font-weight:700;color:#0d1b2e;">${esc(id)}</p>
-  </div>
-  <p style="color:#0d1b2e;font-size:13px;font-weight:700;margin:0 0 8px;padding-bottom:4px;border-bottom:2px solid #e8eef4;">お車の情報</p>
-  <table width="100%" style="margin-bottom:20px;">
-    <tr><td style="padding:6px 0;font-size:13px;color:#777;width:120px;">メーカー</td><td style="padding:6px 0;font-size:13px;color:#1a2a3e;font-weight:500;">${esc(vehicle.maker)}</td></tr>
-    <tr><td style="padding:6px 0;font-size:13px;color:#777;">車種</td><td style="padding:6px 0;font-size:13px;color:#1a2a3e;font-weight:500;">${esc(vehicle.model || "不明")}</td></tr>
-    <tr><td style="padding:6px 0;font-size:13px;color:#777;">サイズ</td><td style="padding:6px 0;font-size:13px;color:#1a2a3e;font-weight:500;">${esc(vehicle.size)}</td></tr>
-    <tr><td style="padding:6px 0;font-size:13px;color:#777;">車両状態</td><td style="padding:6px 0;font-size:13px;color:#1a2a3e;font-weight:500;">${carAgeLabel}</td></tr>
-  </table>
-  <p style="color:#0d1b2e;font-size:13px;font-weight:700;margin:0 0 8px;padding-bottom:4px;border-bottom:2px solid #e8eef4;">コーティングプラン</p>
-  <table width="100%" style="margin-bottom:20px;">
-    <tr><td style="padding:6px 0;font-size:13px;color:#777;width:120px;">メニュー</td><td style="padding:6px 0;font-size:13px;color:#1a2a3e;font-weight:500;">${esc(menu)}（耐久${esc(menuDuration)}）</td></tr>
-    <tr><td style="padding:6px 0;font-size:13px;color:#777;">オプション</td><td style="padding:6px 0;font-size:13px;color:#1a2a3e;font-weight:500;">${optionsList}</td></tr>
-  </table>
-  <div style="background:#0d1b2e;border-radius:6px;padding:24px;text-align:center;margin-bottom:24px;">
-    <p style="color:#3a7bd5;font-size:11px;letter-spacing:0.2em;margin:0 0 4px;">AI見積金額（税込）</p>
-    <p style="color:#fff;font-size:36px;font-weight:700;margin:0 0 4px;">¥${totalFmt}</p>
-    <p style="color:#a8b4c4;font-size:11px;margin:0;">※ 実際の料金は車両状態により変動する場合があります</p>
-  </div>
-  <p style="color:#555;font-size:14px;line-height:1.8;margin:0 0 20px;">ご質問・ご予約はお気軽にご相談ください。</p>
-  <table width="100%" cellpadding="0" cellspacing="0"><tr>
-    <td width="50%" style="padding-right:6px;"><a href="https://line.me/ti/p/@271goter" style="display:block;background:#06c755;color:#fff;text-align:center;padding:14px;border-radius:6px;text-decoration:none;font-size:14px;font-weight:700;">💬 LINEで相談する</a></td>
-    <td width="50%" style="padding-left:6px;"><a href="tel:0455488588" style="display:block;background:#1a2a3e;color:#fff;text-align:center;padding:14px;border-radius:6px;text-decoration:none;font-size:14px;font-weight:700;">📞 045-548-8588</a></td>
-  </tr></table>
-</td></tr>
-<tr><td style="background:#f0f4f8;padding:16px 40px;text-align:center;">
-  <p style="color:#999;font-size:11px;margin:0;">横浜市都筑区のカーコーティング専門店 Uncuore<br><a href="https://ai.un-cuore.com/" style="color:#2556a8;">https://ai.un-cuore.com/</a></p>
-</td></tr>
+<tr><td style="background:#eef2f7;padding:16px;text-align:center;color:#8a96a8;font-size:10px">横浜市都筑区のカーコーティング専門店 Uncuore</td></tr>
 </table></td></tr></table></body></html>`;
 
-  // ── お客様へメール送信（KV保存前に実行） ──
-  let customerEmailOk = false;
-  try {
-    const r = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        from: `Uncuore AI見積 <${FROM}>`,
-        to: [customer.email.trim()],
-        subject: `【Uncuore AI見積】${id} ${vehicle.maker} ${vehicle.model || ""}`,
-        html,
-      }),
+  let customerEmailOk=false;
+  try{
+    const r=await fetch("https://api.resend.com/emails",{
+      method:"POST",
+      headers:{"Authorization":`Bearer ${env.RESEND_API_KEY}`,"Content-Type":"application/json"},
+      body:JSON.stringify({
+        from:`Uncuore AI見積 <${FROM}>`,
+        to:[email],
+        subject:`【Uncuore AI見積】${id} ${maker} ${model}`,
+        html:customerHtml
+      })
     });
-    if (r.ok) {
-      customerEmailOk = true;
-    } else {
-      const errBody = await r.text();
-      console.error(`Customer email failed: status=${r.status} body=${errBody}`);
-    }
-  } catch (err) {
-    console.error("Customer email exception:", err.message);
-  }
+    if(r.ok) customerEmailOk=true;
+    else console.error("[submit-quote] customer email failed",r.status,await r.text());
+  }catch(e){console.error("[submit-quote] customer email exception",e?.message||e);}
 
-  // ── KVへ1回だけ保存（emailStatusをsent/failedで確定） ──
-  const ttl = { expirationTtl: 60 * 60 * 24 * 365 * 2 };
-  const emailStatus = customerEmailOk ? "sent" : "failed";
-  const quote = {
-    id, date: nowUtc.toISOString(),
-    customer: {
-      name: customer.name.trim(), email: customer.email.trim(),
-      phone: customer.phone.trim(), pref: customer.pref || "",
-    },
-    vehicle: {
-      maker: vehicle.maker, model: vehicle.model || "不明",
-      size: vehicle.size, carAge: vehicle.carAge,
-    },
-    menu, menuDuration, options, menuPrice, optionTotal, total,
-    status: "未対応", memo: "",
-    emailStatus,
+  const record={
+    no:id,
+    at:now.toISOString(),
+    name,tel:phone,mail:email,pref,
+    maker,model,size,condition:conditionLabel,
+    menu:calc.results.map(r=>r.name).join(" / "),
+    years:calc.results[0].years,
+    options:calc.selectedOptions.map(o=>o.name),
+    total:calc.results[0].total,
+    source:"normal",campaignName:"",normalPrice:0,campaignPrice:0,
+    status:"未対応",memo:"",
+    history:[`[${now.toLocaleString("ja-JP",{timeZone:"Asia/Tokyo"})}] AI見積メール ${customerEmailOk?"送信済み":"送信失敗"}`],
+    emailStatus:customerEmailOk?"sent":"failed",
+    resultMenus:calc.results,
   };
 
-  // ── KV保存（キー別に状態管理・成功済みキーは再putしない） ──
-  // メール送信済みのため、KV失敗でも500は返さず warning で処理する
-  let quoteSaved = false;
-  let indexSaved = false;
-  const kvQuoteKey  = `quote:${id}`;
-  const kvIdxKey    = `idx:${nowUtc.toISOString()}_${id}`;
-  const kvIdxValue  = JSON.stringify({ id, date: quote.date, name: customer.name.trim(), maker: vehicle.maker, model: vehicle.model || "不明", menu, total, status: "未対応", emailStatus });
-  const kvQuoteValue = JSON.stringify(quote);
+  const saved=await saveRecord(kv,`est:${id}`,JSON.stringify(record));
 
-  for (let attempt = 1; attempt <= 3; attempt++) {
-    // ① quote未保存の場合のみ保存
-    if (!quoteSaved) {
-      try {
-        await env.UNCUORE_KV.put(kvQuoteKey, kvQuoteValue, ttl);
-        quoteSaved = true;
-      } catch (err) {
-        console.error(`KV quote save error (attempt ${attempt}/3) [${id}]:`, err.message ?? err);
-      }
-    }
-    // ② quote保存済みの場合のみ index を保存（孤立インデックス防止）
-    if (quoteSaved && !indexSaved) {
-      try {
-        await env.UNCUORE_KV.put(kvIdxKey, kvIdxValue, ttl);
-        indexSaved = true;
-      } catch (err) {
-        console.error(`KV index save error (attempt ${attempt}/3) [${id}]:`, err.message ?? err);
-      }
-    }
-    // 両方成功したら終了
-    if (quoteSaved && indexSaved) break;
-    // 次リトライまで1100ms待機（KV書き込み間隔を確保）
-    if (attempt < 3) await new Promise(r => setTimeout(r, 1100));
+  if(!customerEmailOk){
+    return json({error:"メールの送信に失敗しました。メールアドレスをご確認のうえ、もう一度お試しください。"},500);
   }
 
-  const kvSaved = quoteSaved && indexSaved;
-
-  // メール失敗 → エラーを返す（KV保存の有無に関わらず）
-  if (!customerEmailOk) {
-    return new Response(
-      JSON.stringify({ error: "メールの送信に失敗しました。もう一度お試しください。" }),
-      { status: 500, headers }
-    );
-  }
-
-  // メール成功・KV失敗 → 通知メールに警告を追加してフロントには warning を返す
-  if (!kvSaved) {
-    const kvFailText = `⚠️ KV保存失敗・管理画面未登録
-見積番号: ${id}
-お名前: ${customer.name.trim()}
-メール: ${customer.email.trim()}
-電話: ${customer.phone.trim()}
-メーカー: ${vehicle.maker} / 車種: ${vehicle.model || "不明"} / サイズ: ${vehicle.size}
-メニュー: ${menu} / 合計: ¥${Number(total).toLocaleString("ja-JP")}
-※ 管理画面に自動登録されていません。手動で確認してください。`;
-    console.error(`KV SAVE FAILED after 3 retries [${id}]:`, kvFailText);
-    context.waitUntil(
-      (async () => {
-        try {
-          const nr = await fetch("https://api.resend.com/emails", {
-            method: "POST",
-            headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" },
-            body: JSON.stringify({
-              from: `Uncuore システム <${FROM}>`,
-              to: [NOTIFY],
-              subject: `[⚠️KV保存失敗] ${id} ${customer.name.trim()} 要手動対応`,
-              text: kvFailText,
-            }),
-          });
-          if (!nr.ok) {
-            const errBody = await nr.text();
-            console.error(`KV-fail notify email failed: status=${nr.status} body=${errBody}`);
-          }
-        } catch (e) {
-          console.error("KV-fail notify email exception:", e.message);
-        }
-      })()
-    );
-    return new Response(JSON.stringify({ ok: true, id, warning: "storage_failed" }), { status: 200, headers });
-  }
-
-  // ── Uncuore通知メール（waitUntilでバックグラウンド・ログ付き） ──
-  const notifyText = `[新規AI見積リード] ${id}
-お名前: ${customer.name.trim()} / メール: ${customer.email.trim()} / 電話: ${customer.phone.trim()}
-送信日時: ${nowUtc.toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" })}
-メーカー: ${vehicle.maker} / 車種: ${vehicle.model || "不明"} / サイズ: ${vehicle.size} / 状態: ${carAgeLabel}
-メニュー: ${menu}（耐久${menuDuration}）/ オプション: ${options.map(o => o.label).join("、") || "なし"}
-AI見積金額: ¥${totalFmt}
+  const notifyText=`[新規AI見積リード] ${id}
+お名前: ${name}
+メール: ${email}
+電話: ${phone}
+送信日時: ${now.toLocaleString("ja-JP",{timeZone:"Asia/Tokyo"})}
+車両: ${maker} ${model} / ${size} / ${conditionLabel}
+オプション: ${calc.selectedOptions.map(o=>o.name).join("、")||"なし"}
+見積: ${calc.results.map(r=>`${r.name} ¥${Number(r.total).toLocaleString("ja-JP")}（税別）`).join(" / ")}
 管理画面: https://ai.un-cuore.com/#admin`;
 
-  context.waitUntil(
-    (async () => {
-      try {
-        const nr = await fetch("https://api.resend.com/emails", {
-          method: "POST",
-          headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" },
-          body: JSON.stringify({ from: `Uncuore システム <${FROM}>`, to: [NOTIFY], subject: `[新規リード] ${id} ${customer.name.trim()}`, text: notifyText }),
+  if(!saved){
+    const warning=`⚠️ KV保存失敗・管理画面未登録\n${notifyText}`;
+    console.error("[submit-quote]",warning);
+    context.waitUntil((async()=>{
+      try{
+        const r=await fetch("https://api.resend.com/emails",{
+          method:"POST",
+          headers:{"Authorization":`Bearer ${env.RESEND_API_KEY}`,"Content-Type":"application/json"},
+          body:JSON.stringify({from:`Uncuore システム <${FROM}>`,to:[NOTIFY],subject:`[⚠️KV保存失敗] ${id} 要手動対応`,text:warning})
         });
-        if (!nr.ok) {
-          const errBody = await nr.text();
-          console.error(`Notify email failed: status=${nr.status} body=${errBody}`);
-        }
-      } catch (e) {
-        console.error("Notify email exception:", e.message);
-      }
-    })()
-  );
+        if(!r.ok) console.error("[submit-quote] kv warning email failed",r.status,await r.text());
+      }catch(e){console.error("[submit-quote] kv warning exception",e?.message||e);}
+    })());
+    return json({ok:true,id,warning:"storage_failed"},200);
+  }
 
-  return new Response(JSON.stringify({ ok: true, id }), { status: 200, headers });
+  context.waitUntil((async()=>{
+    try{
+      const r=await fetch("https://api.resend.com/emails",{
+        method:"POST",
+        headers:{"Authorization":`Bearer ${env.RESEND_API_KEY}`,"Content-Type":"application/json"},
+        body:JSON.stringify({from:`Uncuore システム <${FROM}>`,to:[NOTIFY],reply_to:email,subject:`[新規AI見積リード] ${id} ${name}`,text:notifyText})
+      });
+      if(!r.ok) console.error("[submit-quote] notify failed",r.status,await r.text());
+    }catch(e){console.error("[submit-quote] notify exception",e?.message||e);}
+  })());
+
+  return json({ok:true,id},200);
+}
+
+export async function onRequest(context){
+  if(context.request.method==="POST") return onRequestPost(context);
+  if(context.request.method==="OPTIONS") return onRequestOptions(context);
+  return json({error:"Method Not Allowed"},405);
 }
