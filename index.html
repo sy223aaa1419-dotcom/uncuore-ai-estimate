@@ -1325,7 +1325,7 @@ function renderAiConfirm(){
     </div>
     <button class="cp-btn go big" onclick="aiConfirmYes(this)">はい、この内容で進む</button>
     <button class="cp-btn sub" onclick="renderAiRetry()">メーカー・車種が違います</button>
-    <button class="cp-textlink" onclick="${IS_CAMPAIGN?(cstate.from===\"manual\"?\"cRenderManual()\":\"cgo(1)\"):\"go(1)\"}">← 戻る（写真・車両情報）</button>
+    <button class="cp-textlink" onclick="${IS_CAMPAIGN?(cstate.from==="manual"?"cRenderManual()":"cgo(1)"):"go(1)"}">← 戻る（写真・車両情報）</button>
   </div>`;
 }
 async function aiConfirmYes(btn){
@@ -1395,18 +1395,22 @@ function renderSize(){
       <div class="size-info"><b>${state.maker} ${state.model}</b></div>
     </div>
     <p style="font-size:11px;color:var(--muted);margin-top:10px">※サイズは車種データまたはAI判定結果から自動設定されます。</p>`;
-    html += navRow(1,"次へ","go(3)",false);
   }else{
-    html += `<h3 class="step-title">車両サイズを判定できませんでした</h3>
-    <p class="step-desc">メーカー・車種を選び直すか、写真でもう一度AI判定を行ってください。</p>
-    <div class="notice">お客様によるサイズの手動変更はできません。</div>
-    <div class="nav-row">
-      <button class="btn" onclick="go(1)">← メーカー・車種を選び直す</button>
-    </div>`;
+    html += `<h3 class="step-title">車両サイズをお選びください</h3>
+    <p class="step-desc">お車に近いサイズをお選びください。</p>`;
+    if(state.notFound) html += `<div class="notice">車種が見つかりません — お手数ですがサイズを手動でお選びください。正確なサイズは店舗にて確認いたします。</div>`;
+    html += `<div class="grid sizes">`;
+    SIZES.forEach(sz=>{
+      html += `<button class="size-card ${state.size===sz?'sel':''}" onclick="selSize('${sz}')">
+        <div class="size-visual"><img src="${SIZE_IMAGES[sz]}" alt="${sz}サイズ" loading="lazy"></div>
+      </button>`;
+    });
+    html += `</div>`;
   }
-  html += `</div>`;
+  html += navRow(1,"次へ","go(3)",!state.size) + `</div>`;
   body().innerHTML = html;
 }
+function selSize(sz){ state.size=sz; renderSize(); }
 
 /* STEP3: 車両状態 */
 function renderCondition(){
