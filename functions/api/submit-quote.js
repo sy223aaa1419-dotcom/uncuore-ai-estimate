@@ -95,6 +95,22 @@ const DEFAULT_MENU_DESCRIPTIONS = {
   "veloce":   { feature: "手軽にカーコーティングを施工したい方におすすめのエントリープランです。コーティングの基本的な保護効果と艶を手頃な価格でご提供します。", recommend: "初めてコーティングを試したい方、まずはリーズナブルにコーティング効果を体験したい方" },
 };
 
+const DEFAULT_EMAIL_TEMPLATE = {
+  subject: "【Uncuore AI見積】{見積番号} {メーカー} {車種}",
+  opening: "AI見積シミュレーションをご利用いただきありがとうございます。\nお車に合わせた概算見積をお送りします。",
+  heading: "AI見積結果",
+  labelRecommend: "AIおすすめプラン",
+  labelCompare: "比較プラン",
+  labelFeat: "このプランの特徴",
+  labelRec: "こんな方におすすめ",
+  labelYears: "耐久年数",
+  labelPrice: "税別・概算",
+  note: "※ 各金額は施工メニューと選択オプションを含む税別の概算です。\n車両状態により実際の金額が変わる場合があります。\n正式なお見積は現車確認のうえご提示いたします。",
+  lineText: "LINEで相談",
+  telText: "045-548-8588",
+  footer: "横浜市都筑区のカーコーティング専門店 Uncuore",
+};
+
 async function loadPricing(kv){
   let saved=null;
   try{
@@ -106,7 +122,9 @@ async function loadPricing(kv){
   const lpMenus=Array.isArray(saved?.lpMenus)&&saved.lpMenus.length ? saved.lpMenus : DEFAULT_LP_MENUS;
   const savedDesc = saved?.menuDescriptions;
   const menuDescriptions = (savedDesc && typeof savedDesc === "object") ? savedDesc : DEFAULT_MENU_DESCRIPTIONS;
-  return {menus,options,lpMenus,menuDescriptions};
+  const savedEmailTemplate = (saved?.emailTemplate && typeof saved.emailTemplate === "object" && !Array.isArray(saved.emailTemplate)) ? saved.emailTemplate : {};
+  const emailTemplate = Object.assign({}, DEFAULT_EMAIL_TEMPLATE, savedEmailTemplate);
+  return {menus,options,lpMenus,menuDescriptions,emailTemplate};
 }
 function computeResults(cfg,condition,size,optionIds){
   const selectedOptions=(Array.isArray(optionIds)?optionIds:[])
@@ -209,21 +227,36 @@ export async function onRequestPost(context){
   const optText=calc.selectedOptions.length ? calc.selectedOptions.map(o=>`${esc(o.name)}（+¥${o.price.toLocaleString("ja-JP")}）`).join("<br>") : "なし";
 
   const escNl = v => esc(v).replace(/\n/g,"<br>");
+  const T = cfg.emailTemplate || {};
+  const labelRecommend = T.labelRecommend || DEFAULT_EMAIL_TEMPLATE.labelRecommend;
+  const labelCompare   = T.labelCompare   || DEFAULT_EMAIL_TEMPLATE.labelCompare;
+  const labelFeat      = T.labelFeat      || DEFAULT_EMAIL_TEMPLATE.labelFeat;
+  const labelRec       = T.labelRec       || DEFAULT_EMAIL_TEMPLATE.labelRec;
+  const labelYears     = T.labelYears     || DEFAULT_EMAIL_TEMPLATE.labelYears;
+  const labelPrice     = T.labelPrice     || DEFAULT_EMAIL_TEMPLATE.labelPrice;
   const menuHtml=calc.results.map((r,i)=>{
     const desc = cfg.menuDescriptions?.[r.id] || {};
-    const feat = desc.feature   ? `<div style="font-size:11px;font-weight:700;color:#2556a8;margin:10px 0 3px;">【このプランの特徴】</div><div style="font-size:12px;color:#444;line-height:1.7;">${escNl(desc.feature)}</div>` : "";
-    const rec  = desc.recommend ? `<div style="font-size:11px;font-weight:700;color:#2556a8;margin:10px 0 3px;">【こんな方におすすめ】</div><div style="font-size:12px;color:#444;line-height:1.7;">${escNl(desc.recommend)}</div>` : "";
+    const feat = desc.feature   ? `<div style="font-size:11px;font-weight:700;color:#2556a8;margin:10px 0 3px;">【${esc(labelFeat)}】</div><div style="font-size:12px;color:#444;line-height:1.7;">${escNl(desc.feature)}</div>` : "";
+    const rec  = desc.recommend ? `<div style="font-size:11px;font-weight:700;color:#2556a8;margin:10px 0 3px;">【${esc(labelRec)}】</div><div style="font-size:12px;color:#444;line-height:1.7;">${escNl(desc.recommend)}</div>` : "";
     const hasdesc = feat || rec;
-    return `<tr><td colspan="2" style="padding:16px 0 ${hasdesc?"8":"0"}px;border-bottom:${hasdesc?"none":"1px solid #e7edf5"};">
-      <div style="font-size:12px;color:#2556a8;font-weight:700;">${r.recommend||i===0?"AIおすすめプラン":"比較プラン"}</div>
-      <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:4px;margin-top:3px;">
-        <div style="font-size:17px;color:#17233a;font-weight:700;">${esc(r.name)}</div>
-        <div style="font-size:24px;color:#17233a;font-weight:800;white-space:nowrap;">¥${Number(r.total).toLocaleString("ja-JP")}<span style="font-size:11px;color:#888;font-weight:400;margin-left:4px;">税別・概算</span></div>
-      </div>
-      <div style="font-size:12px;color:#777;margin-top:2px;">耐久年数：${r.years}年</div>
+    return `<tr><td style="padding:16px 0 ${hasdesc?"8":"0"}px;border-bottom:${hasdesc?"none":"1px solid #e7edf5"};">
+      <div style="font-size:12px;color:#2556a8;font-weight:700;">${(r.recommend||i===0)?esc(labelRecommend):esc(labelCompare)}</div>
+      <div style="font-size:17px;color:#17233a;font-weight:700;margin-top:3px;">${esc(r.name)}</div>
+      <div style="font-size:26px;color:#17233a;font-weight:800;margin-top:6px;">¥${Number(r.total).toLocaleString("ja-JP")}</div>
+      <div style="font-size:11px;color:#888;margin-top:2px;">${esc(labelPrice)}</div>
+      <div style="font-size:12px;color:#777;margin-top:4px;">${esc(labelYears)}：${r.years}年</div>
       ${feat}${rec}
-    </td></tr>${hasdesc?`<tr><td colspan="2" style="border-bottom:1px solid #e7edf5;padding:0;"></td></tr>`:""}`;
+    </td></tr>${hasdesc?`<tr><td style="border-bottom:1px solid #e7edf5;padding:0;"></td></tr>`:""}`;
   }).join("");
+
+    // メールテンプレート変数（管理画面で変更可、未設定はデフォルト値）
+  const tpl = cfg.emailTemplate || {};
+  const tplOpening  = escNl(tpl.opening || DEFAULT_EMAIL_TEMPLATE.opening);
+  const tplHeading  = esc(tpl.heading || DEFAULT_EMAIL_TEMPLATE.heading);
+  const tplNote     = escNl(tpl.note || DEFAULT_EMAIL_TEMPLATE.note);
+  const tplLineTxt  = esc(tpl.lineText || DEFAULT_EMAIL_TEMPLATE.lineText);
+  const tplTelTxt   = esc(tpl.telText || DEFAULT_EMAIL_TEMPLATE.telText);
+  const tplFooter   = esc(tpl.footer || DEFAULT_EMAIL_TEMPLATE.footer);
 
   const customerHtml=`<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;background:#f4f6f8;font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Noto Sans JP',sans-serif;color:#17233a;">
@@ -232,7 +265,7 @@ export async function onRequestPost(context){
 <tr><td style="background:#0b1120;padding:26px 30px;text-align:center;color:white"><div style="font-size:22px;letter-spacing:.2em;font-weight:700">UNCUORE</div><div style="font-size:10px;color:#7fb0ff;letter-spacing:.2em;margin-top:5px">AI ESTIMATE — YOKOHAMA</div></td></tr>
 <tr><td style="padding:30px">
 <p style="font-size:16px;font-weight:700;margin:0 0 8px">${esc(name)} 様</p>
-<p style="font-size:14px;line-height:1.8;color:#56647a;margin:0 0 22px">AI見積シミュレーションをご利用いただきありがとうございます。お車に合わせた概算見積をお送りします。</p>
+<p style="font-size:14px;line-height:1.8;color:#56647a;margin:0 0 22px">${tplOpening}</p>
 <div style="background:#eef4ff;border-left:4px solid #2563eb;padding:12px 16px;margin-bottom:24px"><div style="font-size:10px;color:#2563eb">見積番号</div><div style="font-size:18px;font-weight:700;margin-top:3px">${esc(id)}</div></div>
 <table width="100%" cellpadding="0" cellspacing="0" style="font-size:13px;margin-bottom:22px">
 <tr><td style="padding:6px 0;color:#7a8799;width:120px">お車</td><td style="padding:6px 0;font-weight:600">${esc(maker)} ${esc(model)}</td></tr>
@@ -240,15 +273,15 @@ export async function onRequestPost(context){
 <tr><td style="padding:6px 0;color:#7a8799">車両状態</td><td style="padding:6px 0;font-weight:600">${fullCondition}</td></tr>
 <tr><td style="padding:6px 0;color:#7a8799;vertical-align:top">オプション</td><td style="padding:6px 0;font-weight:600">${optText}</td></tr>
 </table>
-<div style="font-size:13px;font-weight:700;border-bottom:2px solid #e7edf5;padding-bottom:7px">AI見積結果</div>
+<div style="font-size:13px;font-weight:700;border-bottom:2px solid #e7edf5;padding-bottom:7px">${tplHeading}</div>
 <table width="100%" cellpadding="0" cellspacing="0">${menuHtml}</table>
-<p style="font-size:11px;color:#7b8798;line-height:1.7;margin:18px 0 22px">※ 各金額は施工メニューと選択オプションを含む税別の概算です。車両状態により実際の金額が変わる場合があります。正式なお見積は現車確認のうえご提示いたします。</p>
+<p style="font-size:11px;color:#7b8798;line-height:1.7;margin:18px 0 22px">${tplNote}</p>
 <table width="100%" cellpadding="0" cellspacing="0"><tr>
-<td style="padding-right:5px"><a href="https://line.me/ti/p/@271goter" style="display:block;text-align:center;background:#06c755;color:#fff;text-decoration:none;padding:14px 8px;border-radius:6px;font-size:13px;font-weight:700">LINEで相談</a></td>
-<td style="padding-left:5px"><a href="tel:0455488588" style="display:block;text-align:center;background:#17233a;color:#fff;text-decoration:none;padding:14px 8px;border-radius:6px;font-size:13px;font-weight:700">045-548-8588</a></td>
+<td style="padding-right:5px"><a href="https://line.me/ti/p/@271goter" style="display:block;text-align:center;background:#06c755;color:#fff;text-decoration:none;padding:14px 8px;border-radius:6px;font-size:13px;font-weight:700">${tplLineTxt}</a></td>
+<td style="padding-left:5px"><a href="tel:0455488588" style="display:block;text-align:center;background:#17233a;color:#fff;text-decoration:none;padding:14px 8px;border-radius:6px;font-size:13px;font-weight:700">${tplTelTxt}</a></td>
 </tr></table>
 </td></tr>
-<tr><td style="background:#eef2f7;padding:16px;text-align:center;color:#8a96a8;font-size:10px">横浜市都筑区のカーコーティング専門店 Uncuore</td></tr>
+<tr><td style="background:#eef2f7;padding:16px;text-align:center;color:#8a96a8;font-size:10px">${tplFooter}</td></tr>
 </table></td></tr></table></body></html>`;
 
   let customerEmailOk=false;
@@ -259,7 +292,9 @@ export async function onRequestPost(context){
       body:JSON.stringify({
         from:`Uncuore AI見積 <${FROM}>`,
         to:[email],
-        subject:`【Uncuore AI見積】${id} ${maker} ${model}`,
+        subject:Object.entries({"{見積番号}":id,"{メーカー}":maker,"{車種}":model,"{名前}":name})
+          .reduce((s,[token,value])=>s.split(token).join(value),String(tpl.subject||DEFAULT_EMAIL_TEMPLATE.subject))
+          .replace(/[\r\n]+/g," ").slice(0,240),
         html:customerHtml
       })
     });
