@@ -611,8 +611,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <p class="privacy">送信いただいた内容はご相談への対応のみに使用いたします。</p>
     </div>
     <div id="contactDone" style="display:none;text-align:center;padding:30px 0">
-      <p style="font-family:var(--serif);font-size:18px;letter-spacing:.1em;color:var(--blue)">送信が完了しました</p>
-      <p style="font-size:13px;color:var(--muted);margin-top:10px">担当者より折り返しご連絡いたします。<br>お急ぎの場合はLINEでのご相談が便利です。</p>
+      <p id="contactDoneTitle" style="font-family:var(--serif);font-size:18px;letter-spacing:.1em;color:var(--blue)">送信が完了しました</p>
+      <p id="contactDoneText" style="font-size:13px;color:var(--muted);margin-top:10px">担当者より折り返しご連絡いたします。<br>お急ぎの場合はLINEでのご相談が便利です。</p>
       <a class="rcta line-btn" style="margin-top:22px;display:inline-flex" href="https://line.me/ti/p/@271goter" target="_blank" rel="noopener">LINEで相談する</a>
     </div>
   </div>
@@ -793,6 +793,25 @@ const DEFAULT_EMAIL_TEMPLATE = {
   footer:      "横浜市都筑区のカーコーティング専門店 Uncuore",
 };
 
+const DEFAULT_CAMPAIGN_EMAIL_TEMPLATE = {
+  subject:       "【Uncuore キャンペーン見積】{見積番号} {メーカー} {車種}",
+  opening:       "このたびはUncuore キャンペーンにご応募いただきありがとうございます。\nお車に合わせたキャンペーン見積をお送りします。",
+  heading:       "キャンペーン見積結果",
+  labelCampaign: "キャンペーン",
+  labelMenu:     "対象コーティング",
+  labelBenefit:  "キャンペーン特典",
+  labelNormal:   "通常価格",
+  labelCamp:     "キャンペーン価格",
+  labelYears:    "耐久年数",
+  labelFeat:     "このプランの特徴",
+  labelRec:      "こんな方におすすめ",
+  labelPrice:    "税別・概算",
+  note:          "※ 表示価格は税別・概算です。車両の状態により変動する場合があります。\n正式なお見積は現車確認のうえご提示いたします。",
+  lineText:      "LINEで相談",
+  telText:       "045-548-8588",
+  footer:        "横浜市都筑区のカーコーティング専門店 Uncuore",
+};
+
 const DEFAULT_CAMPAIGN = {
   ver: 2,
   enabled: true,
@@ -807,7 +826,7 @@ const DEFAULT_CAMPAIGN = {
   start: "", end: ""
 };
 /* 設定（メニュー・オプション・車種・キャンペーン）読込：サーバー共有データから取得 */
-let DATA = {menus:DEFAULT_MENUS, options:DEFAULT_OPTIONS, vehicles:DEFAULT_VEHICLES, campaign:JSON.parse(JSON.stringify(DEFAULT_CAMPAIGN)), lpMenus:JSON.parse(JSON.stringify(DEFAULT_LP_MENUS)), menuDescriptions:JSON.parse(JSON.stringify(DEFAULT_MENU_DESCRIPTIONS)), emailTemplate:JSON.parse(JSON.stringify(DEFAULT_EMAIL_TEMPLATE))};
+let DATA = {menus:DEFAULT_MENUS, options:DEFAULT_OPTIONS, vehicles:DEFAULT_VEHICLES, campaign:JSON.parse(JSON.stringify(DEFAULT_CAMPAIGN)), lpMenus:JSON.parse(JSON.stringify(DEFAULT_LP_MENUS)), menuDescriptions:JSON.parse(JSON.stringify(DEFAULT_MENU_DESCRIPTIONS)), emailTemplate:JSON.parse(JSON.stringify(DEFAULT_EMAIL_TEMPLATE)), campaignEmailTemplate:JSON.parse(JSON.stringify(DEFAULT_CAMPAIGN_EMAIL_TEMPLATE))};
 const SETTINGS_VER = 2; // 車種DB更新時に上げる
 async function loadSettings(){
   try{
@@ -818,6 +837,7 @@ async function loadSettings(){
       if(!DATA.campaign) DATA.campaign = JSON.parse(JSON.stringify(DEFAULT_CAMPAIGN));
       if(!DATA.menuDescriptions) DATA.menuDescriptions = JSON.parse(JSON.stringify(DEFAULT_MENU_DESCRIPTIONS));
       DATA.emailTemplate = Object.assign(JSON.parse(JSON.stringify(DEFAULT_EMAIL_TEMPLATE)), DATA.emailTemplate || {});
+      DATA.campaignEmailTemplate = Object.assign(JSON.parse(JSON.stringify(DEFAULT_CAMPAIGN_EMAIL_TEMPLATE)), DATA.campaignEmailTemplate || {});
       // 旧形式（固定価格キャンペーン）からの移行と不足キーの補完
       if(DATA.campaign.discountType===undefined && Number(DATA.campaign.campaignPrice)>0){
         DATA.campaign.discountType="fixed"; DATA.campaign.discountValue=Number(DATA.campaign.campaignPrice);
@@ -1862,6 +1882,15 @@ async function submitContact(){
   // 問い合わせのデータ保存・見積レコードへの履歴追記はサーバー側（/api/contact）で実施済み
   // メール送信済み（上の /api/contact 経由で uncuore02@gmail.com 宛）。完了画面を表示
   document.getElementById("contactForm").style.display="none";
+  const doneTitle=document.getElementById("contactDoneTitle");
+  const doneText=document.getElementById("contactDoneText");
+  if(state.source==="campaign"){
+    if(doneTitle) doneTitle.textContent="キャンペーン見積をメールへ送信しました";
+    if(doneText) doneText.innerHTML="担当者より折り返しご連絡いたします。<br>お急ぎの場合はLINEでのご相談が便利です。";
+  }else{
+    if(doneTitle) doneTitle.textContent="送信が完了しました";
+    if(doneText) doneText.innerHTML="担当者より折り返しご連絡いたします。<br>お急ぎの場合はLINEでのご相談が便利です。";
+  }
   document.getElementById("contactDone").style.display="block";
   if(window.turnstile && turnstileWidgetId!==null) try{ window.turnstile.reset(turnstileWidgetId); }catch(_){}
 }
@@ -2235,10 +2264,43 @@ function adRenderDesc(){
     </div>`;
   }).join("");
 
+  // キャンペーンメール文章フィールド
+  if(!DATA.campaignEmailTemplate) DATA.campaignEmailTemplate=JSON.parse(JSON.stringify(DEFAULT_CAMPAIGN_EMAIL_TEMPLATE));
+  const ctpl=DATA.campaignEmailTemplate;
+  const ctplFields=[
+    {key:"subject",       label:"メール件名",                  placeholder:"【Uncuore キャンペーン見積】{見積番号} {メーカー} {車種}", hint:"使えるプレースホルダー: {見積番号} {メーカー} {車種} {名前} {キャンペーン名}", rows:1},
+    {key:"opening",       label:"冒頭文章",                    placeholder:"このたびはUncuoreキャンペーンにご応募いただき...", rows:3},
+    {key:"heading",       label:"見積結果の見出し",             placeholder:"キャンペーン見積結果", rows:1},
+    {key:"labelCampaign", label:"キャンペーン名の見出し",       placeholder:"キャンペーン", rows:1},
+    {key:"labelMenu",     label:"対象コーティングの見出し",     placeholder:"対象コーティング", rows:1},
+    {key:"labelBenefit",  label:"キャンペーン特典の見出し",     placeholder:"キャンペーン特典", rows:1},
+    {key:"labelNormal",   label:"通常価格の表示名",             placeholder:"通常価格", rows:1},
+    {key:"labelCamp",     label:"キャンペーン価格の表示名",     placeholder:"キャンペーン価格", rows:1},
+    {key:"labelYears",    label:"耐久年数の表示名",             placeholder:"耐久年数", rows:1},
+    {key:"labelFeat",     label:"特徴の見出し",                 placeholder:"このプランの特徴", rows:1},
+    {key:"labelRec",      label:"おすすめ対象の見出し",         placeholder:"こんな方におすすめ", rows:1},
+    {key:"labelPrice",    label:"金額補足",                     placeholder:"税別・概算", rows:1},
+    {key:"note",          label:"注意事項",                     placeholder:"※ 表示価格は...", rows:3},
+    {key:"lineText",      label:"LINEボタン文章",               placeholder:"LINEで相談", rows:1},
+    {key:"telText",       label:"電話ボタン文章",               placeholder:"045-548-8588", rows:1},
+    {key:"footer",        label:"メール下部文章",               placeholder:"横浜市都筑区の...", rows:1},
+  ];
+  const ctplHtml=ctplFields.map(f=>`<div style="margin-bottom:14px">
+    <label class="ad-lbl">${esc(f.label)}</label>
+    ${f.hint?`<p style="font-size:11px;color:#6a7a9a;margin:2px 0 4px">${esc(f.hint)}</p>`:""}
+    <textarea class="ad-inp" rows="${f.rows}" id="cetpl_${f.key}"
+      placeholder="${esc(f.placeholder)}"
+      oninput="DATA.campaignEmailTemplate['${f.key}']=this.value">${esc(ctpl[f.key]!=null?ctpl[f.key]:(DEFAULT_CAMPAIGN_EMAIL_TEMPLATE[f.key]||""))}</textarea>
+  </div>`).join("");
+
   el.innerHTML=`<div class="ad-card">
     <h3>メール基本文章設定</h3>
     <p style="font-size:12px;color:#98a7c4;margin-bottom:18px">空欄のままにすると初期値が使われます。</p>
     ${tplHtml}
+    <hr style="border:none;border-top:1px solid #1e3a5f;margin:24px 0">
+    <h3>キャンペーンメール基本文章設定</h3>
+    <p style="font-size:12px;color:#98a7c4;margin-bottom:18px">キャンペーン問い合わせ後にお客様へ自動送信されるメールの文章です。空欄のままにすると初期値が使われます。</p>
+    ${ctplHtml}
     <hr style="border:none;border-top:1px solid #1e3a5f;margin:24px 0">
     <h3>コーティング別文章設定</h3>
     <p style="font-size:12px;color:#98a7c4;margin-bottom:18px">設定した文章は各プランの「このプランの特徴」「こんな方におすすめ」としてメールに挿入されます。空欄の場合はその項目は表示されません。</p>
@@ -2680,6 +2742,7 @@ async function cFinalize(){
     maker:state.maker||"—", model:state.model||"（車種不明）", size:state.size||"—",
     condition: cond,
     menu:(c.desc||c.name).replace(/\n/g,"").slice(0,60),
+    menuId:c.menuId,
     years:(m&&m.years)||0,
     options:(c.optionIds||[]).map(id=>{const o=DATA.options.find(x=>x.id===id);return o?("【特典】"+o.name):id;}),
     total:finalPrice,
