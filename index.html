@@ -707,7 +707,150 @@ const DEFAULT_OPTIONS = [
 ];
 
 /* 車種DB（メーカー → 車種 → サイズ）。管理画面から追加・編集できます。 */
-const DEFAULT_VEHICLES = {"TOYOTA":[["iQ","S"],["ist","S"],["MR-S","S"],["MR2","S"],["アクア","S"],["ヴィッツ","S"],["アレックス","S"],["カローラランクス","S"],["ピクシス","S"],["ピクシス エポック","S"],["ピクシス ジョイ","S"],["ピクシス メガ","S"],["パッソ","S"],["ヤリス","S"],["GRヤリス","S"],["C-HR","M"],["ルーミー","M"],["アリオン","M"],["サイ","M"],["アルテッツァ","M"],["タンク","M"],["オーリス","M"],["ブレイド","M"],["カリーナ","M"],["プレミオ","M"],["ソアラ","M"],["ポルテ","M"],["スペイド","M"],["ラクティス","M"],["パッソセッテ","M"],["86","M"],["ブレビス","M"],["カルディナ","M"],["プログレ","M"],["ヤリスクロス","M"],["ライズ","M"],["カローラアクシオ","M"],["カローラスパシオ","M"],["カローラスポーツ","M"],["カローラセダン","M"],["カローラフィールダー","M"],["カローラルミオン","M"],["サクシード","M"],["プロボックス","M"],["スープラ","M"],["アイシス","L"],["アベンシス","L"],["アリスト","L"],["ヴァンガード","L"],["ウィッシュ","L"],["カムリ","L"],["カローラクロス","L"],["クラウン","L"],["クラウンエステート","L"],["クラウンマジェスタ","L"],["シエンタ","L"],["セルシオ","L"],["プリウスα","L"],["マークX","L"],["マークXジオ","L"],["ミライ","L"],["マークII","L"],["ウィンダム","L"],["ヴェロッサ","L"],["プリウス","L"],["RAV4","LL"],["アルファード","LL"],["ヴェルファイア","LL"],["ヴォクシー","LL"],["エスクァイア","LL"],["エスティマ","LL"],["bZ4X","LL"],["クルーガー","LL"],["センチュリー","LL"],["タウンエースノア","LL"],["ライトエースノア","LL"],["ノア","LL"],["ハイラックスサーフ","LL"],["ハリアー","LL"],["ランドクルーザープラド","LL"],["レジアスエース","LL"],["クラウンクロスオーバー","LL"],["ノハリアー","LL"],["アリア","LL"],["グランエース","3L"],["ランドクルーザー","3L"],["ハイエース","3L"],["ハイラックス","3L"],["FJクルーザー","3L"]],"LEXUS":[["RC","M"],["SC","M"],["CT","M"],["LBX","M"],["ES","L"],["GS","L"],["HS","L"],["IS","L"],["LC","L"],["UX","L"],["RX","LL"],["RZ","LL"],["NX","LL"],["LS","LL"],["LM","LL"],["LX","3L"],["LFA","3L"]],"NISSAN":[["DAYS（デイズ）","S"],["NV100","S"],["オッティ","S"],["サクラ","S"],["マーチ","S"],["モコ","S"],["ルークス","S"],["キックス","M"],["キューブ","M"],["シルビア","M"],["ジューク","M"],["ティーダ","M"],["スカイラインGT-R","M"],["ノート","M"],["ノート オーテック","M"],["ノート オーラ","M"],["フェアレディZ","M"],["GT-R","L"],["NV200","L"],["グロリア","L"],["リーフ","L"],["スカイライン","L"],["セドリック","L"],["ティアナ","L"],["デュアリス","L"],["フーガ","L"],["アリア","LL"],["エクストレイル","LL"],["エルグランド","LL"],["キャラバン","LL"],["シーマ","LL"],["プレジデント","LL"],["セレナ","LL"],["ムラーノ","LL"],["キャラバンスーパーロング","3L"]],"HONDA":[["CR-Z","S"],["Z","S"],["Honda e","S"],["ゼスト","S"],["N-BOX","S"],["バモス","S"],["N-ONE","S"],["ライフ","S"],["N-VAN","S"],["N-WGN","S"],["S660","S"],["N-BOX スラッシュ","S"],["フィット クロスター","M"],["フィットシャトル","M"],["インサイト","M"],["インテグラ","M"],["グレイス","M"],["ストリーム","M"],["S2000","M"],["フィット","M"],["フリード","L"],["レジェンド","L"],["ZR-V","L"],["アコード","L"],["インスパイア","L"],["ヴェゼル","L"],["クロスロード","L"],["ジェイド","L"],["シビック","L"],["シビック タイプR","L"],["CR-V","LL"],["エリシオン","LL"],["オデッセイ","LL"],["ステップワゴン","LL"],["NSX","LL"]],"MAZDA":[["AZ-ワゴン","S"],["キャロル","S"],["スクラム","S"],["RX-7","S"],["スピアーノ","S"],["デミオ","S"],["フレア","S"],["フレアクロスオーバー","S"],["スクラムワゴン","S"],["フレアワゴン","S"],["ロードスター","S"],["CX-3","M"],["CX-30","M"],["RX-8","M"],["アクセラ","M"],["マツダ3","M"],["MX-30","L"],["プレマシー","L"],["アテンザ","L"],["マツダ6","L"],["CX-5","LL"],["CX-7","LL"],["CX-8","LL"],["CX-60","LL"],["MPV","LL"],["ビアンテ","LL"]],"SUBARU":[["BRZ","S"],["プレオ","S"],["R1","S"],["ルクラ","S"],["R2","S"],["サンバー","S"],["シフォン","S"],["ステラ","S"],["WRX","M"],["インプレッサ","M"],["ジャスティー","M"],["レックス","M"],["XV","L"],["エクシーガ","L"],["クロストレック","L"],["レヴォーグ","L"],["レガシィB4/ツーリングワゴン","L"],["レガシィアウトバック","LL"],["フォレスター","LL"]],"MITSUBISHI":[["ek","S"],["ekクロス","S"],["ekスペース","S"],["i（アイ）","S"],["タウンボックス","S"],["デリカミニ","S"],["パジェロミニ","S"],["ミニキャブバン","S"],["ミラージュ","S"],["ギャラン","M"],["デリカD：2","M"],["ランサー","M"],["RVR","L"],["エクリプスクロス","L"],["デリカD：3","L"],["アウトランダー","LL"],["パジェロ","LL"],["デリカ","3L"]],"SUZUKI":[["MRワゴン","S"],["スイフト","S"],["アルト","S"],["スペーシア","S"],["イグニス","S"],["エブリイ","S"],["ジムニー","S"],["ハスラー","S"],["パレット","S"],["バレーノ","S"],["ラパン","S"],["ジムニーワイド","S"],["ジムニーシエラ","S"],["スペーシアベース","S"],["ワゴンR","S"],["ワゴンRワイド","S"],["ソリオ","S"],["プラス","S"],["SX4","M"],["X-BEE","M"],["スイフトスポーツ","M"],["クロンクス","M"],["エスクード","L"],["キザシ","L"],["ランディ","LL"]],"DAIHATSU":[["WAKE","S"],["ハイゼット","S"],["アトレー","S"],["テリオス","S"],["エッセ","S"],["タント","S"],["キャスト","S"],["トコット","S"],["コペン","S"],["ブーン","S"],["タフト","S"],["ミライース","S"],["ミラ","S"],["ムーヴ","S"],["テリオスルキア","S"],["ムーヴキャンバス","S"],["トール","M"],["ハイゼットグランカーゴ","M"],["ビーゴ","M"],["ロッキー","M"],["アルティス","L"]],"BMW":[["ミニ","S"],["ミニクーパー","S"],["クーペ","S"],["Z4","S"],["Z3","S"],["1シリーズ","M"],["2シリーズ","M"],["ミニクラブマン","M"],["ミニクロスオーバー","M"],["ミニペースマン","M"],["i3","M"],["カントリーマン","M"],["Z8","M"],["3シリーズ","L"],["7シリーズ","LL"],["X3","LL"],["4シリーズ","L"],["X4","LL"],["5シリーズ","L"],["X5","LL"],["5シリーズツーリング","L"],["X6","LL"],["6シリーズ","L"],["iX","LL"],["8シリーズ","L"],["i8","LL"],["X1","L"],["X2","L"],["X7","3L"],["X8","3L"],["XM","3L"]],"Mercedes-Benz":[["Aクラス","M"],["Bクラス","M"],["CLK","M"],["SLC","M"],["SLK","M"],["Cクラスワゴン","L"],["GLB","L"],["Mクラス","LL"],["Eクラスワゴン","L"],["CLクラス","L"],["GLE","LL"],["Eクラス","L"],["SL","L"],["Sクラス","LL"],["Cクラス","L"],["Gクラス","LL"],["GT","M"],["AMG GT","M"],["GLC","L"],["EQB","LL"],["CLS","L"],["EQC","LL"],["EQA","L"],["EQE","LL"],["GLA","L"],["EQS","LL"],["GLK","LL"],["Rクラス","LL"],["EQV","3L"],["GL","3L"],["GLS","3L"],["Vクラス","3L"],["ピアノ","3L"],["SUV","3L"]],"VOLVO":[["S60","M"],["S70","M"],["V40","M"],["C40","M"],["240","M"],["V50","M"],["C30","M"],["C70","M"],["XC60","L"],["S90","L"],["V90","L"],["S80","L"],["V90クロスカントリー","LL"],["940","L"],["XC70","LL"],["V60","L"],["V70","L"],["XC40","L"],["XC90","3L"]],"Audi":[["A1/S1","S"],["A3/S3","M"],["TT","M"],["RS4","M"],["R8","LL"],["A8/S8","LL"],["A4/S4","L"],["RS4アバント","L"],["A6/S6","L"],["RS5スポーツバック","L"],["e-tron","LL"],["A7/S7","L"],["RS6","L"],["Q3","L"],["RS7","L"],["Q4 e-tron","L"],["A5/S5","L"],["e-tronS","LL"],["RS e-tron GT","L"],["RS5","L"],["Q5","LL"],["e-tron GT","L"],["Q2","L"],["Q7","LL"],["Q4 スポーツバック e-tron","L"],["Q8","3L"]],"Volkswagen":[["UP!","S"],["クロスポロ","S"],["ルポ","S"],["ポロ","M"],["ジェッタ","M"],["シロッコ","M"],["ティークロス","M"],["ニュービートル","M"],["ザ ビートル","M"],["イオス","M"],["ビートル","M"],["ID.4","L"],["パサート","L"],["シャラン","LL"],["アルテオン","L"],["トゥアレグ","LL"],["クロスゴルフ","L"],["ゴルフヴァリアント","L"],["ゴルフオールトラック","L"],["ゴルフトゥーラン","L"],["ティーロック","L"],["ゴルフ","L"]],"CHRYSLER":[["デルタ","M"],["300M","M"],["イプシロン","M"],["PTクルーザー","L"],["300C","LL"],["ボイジャー","3L"]],"PEUGEOT":[["106","S"],["206","S"],["207","S"],["208","S"],["1007","S"],["308","M"],["405","M"],["605","M"],["RCZ","M"],["306","M"],["407","L"],["2008","L"],["SUV5008GT","LL"],["508","L"],["リフター","LL"],["607","L"],["3008","L"],["5008","L"],["307SW/307ブレーク","L"]],"RENAULT":[["トゥインゴ","S"],["キャプチャー","M"],["ルーテシア","M"],["アルカナ","L"],["カングー","LL"],["メガーヌ","L"]],"LAND ROVER":[["MINI","S"],["イヴォーク","L"],["レンジローバースポーツ","LL"],["ヴェラール","LL"],["フリーランダー","L"],["ディスカバリー","3L"],["ディフェンダー","3L"],["レンジローバー","3L"]],"FIAT/ABARTH":[["バルケッタ","S"],["500","S"],["595","S"],["695","S"],["プント","S"],["ウーノ","S"],["クーペフィアット","S"],["124スパイダー","S"],["500X","M"],["グランデプント","M"],["ティーポ","M"],["パンダ","M"],["ムルティプラ","L"]],"JAGUAR":[["Sタイプ","L"],["Xタイプ","L"],["Fペイス","LL"],["XF","L"],["XE","L"],["XJ","LL"],["Eペイス","L"],["XK","L"],["Fタイプ","L"]],"CITROEN":[["C3","M"],["C4","M"],["C5クーペ","M"],["DS3 CROSSBACK","M"],["DS4","M"],["C4ピカソ","L"],["DS5","L"],["C6","L"],["C3エアクロスSUV","L"],["ベルランゴ","LL"],["グランドピカソ","LL"]],"TESLA":[["テスラロードスター","M"],["モデル３","L"],["モデルS","LL"],["モデルY","LL"],["モデルX","3L"]],"CHEVROLET":[["ソニック","S"],["クルーズ","S"],["MW","S"],["キャプティバ","L"],["エクスプローラー","LL"],["カマロ","LL"],["コルベット","LL"],["ブレイザー","LL"],["トラバース","3L"],["トレイルブレイザー","3L"],["タホ","3L"],["シルバラード","3L"],["エクスプレス","3L"],["アストロ","3L"]],"Jeep":[["コンパス","L"],["レネゲード","L"],["パトリオット","L"],["グランドチェロキー","LL"],["ラングラー","LL"],["チェロキー","LL"],["グランドチェロキーＬ","3L"],["ワゴニア/グランドワゴニア","3L"],["ラングラーアンリミテッド","3L"]],"BENTLEY":[["コンチネンタルGT","LL"],["ミュルザンヌ","3L"],["ブルックランズ","3L"],["ベンテイガ","3L"],["フライングスパー","3L"],["アルナージ","3L"],["アズール","3L"]],"LAMBORGHINI":[["ウラカン","LL"],["ガヤルド","LL"],["ウルス","3L"],["ディアブロ","3L"],["アヴェンタドール","3L"],["ムルシエラゴ","3L"],["カウンタック","3L"],["レヴエルト","3L"]],"FERRARI":[["812","LL"],["F12","LL"],["458","LL"],["ポルトフィーノ","LL"],["488","LL"],["296","LL"],["F8","LL"],["LVS50","LL"],["FF","LL"],["カリフォルニア","LL"],["ラ・フェラーリ","3L"],["プロサングエ","3L"]],"PORSCHE":[["911","M"],["ボクスター","M"],["928","M"],["718スパイダー","M"],["968","M"],["ケイマン","M"],["タイカン","L"],["パナメーラ","LL"],["マカン","LL"],["カイエン","3L"]],"Alfa Romeo":[["Alfa GT","M"],["ジュリエッタ","M"],["ミト","M"],["147","M"],["155","M"],["156","M"],["164","M"],["スパイダー","M"],["スポーツワゴン","M"],["ブレラ","M"],["159","L"],["トナーレ","L"],["ジュリア","L"],["ステルヴィオ","LL"]],"Maserati":[["ギブリ","LL"],["グランカブリオ","LL"],["グレカーレ","LL"],["グランスポーツ","LL"],["グラントゥーリズモ","LL"],["クアトロポルテ","LL"],["レヴァンテ","3L"],["MC20","3L"]],"Rolls-Royce":[["カリナン","3L"],["ファントムシリーズ","3L"],["ゴースト","3L"],["レイス","3L"],["ドーン","3L"]],"McLaren":[["720","LL"],["600LT","LL"],["765","LL"],["GT","LL"],["750","LL"],["アルトゥーラ","LL"]],"DS Automobiles":[["DS4","M"],["DS3","M"],["DS5","M"],["DS9","L"],["DS7","LL"]],"Lotus":[["エリーゼ","S"],["エミーラ","L"],["エキシージ","L"]],"Cadillac":[["CTS","M"],["ATS","M"],["XT-4","M"],["CT6","L"],["XT-5","L"],["エスカレード","3L"],["XT-6","3L"]]};
+const DEFAULT_VEHICLES = {"TOYOTA":[["iQ","S"],["ist","S"],["MR-S","S"],["MR2","S"],["アクア","S"],["ヴィッツ","S"],["アレックス","S"],["カローラランクス","S"],["ピクシス","S"],["ピクシス エポック","S"],["ピクシス ジョイ","S"],["ピクシス メガ","S"],["パッソ","S"],["ヤリス","S"],["C-HR","M"],["ルーミー","M"],["アリオン","M"],["サイ","M"],["アルテッツァ","M"],["タンク","M"],["オーリス","M"],["ブレイド","M"],["カリーナ","M"],["プレミオ","M"],["ソアラ","M"],["ポルテ","M"],["スペイド","M"],["ラクティス","M"],["パッソセッテ","M"],["86","M"],["ブレビス","M"],["カルディナ","M"],["プログレ","M"],["ヤリスクロス","M"],["ライズ","M"],["カローラアクシオ","M"],["カローラスパシオ","M"],["カローラスポーツ","M"],["カローラセダン","M"],["カローラフィールダー","M"],["カローラルミオン","M"],["サクシード","M"],["プロボックス","M"],["スープラ","M"],["アイシス","L"],["アベンシス","L"],["アリスト","L"],["ヴァンガード","L"],["ウィッシュ","L"],["カムリ","L"],["カローラクロス","L"],["クラウン","L"],["クラウンエステート","L"],["クラウンマジェスタ","L"],["シエンタ","L"],["セルシオ","L"],["プリウスα","L"],["マークX","L"],["マークXジオ","L"],["ミライ","L"],["マークII","L"],["ウィンダム","L"],["ヴェロッサ","L"],["プリウス","L"],["RAV4","LL"],["アルファード","LL"],["ヴェルファイア","LL"],["ヴォクシー","LL"],["エスクァイア","LL"],["エスティマ","LL"],["bZ4X","LL"],["クルーガー","LL"],["センチュリー","LL"],["タウンエースノア","LL"],["ライトエースノア","LL"],["ノア","LL"],["ハイラックスサーフ","LL"],["ハリアー","LL"],["ランドクルーザープラド","LL"],["レジアスエース","LL"],["クラウンクロスオーバー","LL"],["ノハリアー","LL"],["アリア","LL"],["グランエース","3L"],["ランドクルーザー","3L"],["ハイエース","3L"],["ハイラックス","3L"],["FJクルーザー","3L"]],"LEXUS":[["RC","M"],["SC","M"],["CT","M"],["LBX","M"],["ES","L"],["GS","L"],["HS","L"],["IS","L"],["LC","L"],["UX","L"],["RX","LL"],["RZ","LL"],["NX","LL"],["LS","LL"],["LM","LL"],["LX","3L"],["LFA","3L"]],"NISSAN":[["DAYS（デイズ）","S"],["NV100","S"],["オッティ","S"],["サクラ","S"],["マーチ","S"],["モコ","S"],["ルークス","S"],["キックス","M"],["キューブ","M"],["シルビア","M"],["ジューク","M"],["ティーダ","M"],["ノート","M"],["ノート オーラ","M"],["フェアレディZ","M"],["GT-R","L"],["NV200","L"],["グロリア","L"],["リーフ","L"],["スカイライン","L"],["セドリック","L"],["ティアナ","L"],["デュアリス","L"],["フーガ","L"],["アリア","LL"],["エクストレイル","LL"],["エルグランド","LL"],["キャラバン","LL"],["シーマ","LL"],["プレジデント","LL"],["セレナ","LL"],["ムラーノ","LL"],["キャラバンスーパーロング","3L"]],"HONDA":[["CR-Z","S"],["Z","S"],["Honda e","S"],["ゼスト","S"],["N-BOX","S"],["バモス","S"],["N-ONE","S"],["ライフ","S"],["N-VAN","S"],["N-WGN","S"],["S660","S"],["N-BOX スラッシュ","S"],["フィットシャトル","M"],["インサイト","M"],["インテグラ","M"],["グレイス","M"],["ストリーム","M"],["S2000","M"],["フィット","M"],["フリード","L"],["レジェンド","L"],["ZR-V","L"],["アコード","L"],["インスパイア","L"],["ヴェゼル","L"],["クロスロード","L"],["ジェイド","L"],["シビック","L"],["CR-V","LL"],["エリシオン","LL"],["オデッセイ","LL"],["ステップワゴン","LL"],["NSX","LL"]],"MAZDA":[["AZ-ワゴン","S"],["キャロル","S"],["スクラム","S"],["RX-7","S"],["スピアーノ","S"],["デミオ","S"],["フレア","S"],["フレアクロスオーバー","S"],["スクラムワゴン","S"],["フレアワゴン","S"],["ロードスター","S"],["CX-3","M"],["CX-30","M"],["RX-8","M"],["アクセラ","M"],["マツダ3","M"],["MX-30","L"],["プレマシー","L"],["アテンザ","L"],["マツダ6","L"],["CX-5","LL"],["CX-7","LL"],["CX-8","LL"],["CX-60","LL"],["MPV","LL"],["ビアンテ","LL"]],"SUBARU":[["BRZ","S"],["プレオ","S"],["R1","S"],["ルクラ","S"],["R2","S"],["サンバー","S"],["シフォン","S"],["ステラ","S"],["WRX","M"],["インプレッサ","M"],["ジャスティー","M"],["レックス","M"],["XV","L"],["エクシーガ","L"],["クロストレック","L"],["レヴォーグ","L"],["レガシィB4/ツーリングワゴン","L"],["レガシィアウトバック","LL"],["フォレスター","LL"]],"MITSUBISHI":[["ek","S"],["ekクロス","S"],["ekスペース","S"],["i（アイ）","S"],["タウンボックス","S"],["デリカミニ","S"],["パジェロミニ","S"],["ミニキャブバン","S"],["ミラージュ","S"],["ギャラン","M"],["デリカD：2","M"],["ランサー","M"],["RVR","L"],["エクリプスクロス","L"],["デリカD：3","L"],["アウトランダー","LL"],["パジェロ","LL"],["デリカ","3L"]],"SUZUKI":[["MRワゴン","S"],["スイフト","S"],["アルト","S"],["スペーシア","S"],["イグニス","S"],["エブリイ","S"],["ジムニー","S"],["ハスラー","S"],["パレット","S"],["バレーノ","S"],["ラパン","S"],["ジムニーワイド","S"],["ジムニーシエラ","S"],["スペーシアベース","S"],["ワゴンR","S"],["ワゴンRワイド","S"],["ソリオ","S"],["プラス","S"],["SX4","M"],["X-BEE","M"],["クロンクス","M"],["エスクード","L"],["キザシ","L"],["ランディ","LL"]],"DAIHATSU":[["WAKE","S"],["ハイゼット","S"],["アトレー","S"],["テリオス","S"],["エッセ","S"],["タント","S"],["キャスト","S"],["トコット","S"],["コペン","S"],["ブーン","S"],["タフト","S"],["ミライース","S"],["ミラ","S"],["ムーヴ","S"],["テリオスルキア","S"],["ムーヴキャンバス","S"],["トール","M"],["ハイゼットグランカーゴ","M"],["ビーゴ","M"],["ロッキー","M"],["アルティス","L"]],"BMW":[["ミニ","S"],["クーペ","S"],["Z4","S"],["Z3","S"],["1シリーズ","M"],["2シリーズ","M"],["ミニクラブマン","M"],["ミニクロスオーバー","M"],["ミニペースマン","M"],["i3","M"],["カントリーマン","M"],["Z8","M"],["3シリーズ","L"],["7シリーズ","LL"],["X3","LL"],["4シリーズ","L"],["X4","LL"],["5シリーズ","L"],["X5","LL"],["5シリーズツーリング","L"],["X6","LL"],["6シリーズ","L"],["iX","LL"],["8シリーズ","L"],["i8","LL"],["X1","L"],["X2","L"],["X7","3L"],["X8","3L"],["XM","3L"]],"Mercedes-Benz":[["Aクラス","M"],["Bクラス","M"],["CLK","M"],["SLC","M"],["SLK","M"],["Cクラスワゴン","L"],["GLB","L"],["Mクラス","LL"],["Eクラスワゴン","L"],["CLクラス","L"],["GLE","LL"],["Eクラス","L"],["SL","L"],["Sクラス","LL"],["Cクラス","L"],["Gクラス","LL"],["GT","M"],["GLC","L"],["EQB","LL"],["CLS","L"],["EQC","LL"],["EQA","L"],["EQE","LL"],["GLA","L"],["EQS","LL"],["GLK","LL"],["Rクラス","LL"],["EQV","3L"],["GL","3L"],["GLS","3L"],["Vクラス","3L"],["ピアノ","3L"],["SUV","3L"]],"VOLVO":[["S60","M"],["S70","M"],["V40","M"],["C40","M"],["240","M"],["V50","M"],["C30","M"],["C70","M"],["XC60","L"],["S90","L"],["V90","L"],["S80","L"],["V90クロスカントリー","LL"],["940","L"],["XC70","LL"],["V60","L"],["V70","L"],["XC40","L"],["XC90","3L"]],"Audi":[["TT","M"],["R8","LL"],["e-tron","LL"],["Q3","L"],["Q4 e-tron","L"],["Q5","LL"],["e-tron GT","L"],["Q2","L"],["Q7","LL"],["Q4 スポーツバック e-tron","L"],["Q8","3L"],["A1","S"],["A3","M"],["A4","M"],["A8","LL"],["A6","L"],["A5","L"],["A7","L"]],"Volkswagen":[["UP!","S"],["クロスポロ","S"],["ルポ","S"],["ポロ","M"],["ジェッタ","M"],["シロッコ","M"],["ティークロス","M"],["ニュービートル","M"],["ザ ビートル","M"],["イオス","M"],["ビートル","M"],["ID.4","L"],["パサート","L"],["シャラン","LL"],["アルテオン","L"],["トゥアレグ","LL"],["クロスゴルフ","L"],["ゴルフヴァリアント","L"],["ゴルフオールトラック","L"],["ゴルフトゥーラン","L"],["ティーロック","L"],["ゴルフ","L"]],"CHRYSLER":[["デルタ","M"],["300M","M"],["イプシロン","M"],["PTクルーザー","L"],["300C","LL"],["ボイジャー","3L"]],"PEUGEOT":[["106","S"],["206","S"],["207","S"],["208","S"],["1007","S"],["308","M"],["405","M"],["605","M"],["RCZ","M"],["306","M"],["407","L"],["2008","L"],["508","L"],["リフター","LL"],["607","L"],["3008","L"],["5008","L"],["307SW/307ブレーク","L"]],"RENAULT":[["トゥインゴ","S"],["キャプチャー","M"],["ルーテシア","M"],["アルカナ","L"],["カングー","LL"],["メガーヌ","L"]],"LAND ROVER":[["MINI","S"],["イヴォーク","L"],["レンジローバースポーツ","LL"],["ヴェラール","LL"],["フリーランダー","L"],["ディスカバリー","3L"],["ディフェンダー","3L"],["レンジローバー","3L"]],"FIAT/ABARTH":[["バルケッタ","S"],["500","S"],["595","S"],["695","S"],["プント","S"],["ウーノ","S"],["クーペフィアット","S"],["124スパイダー","S"],["500X","M"],["グランデプント","M"],["ティーポ","M"],["パンダ","M"],["ムルティプラ","L"]],"JAGUAR":[["Sタイプ","L"],["Xタイプ","L"],["Fペイス","LL"],["XF","L"],["XE","L"],["XJ","LL"],["Eペイス","L"],["XK","L"],["Fタイプ","L"]],"CITROEN":[["C3","M"],["C4","M"],["C5クーペ","M"],["DS3 CROSSBACK","M"],["DS4","M"],["C4ピカソ","L"],["DS5","L"],["C6","L"],["C3エアクロスSUV","L"],["ベルランゴ","LL"],["グランドピカソ","LL"]],"TESLA":[["テスラロードスター","M"],["モデル３","L"],["モデルS","LL"],["モデルY","LL"],["モデルX","3L"]],"CHEVROLET":[["ソニック","S"],["クルーズ","S"],["MW","S"],["キャプティバ","L"],["エクスプローラー","LL"],["カマロ","LL"],["コルベット","LL"],["ブレイザー","LL"],["トラバース","3L"],["トレイルブレイザー","3L"],["タホ","3L"],["シルバラード","3L"],["エクスプレス","3L"],["アストロ","3L"]],"Jeep":[["コンパス","L"],["レネゲード","L"],["パトリオット","L"],["グランドチェロキー","LL"],["ラングラー","LL"],["チェロキー","LL"],["グランドチェロキーＬ","3L"],["ワゴニア/グランドワゴニア","3L"],["ラングラーアンリミテッド","3L"]],"BENTLEY":[["コンチネンタルGT","LL"],["ミュルザンヌ","3L"],["ブルックランズ","3L"],["ベンテイガ","3L"],["フライングスパー","3L"],["アルナージ","3L"],["アズール","3L"]],"LAMBORGHINI":[["ウラカン","LL"],["ガヤルド","LL"],["ウルス","3L"],["ディアブロ","3L"],["アヴェンタドール","3L"],["ムルシエラゴ","3L"],["カウンタック","3L"],["レヴエルト","3L"]],"FERRARI":[["812","LL"],["F12","LL"],["458","LL"],["ポルトフィーノ","LL"],["488","LL"],["296","LL"],["F8","LL"],["LVS50","LL"],["FF","LL"],["カリフォルニア","LL"],["ラ・フェラーリ","3L"],["プロサングエ","3L"]],"PORSCHE":[["911","M"],["ボクスター","M"],["928","M"],["718スパイダー","M"],["968","M"],["ケイマン","M"],["タイカン","L"],["パナメーラ","LL"],["マカン","LL"],["カイエン","3L"]],"Alfa Romeo":[["Alfa GT","M"],["ジュリエッタ","M"],["ミト","M"],["147","M"],["155","M"],["156","M"],["164","M"],["スパイダー","M"],["スポーツワゴン","M"],["ブレラ","M"],["159","L"],["トナーレ","L"],["ジュリア","L"],["ステルヴィオ","LL"]],"Maserati":[["ギブリ","LL"],["グランカブリオ","LL"],["グレカーレ","LL"],["グランスポーツ","LL"],["グラントゥーリズモ","LL"],["クアトロポルテ","LL"],["レヴァンテ","3L"],["MC20","3L"]],"Rolls-Royce":[["カリナン","3L"],["ファントムシリーズ","3L"],["ゴースト","3L"],["レイス","3L"],["ドーン","3L"]],"McLaren":[["720","LL"],["600LT","LL"],["765","LL"],["GT","LL"],["750","LL"],["アルトゥーラ","LL"]],"DS Automobiles":[["DS4","M"],["DS3","M"],["DS5","M"],["DS9","L"],["DS7","LL"]],"Lotus":[["エリーゼ","S"],["エミーラ","L"],["エキシージ","L"]],"Cadillac":[["CTS","M"],["ATS","M"],["XT-4","M"],["CT6","L"],["XT-5","L"],["エスカレード","3L"],["XT-6","3L"]]};
+
+/* 車種名は「メーカー＋車種」のみで扱い、AMG・NISMO・Type Rなどのグレード名は表示・保存しない */
+const VEHICLE_CATALOG_GRADE_MAP = {
+  "TOYOTA":{"GRヤリス":"ヤリス"},
+  "NISSAN":{"スカイラインGT-R":"スカイライン","ノート オーテック":"ノート"},
+  "HONDA":{"フィット クロスター":"フィット","シビック タイプR":"シビック"},
+  "SUZUKI":{"スイフトスポーツ":"スイフト"},
+  "BMW":{"ミニクーパー":"ミニ"},
+  "Mercedes-Benz":{"AMG GT":"GT"},
+  "Audi":{"A1/S1":"A1","A3/S3":"A3","RS4":"A4","A8/S8":"A8","A4/S4":"A4","RS4アバント":"A4","A6/S6":"A6","RS5スポーツバック":"A5","A7/S7":"A7","RS6":"A6","RS7":"A7","A5/S5":"A5","e-tronS":"e-tron","RS e-tron GT":"e-tron GT","RS5":"A5"},
+  "PEUGEOT":{"SUV5008GT":"5008"}
+};
+/* グレード付き名称から車種名へ直す際、元の車両サイズを維持するための内部別名 */
+const VEHICLE_GRADE_SIZE_ALIASES = [
+  {maker:"TOYOTA",keys:["GRヤリス","GRYARIS"],model:"ヤリス",size:"S"},
+  {maker:"TOYOTA",keys:["GR86"],model:"86",size:"M"},
+  {maker:"TOYOTA",keys:["GRスープラ","GRSUPRA"],model:"スープラ",size:"M"},
+  {maker:"NISSAN",keys:["スカイラインGTR","SKYLINEGTR"],model:"スカイライン",size:"M"},
+  {maker:"NISSAN",keys:["ノートオーテック","NOTEAUTECH"],model:"ノート",size:"M"},
+  {maker:"HONDA",keys:["フィットクロスター","FITCROSSTAR"],model:"フィット",size:"M"},
+  {maker:"HONDA",keys:["シビックタイプR","CIVICTYPER"],model:"シビック",size:"L"},
+  {maker:"SUZUKI",keys:["スイフトスポーツ","SWIFTSPORT"],model:"スイフト",size:"M"},
+  {maker:"BMW",keys:["ミニクーパー","MINICOOPER"],model:"ミニ",size:"S"},
+  {maker:"Mercedes-Benz",keys:["AMGGT","MERCEDESAMGGT","MERCEDESBENZAMGGT","メルセデスAMGGT","メルセデスベンツAMGGT"],model:"GT",size:"M",prefix:true},
+  {maker:"Audi",keys:["S1","RS1"],model:"A1",size:"S",prefix:true},
+  {maker:"Audi",keys:["S3","RS3"],model:"A3",size:"M",prefix:true},
+  {maker:"Audi",keys:["S4","RS4"],model:"A4",size:"L",prefix:true},
+  {maker:"Audi",keys:["S5","RS5"],model:"A5",size:"L",prefix:true},
+  {maker:"Audi",keys:["S6","RS6"],model:"A6",size:"L",prefix:true},
+  {maker:"Audi",keys:["S7","RS7"],model:"A7",size:"L",prefix:true},
+  {maker:"Audi",keys:["S8","RS8"],model:"A8",size:"LL",prefix:true},
+  {maker:"Audi",keys:["RSETRONGT"],model:"e-tron GT",size:"L",prefix:true},
+  {maker:"PEUGEOT",keys:["5008GT","SUV5008GT"],model:"5008",size:"LL",prefix:true}
+];
+function vehicleNorm(s){
+  return String(s||"").toUpperCase()
+    .replace(/[ａ-ｚＡ-Ｚ０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0))
+    .replace(/[\s\u3000・･\-ー－_/（）()＋+]/g,"");
+}
+function vehicleMakerKey(maker){
+  const q=vehicleNorm(maker);
+  if(!q) return "";
+  const aliases={
+    "MERCEDES":"Mercedes-Benz","MERCEDESBENZ":"Mercedes-Benz","MERCEDESAMG":"Mercedes-Benz",
+    "メルセデス":"Mercedes-Benz","メルセデスベンツ":"Mercedes-Benz","メルセデスAMG":"Mercedes-Benz",
+    "AUDI":"Audi","アウディ":"Audi","BMW":"BMW","ビーエムダブリュー":"BMW",
+    "VOLKSWAGEN":"Volkswagen","VW":"Volkswagen","フォルクスワーゲン":"Volkswagen",
+    "NISSAN":"NISSAN","日産":"NISSAN","HONDA":"HONDA","ホンダ":"HONDA",
+    "TOYOTA":"TOYOTA","トヨタ":"TOYOTA","SUZUKI":"SUZUKI","スズキ":"SUZUKI",
+    "SUBARU":"SUBARU","スバル":"SUBARU","LEXUS":"LEXUS","レクサス":"LEXUS",
+    "PEUGEOT":"PEUGEOT","プジョー":"PEUGEOT","PORSCHE":"PORSCHE","ポルシェ":"PORSCHE"
+  };
+  if(aliases[q]) return aliases[q];
+  return Object.keys(DEFAULT_VEHICLES).find(k=>vehicleNorm(k)===q)||"";
+}
+function gradeAliasMatch(model,maker){
+  const q=vehicleNorm(model);
+  const mk=vehicleMakerKey(maker);
+  if(!q) return null;
+  for(const a of VEHICLE_GRADE_SIZE_ALIASES){
+    if(mk && a.maker!==mk) continue;
+    for(const key of a.keys){
+      const k=vehicleNorm(key);
+      if((a.prefix && q.startsWith(k)) || (!a.prefix && q===k)){
+        return {maker:a.maker,model:a.model,size:a.size};
+      }
+    }
+  }
+  return null;
+}
+function baseVehicleModel(model,maker){
+  let s=String(model||"").trim().replace(/\s+/g," ");
+  if(!s) return "";
+  const alias=gradeAliasMatch(s,maker);
+  if(alias) return alias.model;
+  const mk=vehicleMakerKey(maker);
+  let q=vehicleNorm(s);
+
+  if(mk==="Mercedes-Benz"){
+    q=q.replace(/^(MERCEDESBENZ|MERCEDESAMG|MERCEDES|メルセデスベンツ|メルセデスAMG|メルセデス)/,"").replace(/^AMG/,"");
+    if(/^GT/.test(q)) return "GT";
+    const cls=q.match(/^(A|B|C|E|S|G)\d{2,3}/);
+    if(cls) return cls[1]+"クラス";
+    const family=q.match(/^(CLA|CLS|GLA|GLB|GLC|GLE|GLS|SLK|SLC|SL|CLK|EQ[A-Z]+)/);
+    if(family) return family[1];
+  }
+  if(mk==="BMW"){
+    q=q.replace(/^BMW/,"");
+    const xm=q.match(/^(X[1-8])M/); if(xm) return xm[1];
+    const m=q.match(/^M([23458])/); if(m) return m[1]+"シリーズ";
+    const series=q.match(/^([1-8])\d{2}/); if(series) return series[1]+"シリーズ";
+  }
+  if(mk==="Audi"){
+    q=q.replace(/^AUDI/,"");
+    let a=q.match(/^(?:RS|S)([1-8])/); if(a) return "A"+a[1];
+    a=q.match(/^(?:RSQ|SQ)([2-8])/); if(a) return "Q"+a[1];
+  }
+  if(mk==="LEXUS"){
+    s=s.replace(/\s+(?:F\s*SPORT|Fスポーツ|F)\b.*$/i,"").trim();
+  }
+  if(mk==="NISSAN"){
+    s=s.replace(/\s+(?:NISMO|ニスモ|AUTECH|オーテック|RIDER|ライダー|ハイウェイスター)\b.*$/i,"").trim();
+  }
+  if(mk==="HONDA"){
+    s=s.replace(/\s+(?:TYPE\s*R|タイプR|CROSSTAR|クロスター|MODULO\s*X|モデューロX|RS)\b.*$/i,"").trim();
+  }
+  if(mk==="SUBARU"){
+    s=s.replace(/\s+(?:STI|S4)\b.*$/i,"").trim();
+  }
+  if(mk==="Volkswagen"){
+    const g=vehicleNorm(s);
+    if(/^GOLF(?:GTI|GTE|R)/.test(g)) return "ゴルフ";
+  }
+  if(mk==="PEUGEOT"){
+    s=s.replace(/\s+(?:GT\s*LINE|GT|ALLURE|アリュール)\b.*$/i,"").trim();
+  }
+  if(mk==="PORSCHE"){
+    const p=vehicleNorm(s);
+    for(const [key,name] of [["911","911"],["CAYENNE","カイエン"],["カイエン","カイエン"],["MACAN","マカン"],["マカン","マカン"],["TAYCAN","タイカン"],["タイカン","タイカン"],["PANAMERA","パナメーラ"],["パナメーラ","パナメーラ"],["BOXSTER","ボクスター"],["ボクスター","ボクスター"],["CAYMAN","ケイマン"],["ケイマン","ケイマン"]]){
+      if(p.includes(vehicleNorm(key))) return name;
+    }
+  }
+  return s
+    .replace(/\s+(?:AMG|M\s*SPORT|Mスポーツ|S\s*LINE|Sライン|R[\s-]*LINE|Rライン|NISMO|ニスモ|AUTECH|オーテック|TYPE\s*R|タイプR|F\s*SPORT|Fスポーツ|GR\s*SPORT|GRスポーツ|STI|BLACK\s*EDITION|ブラックエディション|COMPETITION|コンペティション|4MATIC\+?|QUATTRO)\b.*$/i,"")
+    .trim();
+}
+function cleanVehicleCatalog(catalog){
+  const src=(catalog&&typeof catalog==="object")?catalog:DEFAULT_VEHICLES;
+  const out={};
+  for(const mk of Object.keys(src)){
+    const map=VEHICLE_CATALOG_GRADE_MAP[mk]||{};
+    const seen=new Set();
+    out[mk]=[];
+    for(const v of (Array.isArray(src[mk])?src[mk]:[])){
+      if(!Array.isArray(v)||!v[0]) continue;
+      const name=map[v[0]]||baseVehicleModel(v[0],mk)||v[0];
+      if(seen.has(name)) continue;
+      seen.add(name);
+      out[mk].push([name,SIZES.includes(v[1])?v[1]:"M"]);
+    }
+  }
+  return out;
+}
 
 const SIZE_META = {
  "S":  {label:"コンパクトカー", ex:"ヤリス / フィット / ノート / アクア"},
@@ -826,7 +969,7 @@ const DEFAULT_CAMPAIGN = {
   start: "", end: ""
 };
 /* 設定（メニュー・オプション・車種・キャンペーン）読込：サーバー共有データから取得 */
-let DATA = {menus:DEFAULT_MENUS, options:DEFAULT_OPTIONS, vehicles:DEFAULT_VEHICLES, campaign:JSON.parse(JSON.stringify(DEFAULT_CAMPAIGN)), lpMenus:JSON.parse(JSON.stringify(DEFAULT_LP_MENUS)), menuDescriptions:JSON.parse(JSON.stringify(DEFAULT_MENU_DESCRIPTIONS)), emailTemplate:JSON.parse(JSON.stringify(DEFAULT_EMAIL_TEMPLATE)), campaignEmailTemplate:JSON.parse(JSON.stringify(DEFAULT_CAMPAIGN_EMAIL_TEMPLATE))};
+let DATA = {menus:DEFAULT_MENUS, options:DEFAULT_OPTIONS, vehicles:cleanVehicleCatalog(DEFAULT_VEHICLES), campaign:JSON.parse(JSON.stringify(DEFAULT_CAMPAIGN)), lpMenus:JSON.parse(JSON.stringify(DEFAULT_LP_MENUS)), menuDescriptions:JSON.parse(JSON.stringify(DEFAULT_MENU_DESCRIPTIONS)), emailTemplate:JSON.parse(JSON.stringify(DEFAULT_EMAIL_TEMPLATE)), campaignEmailTemplate:JSON.parse(JSON.stringify(DEFAULT_CAMPAIGN_EMAIL_TEMPLATE))};
 const SETTINGS_VER = 2; // 車種DB更新時に上げる
 async function loadSettings(){
   try{
@@ -857,12 +1000,11 @@ async function loadSettings(){
           if(!DATA.vehicles.TOYOTA.some(x=>x&&x[0]===v[0])) DATA.vehicles.TOYOTA.push(v);
         });
       }
-      // Mercedes-Benz GT系のサイズ区分を補正（保存済み車種DBにも反映）
-      if(DATA.vehicles && Array.isArray(DATA.vehicles["Mercedes-Benz"])){
-        [["GT","M"],["AMG GT","M"]].forEach(v=>{
-          const hit=DATA.vehicles["Mercedes-Benz"].find(x=>x&&x[0]===v[0]);
-          if(hit) hit[1]=v[1]; else DATA.vehicles["Mercedes-Benz"].push(v);
-        });
+      // 保存済み車種DBもグレード名を除いた「車種名のみ」に正規化
+      DATA.vehicles = cleanVehicleCatalog(DATA.vehicles || DEFAULT_VEHICLES);
+      if(Array.isArray(DATA.vehicles["Mercedes-Benz"])){
+        const hit=DATA.vehicles["Mercedes-Benz"].find(x=>x&&x[0]==="GT");
+        if(hit) hit[1]="M"; else DATA.vehicles["Mercedes-Benz"].push(["GT","M"]);
       }
       if(DATA.campaign.ver!==2){
         // 仕様変更（議事録対応）: 特典方式・40%OFFへ更新（キャンペーン名・期間・ON/OFFは保持）
@@ -1033,9 +1175,10 @@ function nfContact(){
   const mk = document.getElementById("nfMaker").value.trim();
   const md = document.getElementById("nfModel").value.trim();
   if(!mk || !md){ alert("メーカー名と車種名をご入力ください。"); return; }
+  const baseModel=baseVehicleModel(md,mk)||md;
   openContact(`【お問い合わせ種別】サイズ表にない車種の見積依頼
 【メーカー】${mk}
-【車種】${md}
+【車種】${baseModel}
 ――――――――――
 上記車両のコーティング見積を希望します。`);
 }
@@ -1102,25 +1245,31 @@ async function aiDetectVehicle(b64){
     if(r.error) throw new Error("判定不可："+r.error);
     if(!r.size || !SIZES.includes(String(r.size).toUpperCase())) throw new Error("サイズを判定できませんでした。車体全体が写る写真でお試しください。");
     r.size = String(r.size).toUpperCase();
-    const hit = dbMatchVehicle(r.model);
-    return { maker: (hit&&hit.maker) || r.maker || "—", model: r.model || "（車種不明）", size: (hit&&hit.size) || r.size };
+    const hit = dbMatchVehicle(r.model,r.maker);
+    const cleanModel = (hit&&hit.model) || baseVehicleModel(r.model,r.maker) || "（車種不明）";
+    return { maker: (hit&&hit.maker) || vehicleMakerKey(r.maker) || r.maker || "—", model: cleanModel, size: (hit&&hit.size) || r.size };
 }
-/* 車種DBのあいまい照合（グレード付き・表記ゆれ対応）。一致すればDBのメーカー・サイズを返す */
-function dbMatchVehicle(model){
-  const norm = s=>String(s||"").toUpperCase()
-    .replace(/[ａ-ｚＡ-Ｚ０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0))
-    .replace(/[\s\u3000・･\-ー－]/g,"");
-  const q = norm(model);
+/* 車種DBのあいまい照合。グレード名は内部で車種名へ変換し、表示・保存には残さない */
+function dbMatchVehicle(model,maker){
+  const alias=gradeAliasMatch(model,maker);
+  if(alias) return alias;
+  const clean=baseVehicleModel(model,maker);
+  const q=vehicleNorm(clean);
   if(!q) return null;
-  let best = null, bestScore = 0;
-  for(const mk of Object.keys(DATA.vehicles)){
+  const preferred=vehicleMakerKey(maker);
+  const makers=preferred&&DATA.vehicles[preferred]
+    ? [preferred,...Object.keys(DATA.vehicles).filter(m=>m!==preferred)]
+    : Object.keys(DATA.vehicles);
+  let best=null,bestScore=0;
+  for(const mk of makers){
     for(const v of DATA.vehicles[mk]){
-      const dn = norm(v[0]);
+      const dn=vehicleNorm(v[0]);
       if(!dn) continue;
-      let score = 0;
-      if(dn===q) score = 1000 + dn.length;
-      else if(dn.length>=3 && q.includes(dn)) score = dn.length;
-      if(score > bestScore){ bestScore = score; best = { maker: mk, size: v[1] }; }
+      let score=0;
+      if(dn===q) score=1000+dn.length;
+      else if(dn.length>=3&&q.includes(dn)) score=dn.length;
+      if(mk===preferred&&score) score+=2000;
+      if(score>bestScore){bestScore=score;best={maker:mk,model:v[0],size:v[1]};}
     }
   }
   return best;
@@ -2459,7 +2608,7 @@ function adRenderVeh(){
         <td><button class="ad-btn danger" onclick="adDelModel(${i})">削除</button></td>
       </tr>`).join("")||`<tr><td colspan="3" style="color:#98a7c4;text-align:center;padding:20px">車種がありません</td></tr>`}</tbody>
     </table></div>
-    <p class="ad-note">CSVの車種マスターを反映する場合は、このタブから追加するか開発者にご依頼ください。</p>
+    <p class="ad-note">車種名はグレードを含めずに登録してください（例：AMG GT → GT、シビック タイプR → シビック）。CSVの車種マスターを反映する場合は、このタブから追加するか開発者にご依頼ください。</p>
   </div>`;
 }
 async function adAddMaker(){
@@ -2473,7 +2622,12 @@ async function adDelMaker(){
   await adSaveAll(true); adRenderVeh();
 }
 async function adAddModel(){
-  const n=document.getElementById("newModel").value.trim(); if(!n)return;
+  const raw=document.getElementById("newModel").value.trim(); if(!raw)return;
+  const n=baseVehicleModel(raw,adVehMaker)||raw;
+  if(DATA.vehicles[adVehMaker].some(v=>v&&v[0]===n)){
+    alert(`「${n}」はすでに登録されています。グレード別の重複登録はできません。`);
+    return;
+  }
   DATA.vehicles[adVehMaker].push([n,document.getElementById("newModelSize").value]);
   await adSaveAll(true); adRenderVeh();
 }
@@ -2585,12 +2739,14 @@ async function cStartAI(mode){
     if(!mkSel || !mdSel){ errEl.textContent="メーカーと車種をお選びください"; errEl.style.display="block"; return; }
     const otherName = ((document.getElementById("cpOtherName")||{}).value||"").trim();
     if(mkSel === "__other__"){
-      state.maker = "その他"; state.model = otherName || "（リストにない車種）";
-      const hit = otherName ? dbMatchVehicle(otherName) : null;
+      const hit = otherName ? dbMatchVehicle(otherName,"") : null;
+      state.maker = hit ? hit.maker : "その他";
+      state.model = hit ? hit.model : (baseVehicleModel(otherName,"") || "（リストにない車種）");
       state.size = hit ? hit.size : null;
     }else if(mdSel === "__other__"){
-      state.maker = mkSel; state.model = otherName || "（リストにない車種）";
-      const hit = otherName ? dbMatchVehicle(otherName) : null;
+      const hit = otherName ? dbMatchVehicle(otherName,mkSel) : null;
+      state.maker = hit ? hit.maker : mkSel;
+      state.model = hit ? hit.model : (baseVehicleModel(otherName,mkSel) || "（リストにない車種）");
       state.size = hit ? hit.size : null;
     }else{
       const v = (DATA.vehicles[mkSel]||[])[Number(mdSel)];
