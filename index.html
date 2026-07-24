@@ -1174,7 +1174,13 @@ function renderAiConfirm(){
 async function aiConfirmYes(btn){
   if(IS_CAMPAIGN){
     if(btn){ btn.disabled = true; btn.textContent = "AI見積書を作成中…"; }
-    await cFinalize(); cgo(5); // 個人情報は見積表示後（問い合わせフォーム）で入力
+    const saved = await cFinalize();
+    if(saved){
+      cgo(6); // step6=キャンペーンリード取得画面
+    }else{
+      if(btn){ btn.disabled = false; btn.textContent = "はい、この車です"; }
+      alert("見積の作成に失敗しました。通信状況をご確認のうえ、もう一度お試しください。");
+    }
   }else{
     go(2); // 通常版：これまで通り サイズ確認 → 状態 → メニュー → オプション → 見積へ
   }
@@ -2484,13 +2490,15 @@ function crender(){
   else if(s===3){ cSetHead(80,"CONFIRM","AI判定結果の確認"); renderAiConfirm(); }
   else if(s===4) cRenderManual();
   else if(s===5) cRenderResult();
+  else if(s===6) cRenderCampLead();
+  else if(s===7) cRenderCampDone();
 }
 /* ① 写真アップロード（ファーストビューでは価格を表示しない） */
 function cRenderPhoto(){
   cSetHead(25,"STEP 1","写真アップロード");
   body().innerHTML = `<div class="step">
     <h3 class="step-title" style="text-align:center">写真1枚でAIが自動見積</h3>
-    <p class="step-desc" style="text-align:center">写真1枚で、あなたのお車に最適なコーティングをAIが自動でお見積り。その場でキャンペーン価格をご案内します。</p>
+    <p class="step-desc" style="text-align:center">写真1枚で、あなたのお車に最適なコーティングをAIが自動でお見積り。見積結果はメールでご案内します。</p>
     <input type="file" id="cpFile" accept="image/*" style="display:none" onchange="cPhotoPicked(this)">
     <div id="cpPrev" class="cp-prev" style="display:none"><img id="cpImg" alt="車両写真"></div>
     <button class="cp-btn go" id="cpUpBtn" onclick="document.getElementById('cpFile').click()">📷 写真をアップロード</button>
@@ -2616,7 +2624,15 @@ async function cAnalyze(mode){
     for(let i=1;i<stages.length;i++){ await cSleep(820); setStage(i); }
     await cSleep(450);
     const last=document.getElementById("cpS"+cur); if(last) last.className="done";
-    await cFinalize(); cgo(5);
+    const saved = await cFinalize();
+    if(saved){
+      cgo(6);
+    }else{
+      body().innerHTML = `<div class="step" style="text-align:center">
+        <p class="cp-err" style="display:block">⚠ 見積の作成に失敗しました。通信状況をご確認のうえ、もう一度お試しください。</p>
+        <button class="cp-btn go" onclick="cRenderManual()">入力画面へ戻る</button>
+      </div>`;
+    }
     return;
   }
   const timer = setInterval(()=>{ if(cur < stages.length-1) setStage(cur+1); }, 1000);
@@ -2740,44 +2756,139 @@ async function cFinalize(){
     at:new Date().toISOString(),
     name:"", tel:"", mail:"", pref:"",
     maker:state.maker||"—", model:state.model||"（車種不明）", size:state.size||"—",
-    condition: cond,
+    condition:cond,
     menu:(c.desc||c.name).replace(/\n/g,"").slice(0,60),
     menuId:c.menuId,
     years:(m&&m.years)||0,
     options:(c.optionIds||[]).map(id=>{const o=DATA.options.find(x=>x.id===id);return o?("【特典】"+o.name):id;}),
     total:finalPrice,
     source:"campaign", campaignName:c.name,
-    normalPrice:p.normal, campaignPrice: (known && active) ? p.camp : 0
+    normalPrice:p.normal, campaignPrice:(known && active) ? p.camp : 0
   };
   try{
     const res = await fetch("/api/record",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(rec)});
-    if(res.ok){ state.estimateNo = (await res.json()).no; return; }
-  }catch(e){}
-  const d = new Date();
-  const ymd = d.getFullYear()+String(d.getMonth()+1).padStart(2,"0")+String(d.getDate()).padStart(2,"0");
-  state.estimateNo = `UC-${ymd}-T${String(Math.floor(Math.random()*9000)+1000)}`;
+    if(!res.ok) throw new Error("見積データの保存に失敗しました");
+    const data = await res.json();
+    if(!data || !data.no) throw new Error("見積番号を取得できませんでした");
+    state.estimateNo = data.no;
+    return true;
+  }catch(e){
+    console.error("[campaign] cFinalize failed",e?.message||e);
+    state.estimateNo = null;
+    return false;
+  }
 }
-/* ④ キャンペーン見積結果（メニュー・オプション選択なし） */
+/* ④ キャンペーン見積計算完了（内部処理用・表示なし）*/
 function cRenderResult(){
-  const c = DATA.campaign || DEFAULT_CAMPAIGN;
-  cSetHead(100,"RESULT","キャンペーン見積結果");
+  // step5はcFinalizeの結果保持のみ。step6へ即遷移。
+  cgo(6);
+}
+/* ⑥ キャンペーンリード取得画面 */
+function cRenderCampLead(){
+  if(!state.estimateNo){
+    body().innerHTML = `<div class="step" style="text-align:center">
+      <p class="cp-err" style="display:block">⚠ 見積データを保存できませんでした。最初からやり直してください。</p>
+      <button class="cp-btn go" onclick="cgo(1)">最初からやり直す</button>
+    </div>`;
+    return;
+  }
+  cSetHead(90,"LEAD","キャンペーンAI見積が完成しました");
   body().innerHTML = `<div class="step">
-    <p class="cp-kicker">🎉 ${cesc(c.name)}</p>
-    ${state.estimateNo?`<p class="cp-estno">見積番号：${cesc(state.estimateNo)}</p>`:""}
-    <div class="cp-judge slim">
-      <dl><dt>お車</dt><dd>${cesc(state.maker)} ${cesc(state.model)}${state.size&&state.size!=="—"?`（${cesc(state.size)}サイズ）`:""}${cstate.condition?`・${cstate.condition==="new"?"新車":"経年車"}`:""}</dd></dl>
-      <dl><dt>メニュー</dt><dd style="font-size:14.5px;line-height:1.6">${cesc(c.desc).replace(/\n/g," ")}</dd></dl>
+    <div style="text-align:center;margin-bottom:24px">
+      <div style="font-size:36px;margin-bottom:10px">✨</div>
+      <h2 style="font-size:20px;font-weight:700;color:var(--gold,#c9a84c);margin:0 0 8px">キャンペーンAI見積が完成しました</h2>
+      <p style="font-size:14px;line-height:1.7;color:var(--text2,#7a8799);margin:0">お車に合わせたキャンペーン価格を算出しました。<br>見積結果はご入力いただいたメールアドレスへお送りします。</p>
     </div>
-    ${(()=>{const tk=cCalcPrices(state.size).tokuten; return (campaignActive()&&tk.length)?`<div class="cp-tokuten">
-      <span class="cp-tokuten-t">🎁 ${cesc(c.name)}特典</span>
-      ${tk.map(t=>`<span class="cp-tokuten-i">${cesc(t)}　プレゼント</span>`).join("")}
-    </div>`:"";})()}
-    ${cPriceBlock()}
-    <button class="cp-btn go big" onclick="cOpenContact()">${cSizeKnown()?"この価格で問い合わせる":"この内容で正式見積を依頼する"}</button>
-    <a class="cp-btn line" href="https://line.me/ti/p/@271goter" target="_blank" rel="noopener">LINEで相談する</a>
+    <div class="field" id="campLeadNameField">
+      <label class="lbl" for="campLeadName">お名前 <span class="req">必須</span></label>
+      <input class="inp" id="campLeadName" type="text" placeholder="山田 太郎" autocomplete="name"
+        oninput="document.getElementById('campLeadNameField').classList.remove('invalid')">
+    </div>
+    <div class="field" id="campLeadTelField">
+      <label class="lbl" for="campLeadTel">電話番号 <span class="req">必須</span></label>
+      <input class="inp" id="campLeadTel" type="tel" placeholder="090-0000-0000" inputmode="tel" autocomplete="tel"
+        oninput="document.getElementById('campLeadTelField').classList.remove('invalid')">
+    </div>
+    <div class="field" id="campLeadMailField">
+      <label class="lbl" for="campLeadMail">メールアドレス <span class="req">必須</span></label>
+      <input class="inp" id="campLeadMail" type="email" placeholder="example@email.com" inputmode="email" autocomplete="email"
+        oninput="document.getElementById('campLeadMailField').classList.remove('invalid')">
+    </div>
+    <p id="campLeadErr" style="display:none;color:#e05;font-size:13px;margin:8px 0"></p>
+    <button class="cp-btn go big" id="campLeadBtn" onclick="submitCampLead()">キャンペーン見積をメールで受け取る</button>
     <button class="cp-textlink" onclick="${cstate.from==="manual"?"cRenderManual()":"cgo(1)"}">← 戻る（入力内容は保持されます）</button>
-    <p class="cp-note" style="margin-top:14px;margin-bottom:0">※ 表示価格は税別・概算です。車両の状態により変動する場合があります。</p>
   </div>`;
+}
+/* ⑦ キャンペーン送信完了画面 */
+function cRenderCampDone(){
+  if(!DATA.campaignEmailTemplate) DATA.campaignEmailTemplate={};
+  const T = DATA.campaignEmailTemplate;
+  const lineText = T.lineText || "LINEで相談";
+  const telText  = T.telText  || "045-548-8588";
+  cSetHead(100,"DONE","送信完了");
+  body().innerHTML = `<div class="step" style="text-align:center">
+    <div style="font-size:48px;margin-bottom:16px">✅</div>
+    <h2 style="font-size:20px;font-weight:700;margin:0 0 10px">キャンペーン見積をメールへ送信しました</h2>
+    <p style="font-size:14px;line-height:1.8;color:var(--text2,#7a8799);margin:0 0 28px">ご入力いただいたメールアドレスをご確認ください。<br>担当者より折り返しご連絡いたします。</p>
+    <a class="cp-btn go" href="https://line.me/ti/p/@271goter" target="_blank" rel="noopener">${cesc(lineText)}</a>
+    <a class="cp-btn" href="tel:0455488588" style="margin-top:10px;display:block;text-align:center">${cesc(telText)}</a>
+  </div>`;
+}
+/* キャンペーンリード送信 */
+async function submitCampLead(){
+  const name = (document.getElementById("campLeadName")?.value||"").trim();
+  const tel  = (document.getElementById("campLeadTel")?.value||"").trim();
+  const mail = (document.getElementById("campLeadMail")?.value||"").trim();
+
+  const nameBad = !name;
+  const telBad  = !/^[0-9+\-() ]{8,30}$/.test(tel);
+  const mailBad = !/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(mail);
+
+  document.getElementById("campLeadNameField")?.classList.toggle("invalid", nameBad);
+  document.getElementById("campLeadTelField")?.classList.toggle("invalid", telBad);
+  document.getElementById("campLeadMailField")?.classList.toggle("invalid", mailBad);
+
+  const errEl = document.getElementById("campLeadErr");
+  if(nameBad||telBad||mailBad){
+    if(errEl){ errEl.textContent="⚠ 入力内容を確認してください。"; errEl.style.display="block"; }
+    return;
+  }
+  if(errEl) errEl.style.display="none";
+
+  const btn = document.getElementById("campLeadBtn");
+  if(btn){ btn.disabled=true; btn.textContent="送信中…"; }
+
+  let sent=false, sendErr="";
+  try{
+    const res = await fetch("/api/contact",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        name, tel, mail,
+        msg:"",
+        estimateNo: state.estimateNo||"",
+        source:"campaign",
+        website:"",
+        turnstileToken:""
+      })
+    });
+    if(res.ok){ sent=true; }
+    else{
+      try{ const e=await res.json(); sendErr=e.message||""; }catch(_){}
+    }
+  }catch(_){ sendErr="通信エラー"; }
+
+  if(btn){ btn.disabled=false; btn.textContent="キャンペーン見積をメールで受け取る"; }
+
+  if(!sent){
+    if(errEl){
+      errEl.textContent="⚠ 送信に失敗しました（"+(sendErr||"不明なエラー")+"）。LINEまたはお電話でご連絡ください。";
+      errEl.style.display="block";
+    }
+    return;
+  }
+  // 送信成功時のみ完了画面へ
+  cgo(7);
 }
 function cOpenContact(){
   const c = DATA.campaign || DEFAULT_CAMPAIGN;
