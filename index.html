@@ -640,6 +640,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <button data-tab="opt" onclick="adTab('opt')">オプション価格</button>
         <button data-tab="veh" onclick="adTab('veh')">車種データベース</button>
         <button data-tab="camp" onclick="adTab('camp')">キャンペーン</button>
+        <button data-tab="desc" onclick="adTab('desc')">メール文章設定</button>
         <button onclick="adminLogout()">ログアウト</button>
       </div>
     </div>
@@ -650,6 +651,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <div id="tab-opt" style="display:none"></div>
       <div id="tab-veh" style="display:none"></div>
       <div id="tab-camp" style="display:none"></div>
+      <div id="tab-desc" style="display:none"></div>
     </div>
   </div>
 </div>
@@ -766,6 +768,15 @@ const DEFAULT_LP_MENUS = [
   { id:"veloce", selected:false, recommend:false, no1:false, ai:false, highlight:false, inquiry:true }
 ];
 /* キャンペーン設定の初期値（管理画面から変更可・KVに保存） */
+const DEFAULT_MENU_DESCRIPTIONS = {
+  "russo":    { feature: "どのコーティングをも超える超スペックコーティングシステムです。深みのある艶と高い保護性能を備えたハイグレードなコーティングで、愛車の美しさを長期間にわたって維持します。", recommend: "最高峰のコーティングで愛車を長期間守りたい方、艶と保護性能の両方を妥協したくない方" },
+  "ultra":    { feature: "最高峰の光沢と耐久性を誇る疎水性ハイスペックコーティングです。セラミックウルトラとオリジナルセラミックを組み合わせた二層構造で、美観と保護力を高いレベルで実現します。", recommend: "光沢と耐久性を高いレベルで両立させたい方、長期間メンテナンスの手間を減らしたい方" },
+  "hybrid":   { feature: "プロテクションフィルム、ラッピング、マット塗装など特殊な塗装面にも対応した次世代コーティングシステムです。幅広い車両に対応し、塗装面をしっかり保護します。", recommend: "プロテクションフィルムやラッピング車、マット塗装の愛車をお持ちの方" },
+  "cuore":    { feature: "他社では味わえないUncuoreオリジナルのハイクオリティーコーティングシステムです。優れた光沢と防汚性能を発揮し、愛車を美しく保ちます。", recommend: "品質にこだわりながらコストパフォーマンスも重視したい方" },
+  "original": { feature: "信頼のオリジナルセラミックコーティングです。ガラス系の硬い皮膜が塗装面を保護し、美しい艶を長期間維持します。", recommend: "セラミックコーティングをリーズナブルに体験したい方、定期的にメンテナンスを行いたい方" },
+  "veloce":   { feature: "手軽にカーコーティングを施工したい方におすすめのエントリープランです。コーティングの基本的な保護効果と艶を手頃な価格でご提供します。", recommend: "初めてコーティングを試したい方、まずはリーズナブルにコーティング効果を体験したい方" },
+};
+
 const DEFAULT_CAMPAIGN = {
   ver: 2,
   enabled: true,
@@ -780,7 +791,7 @@ const DEFAULT_CAMPAIGN = {
   start: "", end: ""
 };
 /* 設定（メニュー・オプション・車種・キャンペーン）読込：サーバー共有データから取得 */
-let DATA = {menus:DEFAULT_MENUS, options:DEFAULT_OPTIONS, vehicles:DEFAULT_VEHICLES, campaign:JSON.parse(JSON.stringify(DEFAULT_CAMPAIGN)), lpMenus:JSON.parse(JSON.stringify(DEFAULT_LP_MENUS))};
+let DATA = {menus:DEFAULT_MENUS, options:DEFAULT_OPTIONS, vehicles:DEFAULT_VEHICLES, campaign:JSON.parse(JSON.stringify(DEFAULT_CAMPAIGN)), lpMenus:JSON.parse(JSON.stringify(DEFAULT_LP_MENUS)), menuDescriptions:JSON.parse(JSON.stringify(DEFAULT_MENU_DESCRIPTIONS))};
 const SETTINGS_VER = 2; // 車種DB更新時に上げる
 async function loadSettings(){
   try{
@@ -789,6 +800,7 @@ async function loadSettings(){
       const {settings:saved} = await res.json();
       if(saved && saved.menus && saved.options && saved.vehicles && saved.ver===SETTINGS_VER) DATA = saved;
       if(!DATA.campaign) DATA.campaign = JSON.parse(JSON.stringify(DEFAULT_CAMPAIGN));
+      if(!DATA.menuDescriptions) DATA.menuDescriptions = JSON.parse(JSON.stringify(DEFAULT_MENU_DESCRIPTIONS));
       // 旧形式（固定価格キャンペーン）からの移行と不足キーの補完
       if(DATA.campaign.discountType===undefined && Number(DATA.campaign.campaignPrice)>0){
         DATA.campaign.discountType="fixed"; DATA.campaign.discountValue=Number(DATA.campaign.campaignPrice);
@@ -1950,8 +1962,8 @@ async function adHealthCheck(){
 function adminLogout(){ adminAuthed=false; adminToken=""; document.getElementById("adPass").value=""; checkAdminRoute(); }
 function adTab(t){
   document.querySelectorAll(".ad-tabs button[data-tab]").forEach(b=>b.classList.toggle("on",b.dataset.tab===t));
-  ["list","inq","price","opt","veh","camp"].forEach(x=>document.getElementById("tab-"+x).style.display=(x===t?"block":"none"));
-  if(t==="list")adRenderList(); if(t==="inq")adRenderInq(); if(t==="price")adRenderPrice(); if(t==="opt")adRenderOpt(); if(t==="veh")adRenderVeh(); if(t==="camp")adRenderCamp();
+  ["list","inq","price","opt","veh","camp","desc"].forEach(x=>document.getElementById("tab-"+x).style.display=(x===t?"block":"none"));
+  if(t==="list")adRenderList(); if(t==="inq")adRenderInq(); if(t==="price")adRenderPrice(); if(t==="opt")adRenderOpt(); if(t==="veh")adRenderVeh(); if(t==="camp")adRenderCamp(); if(t==="desc")adRenderDesc();
 }
 function adRender(){ adTab(document.querySelector(".ad-tabs button.on")?.dataset.tab||"list"); }
 
@@ -2152,6 +2164,38 @@ function adRenderCamp(){
   <p class="ad-note">通常価格は「対象メニュー＋特典オプション」の合計（サイズ別・新車/経年車別）で自動算出され、その合計に割引（既定40%OFF）が適用されます。画面上は特典として表示され「＋オプション」表記はされません。<br>
   キャンペーンLPのURL：<b>${location.origin+location.pathname}?mode=campaign</b>（Meta広告のリンク先に設定してください）</p></div>`;
 }
+/* コーティングメール文章設定 */
+function adRenderDesc(){
+  const el=document.getElementById("tab-desc");
+  if(!el) return;
+  if(!DATA.menuDescriptions) DATA.menuDescriptions=JSON.parse(JSON.stringify(DEFAULT_MENU_DESCRIPTIONS));
+  const desc=DATA.menuDescriptions;
+  const esc=s=>String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");
+  const menus=DATA.menus||[];
+  const fields=menus.map(m=>{
+    const d=desc[m.id]||{feature:"",recommend:""};
+    return `<div class="ad-card" style="margin-bottom:14px">
+      <h4 style="margin:0 0 12px;color:#e0eaff;font-size:14px">${esc(m.name)}</h4>
+      <div style="display:grid;gap:10px">
+        <div>
+          <label class="ad-lbl">このプランの特徴（メール本文に挿入）</label>
+          <textarea class="ad-inp" rows="3" id="desc_feat_${m.id}" oninput="DATA.menuDescriptions['${m.id}']=(DATA.menuDescriptions['${m.id}']||{});DATA.menuDescriptions['${m.id}'].feature=this.value">${esc(d.feature)}</textarea>
+        </div>
+        <div>
+          <label class="ad-lbl">こんな方におすすめ（メール本文に挿入）</label>
+          <textarea class="ad-inp" rows="2" id="desc_rec_${m.id}" oninput="DATA.menuDescriptions['${m.id}']=(DATA.menuDescriptions['${m.id}']||{});DATA.menuDescriptions['${m.id}'].recommend=this.value">${esc(d.recommend)}</textarea>
+        </div>
+      </div>
+    </div>`;
+  }).join("");
+  el.innerHTML=`<div class="ad-card"><h3>AI見積メール文章設定</h3>
+    <p style="font-size:12px;color:#98a7c4;margin-bottom:18px">設定した文章はAI見積完了後にお客様へ送信されるメールの「選択されたプランの特徴」として自動挿入されます。空欄の場合はその項目は表示されません。</p>
+    ${fields}
+    <div class="ad-actions"><button class="ad-btn pri" onclick="(async()=>{const m=document.getElementById('desc-save-msg');if(m){m.textContent='保存中…';m.style.color='#98a7c4';}try{await saveSettings();if(m){m.textContent='✅ コーティング説明を保存しました';m.style.color='#4ade80';setTimeout(()=>{if(m)m.textContent='';},3000);}}catch(e){if(m){m.textContent='❌ 保存に失敗しました：'+e.message;m.style.color='#f87171';}}})()">メール文章を保存</button><span id="desc-save-msg" style="font-size:13px;margin-left:12px"></span></div>
+    <p class="ad-note">保存後すぐに次回以降の見積メールへ反映されます（LPの表示は変わりません）。</p>
+  </div>`;
+}
+
 /* 通常版（Aパターン）メニュー表示設定 */
 function adRenderLpMenus(){
   const box=document.getElementById("lpMenuCard");

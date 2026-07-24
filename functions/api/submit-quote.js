@@ -86,6 +86,15 @@ function menuBase(m,condition,size){
   const arr=condition==="new" ? m.priceNew : m.priceUsed;
   return Number(Array.isArray(arr) ? arr[i]||0 : 0);
 }
+const DEFAULT_MENU_DESCRIPTIONS = {
+  "russo":    { feature: "どのコーティングをも超える超スペックコーティングシステムです。深みのある艶と高い保護性能を備えたハイグレードなコーティングで、愛車の美しさを長期間にわたって維持します。", recommend: "最高峰のコーティングで愛車を長期間守りたい方、艶と保護性能の両方を妥協したくない方" },
+  "ultra":    { feature: "最高峰の光沢と耐久性を誇る疎水性ハイスペックコーティングです。セラミックウルトラとオリジナルセラミックを組み合わせた二層構造で、美観と保護力を高いレベルで実現します。", recommend: "光沢と耐久性を高いレベルで両立させたい方、長期間メンテナンスの手間を減らしたい方" },
+  "hybrid":   { feature: "プロテクションフィルム、ラッピング、マット塗装など特殊な塗装面にも対応した次世代コーティングシステムです。幅広い車両に対応し、塗装面をしっかり保護します。", recommend: "プロテクションフィルムやラッピング車、マット塗装の愛車をお持ちの方" },
+  "cuore":    { feature: "他社では味わえないUncuoreオリジナルのハイクオリティーコーティングシステムです。優れた光沢と防汚性能を発揮し、愛車を美しく保ちます。", recommend: "品質にこだわりながらコストパフォーマンスも重視したい方" },
+  "original": { feature: "信頼のオリジナルセラミックコーティングです。ガラス系の硬い皮膜が塗装面を保護し、美しい艶を長期間維持します。", recommend: "セラミックコーティングをリーズナブルに体験したい方、定期的にメンテナンスを行いたい方" },
+  "veloce":   { feature: "手軽にカーコーティングを施工したい方におすすめのエントリープランです。コーティングの基本的な保護効果と艶を手頃な価格でご提供します。", recommend: "初めてコーティングを試したい方、まずはリーズナブルにコーティング効果を体験したい方" },
+};
+
 async function loadPricing(kv){
   let saved=null;
   try{
@@ -95,7 +104,9 @@ async function loadPricing(kv){
   const menus=Array.isArray(saved?.menus)&&saved.menus.length ? saved.menus : DEFAULT_MENUS;
   const options=Array.isArray(saved?.options)&&saved.options.length ? saved.options : DEFAULT_OPTIONS;
   const lpMenus=Array.isArray(saved?.lpMenus)&&saved.lpMenus.length ? saved.lpMenus : DEFAULT_LP_MENUS;
-  return {menus,options,lpMenus};
+  const savedDesc = saved?.menuDescriptions;
+  const menuDescriptions = (savedDesc && typeof savedDesc === "object") ? savedDesc : DEFAULT_MENU_DESCRIPTIONS;
+  return {menus,options,lpMenus,menuDescriptions};
 }
 function computeResults(cfg,condition,size,optionIds){
   const selectedOptions=(Array.isArray(optionIds)?optionIds:[])
@@ -197,15 +208,22 @@ export async function onRequestPost(context){
   const NOTIFY=env.NOTIFY_EMAIL||"uncuore02@gmail.com";
   const optText=calc.selectedOptions.length ? calc.selectedOptions.map(o=>`${esc(o.name)}（+¥${o.price.toLocaleString("ja-JP")}）`).join("<br>") : "なし";
 
-  const menuHtml=calc.results.map((r,i)=>`
-    <tr><td style="padding:16px 0;border-bottom:1px solid #e7edf5;">
+  const escNl = v => esc(v).replace(/\n/g,"<br>");
+  const menuHtml=calc.results.map((r,i)=>{
+    const desc = cfg.menuDescriptions?.[r.id] || {};
+    const feat = desc.feature   ? `<div style="font-size:11px;font-weight:700;color:#2556a8;margin:10px 0 3px;">【このプランの特徴】</div><div style="font-size:12px;color:#444;line-height:1.7;">${escNl(desc.feature)}</div>` : "";
+    const rec  = desc.recommend ? `<div style="font-size:11px;font-weight:700;color:#2556a8;margin:10px 0 3px;">【こんな方におすすめ】</div><div style="font-size:12px;color:#444;line-height:1.7;">${escNl(desc.recommend)}</div>` : "";
+    const hasdesc = feat || rec;
+    return `<tr><td colspan="2" style="padding:16px 0 ${hasdesc?"8":"0"}px;border-bottom:${hasdesc?"none":"1px solid #e7edf5"};">
       <div style="font-size:12px;color:#2556a8;font-weight:700;">${r.recommend||i===0?"AIおすすめプラン":"比較プラン"}</div>
-      <div style="font-size:17px;color:#17233a;font-weight:700;margin-top:3px;">${esc(r.name)}</div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:4px;margin-top:3px;">
+        <div style="font-size:17px;color:#17233a;font-weight:700;">${esc(r.name)}</div>
+        <div style="font-size:24px;color:#17233a;font-weight:800;white-space:nowrap;">¥${Number(r.total).toLocaleString("ja-JP")}<span style="font-size:11px;color:#888;font-weight:400;margin-left:4px;">税別・概算</span></div>
+      </div>
       <div style="font-size:12px;color:#777;margin-top:2px;">耐久年数：${r.years}年</div>
-    </td><td style="padding:16px 0;border-bottom:1px solid #e7edf5;text-align:right;white-space:nowrap;">
-      <div style="font-size:24px;color:#17233a;font-weight:800;">¥${Number(r.total).toLocaleString("ja-JP")}</div>
-      <div style="font-size:11px;color:#888;">税別・概算</div>
-    </td></tr>`).join("");
+      ${feat}${rec}
+    </td></tr>${hasdesc?`<tr><td colspan="2" style="border-bottom:1px solid #e7edf5;padding:0;"></td></tr>`:""}`;
+  }).join("");
 
   const customerHtml=`<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;background:#f4f6f8;font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Noto Sans JP',sans-serif;color:#17233a;">
