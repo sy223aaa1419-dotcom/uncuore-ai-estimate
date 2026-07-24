@@ -213,13 +213,15 @@ async function sendCampaignEmail(env, rec, contact) {
     labelPrice:"税別・概算",
     note:"※ 表示価格は税別・概算です。車両の状態により変動する場合があります。\n正式なお見積は現車確認のうえご提示いたします。",
     lineText:"LINEで相談",
-    telText:"045-548-8588",
+    telText:"電話で相談する",
     footer:"横浜市都筑区のカーコーティング専門店 Uncuore",
   };
   const T = Object.assign({}, DEFAULT_C_TPL,
     (settings.campaignEmailTemplate && typeof settings.campaignEmailTemplate === "object")
       ? settings.campaignEmailTemplate : {}
   );
+  // 旧設定の「電話番号のみ」をボタン文言へ自動移行
+  if(!T.telText || T.telText==="045-548-8588") T.telText="電話で相談する";
   const D = settings.menuDescriptions && typeof settings.menuDescriptions === "object"
     ? settings.menuDescriptions : {};
 
@@ -294,7 +296,7 @@ async function sendCampaignEmail(env, rec, contact) {
 
   const buttonCells = [];
   if (T.lineText) buttonCells.push(`<td style="padding:5px;"><a href="https://line.me/ti/p/@271goter" style="display:block;text-align:center;background:#06c755;color:#fff;text-decoration:none;padding:14px 8px;border-radius:6px;font-size:13px;font-weight:700;">${esc(T.lineText)}</a></td>`);
-  if (T.telText) buttonCells.push(`<td style="padding:5px;"><a href="tel:0455488588" style="display:block;text-align:center;background:#17233a;color:#fff;text-decoration:none;padding:14px 8px;border-radius:6px;font-size:13px;font-weight:700;">${esc(T.telText)}</a></td>`);
+  if (T.telText) buttonCells.push(`<td style="padding:5px;"><a href="tel:0455488588" style="display:block;text-align:center;background:#17233a;color:#fff;text-decoration:none;padding:14px 8px;border-radius:6px;font-size:13px;font-weight:700;">${esc(T.telText)}<br><span style="font-size:11px;font-weight:400;opacity:.85;">045-548-8588</span></a></td>`);
   const buttonsHtml = buttonCells.length ? `<table width="100%" cellpadding="0" cellspacing="0"><tr>${buttonCells.join("")}</tr></table>` : "";
 
   const html = `<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
