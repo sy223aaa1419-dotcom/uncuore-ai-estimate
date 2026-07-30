@@ -740,7 +740,17 @@ const VEHICLE_GRADE_SIZE_ALIASES = [
   {maker:"Audi",keys:["S7","RS7"],model:"A7",size:"L",prefix:true},
   {maker:"Audi",keys:["S8","RS8"],model:"A8",size:"LL",prefix:true},
   {maker:"Audi",keys:["RSETRONGT"],model:"e-tron GT",size:"L",prefix:true},
-  {maker:"PEUGEOT",keys:["5008GT","SUV5008GT"],model:"5008",size:"LL",prefix:true}
+  {maker:"PEUGEOT",keys:["5008GT","SUV5008GT"],model:"5008",size:"LL",prefix:true},
+  // MINI系（英語AI判定 → BMWマスター車種名へ変換）
+  {maker:"BMW",keys:["MINICLUBMAN","CLUBMAN","ミニクラブマン"],model:"ミニクラブマン",size:"M"},
+  {maker:"BMW",keys:["MINICOUNTRYMAN","COUNTRYMAN","カントリーマン"],model:"カントリーマン",size:"L"},
+  {maker:"BMW",keys:["MINICROSSOVER","CROSSOVER","ミニクロスオーバー"],model:"ミニクロスオーバー",size:"L"},
+  {maker:"BMW",keys:["MINIPACEMAN","PACEMAN","ミニペースマン"],model:"ミニペースマン",size:"M"},
+  {maker:"BMW",keys:["MINICONVERTIBLE","CONVERTIBLE","ミニコンバーチブル"],model:"ミニ",size:"S"},
+  {maker:"BMW",keys:["MINICOUPE","MINICUPÉ","ミニクーペ"],model:"ミニ",size:"S"},
+  {maker:"BMW",keys:["MINIROADSTER","ミニロードスター"],model:"ミニ",size:"S"},
+  {maker:"BMW",keys:["MINICABRIO","ミニカブリオ"],model:"ミニ",size:"S"},
+  {maker:"BMW",keys:["MINI","BMWMINI"],model:"ミニ",size:"S"}
 ];
 function vehicleNorm(s){
   return String(s||"").toUpperCase()
@@ -754,6 +764,7 @@ function vehicleMakerKey(maker){
     "MERCEDES":"Mercedes-Benz","MERCEDESBENZ":"Mercedes-Benz","MERCEDESAMG":"Mercedes-Benz",
     "メルセデス":"Mercedes-Benz","メルセデスベンツ":"Mercedes-Benz","メルセデスAMG":"Mercedes-Benz",
     "AUDI":"Audi","アウディ":"Audi","BMW":"BMW","ビーエムダブリュー":"BMW",
+    "MINI":"BMW","BMWMINI":"BMW","MINI(BMW)":"BMW","MINIBMW":"BMW","ミニ（BMW）":"BMW","ミニ(BMW)":"BMW",
     "VOLKSWAGEN":"Volkswagen","VW":"Volkswagen","フォルクスワーゲン":"Volkswagen",
     "NISSAN":"NISSAN","日産":"NISSAN","HONDA":"HONDA","ホンダ":"HONDA",
     "TOYOTA":"TOYOTA","トヨタ":"TOYOTA","SUZUKI":"SUZUKI","スズキ":"SUZUKI",
@@ -1060,7 +1071,7 @@ function menuTotal(m){
 }
 /* ---------- 見積状態 ---------- */
 const state = {
-  step:1, maker:null, model:null, size:null, sizeAuto:false, notFound:false,
+  step:1, maker:null, model:null, size:null, sizeAuto:false, dbMatched:false, notFound:false,
   condition:null, menuId:null, options:[], customer:{name:"",tel:"",mail:"",pref:""}, photoJudged:false, photoData:null,
   estimateNo:null, total:0, leadSubmitting:false, leadTurnstileToken:"",
   source:"normal", campaignName:"", normalPrice:0, campaignPrice:0
@@ -1243,20 +1254,27 @@ async function aiDetectVehicle(b64){
     if(!jm) throw new Error("AIの応答を解析できませんでした。別の写真でお試しください。");
     const r = JSON.parse(jm[0]);
     if(r.error) throw new Error("判定不可："+r.error);
-    if(!r.size || !SIZES.includes(String(r.size).toUpperCase())) throw new Error("サイズを判定できませんでした。車体全体が写る写真でお試しください。");
-    r.size = String(r.size).toUpperCase();
-    const hit = dbMatchVehicle(r.model,r.maker);
-    const cleanModel = (hit&&hit.model) || baseVehicleModel(r.model,r.maker) || "（車種不明）";
-    return { maker: (hit&&hit.maker) || vehicleMakerKey(r.maker) || r.maker || "—", model: cleanModel, size: (hit&&hit.size) || r.size };
+    // AIのsizeは参考値のみ。最終サイズは必ずDATA.vehiclesから取得する。
+    const hit = dbMatchVehicle(r.model, r.maker);
+    if(hit){
+      // マスター一致：マスターのメーカー・車種・サイズを正として採用
+      return { maker: hit.maker, model: hit.model, size: hit.size, dbMatched: true };
+    }
+    // マスター未一致：サイズを確定できないため null を返してお客様に再選択を促す
+    const cleanModel = baseVehicleModel(r.model, r.maker) || r.model || "（車種不明）";
+    const cleanMaker = vehicleMakerKey(r.maker) || r.maker || "—";
+    return { maker: cleanMaker, model: cleanModel, size: null, dbMatched: false };
 }
 /* 車種DBのあいまい照合。グレード名は内部で車種名へ変換し、表示・保存には残さない */
 function dbMatchVehicle(model,maker){
+  // gradeAliasMatchはメーカー・車種名の正規化にのみ使用。sizeはDATA.vehiclesから再取得する。
   const alias=gradeAliasMatch(model,maker);
-  if(alias) return alias;
-  const clean=baseVehicleModel(model,maker);
-  const q=vehicleNorm(clean);
+  // alias.modelでDATA.vehiclesを検索して最新のサイズを取得
+  const searchModel = alias ? alias.model : baseVehicleModel(model,maker);
+  const searchMaker = alias ? alias.maker : vehicleMakerKey(maker);
+  const q=vehicleNorm(searchModel);
   if(!q) return null;
-  const preferred=vehicleMakerKey(maker);
+  const preferred=searchMaker&&DATA.vehicles[searchMaker] ? searchMaker : vehicleMakerKey(maker);
   const makers=preferred&&DATA.vehicles[preferred]
     ? [preferred,...Object.keys(DATA.vehicles).filter(m=>m!==preferred)]
     : Object.keys(DATA.vehicles);
@@ -1268,11 +1286,12 @@ function dbMatchVehicle(model,maker){
       let score=0;
       if(dn===q) score=1000+dn.length;
       else if(dn.length>=3&&q.includes(dn)) score=dn.length;
+      else if(q.length>=3&&dn.includes(q)) score=q.length-1;
       if(mk===preferred&&score) score+=2000;
       if(score>bestScore){bestScore=score;best={maker:mk,model:v[0],size:v[1]};}
     }
   }
-  return best;
+  return best; // サイズは必ずDATA.vehiclesの登録値
 }
 /* キャンペーン価格の算出:
    通常価格 = 対象メニュー（オリジナルセラミック）＋特典オプション（ウィンドウコート）の合計（サイズ別・新車/経年車別）
@@ -1304,8 +1323,13 @@ async function runPhotoAI(){
   try{
     const r = await aiDetectVehicle(state.photoData.split(",")[1]);
     state.maker = r.maker; state.model = r.model; state.size = r.size;
-    state.sizeAuto = true; state.notFound = false; state.photoJudged = true;
-    setPhotoStatus(`判定完了：${state.maker} ${state.model}（${state.size}サイズ）`,"ok");
+    state.dbMatched = !!r.dbMatched;
+    state.sizeAuto = !!r.dbMatched; state.notFound = false; state.photoJudged = true;
+    if(r.dbMatched){
+      setPhotoStatus(`判定完了：${state.maker} ${state.model}（${state.size}サイズ）`,"ok");
+    }else{
+      setPhotoStatus(`車両を検出しましたが車種マスターと一致しませんでした（${state.maker} ${state.model}）`,"ng");
+    }
     setTimeout(()=>renderAiConfirm(),600);
   }catch(e){
     setPhotoStatus("⚠ "+(e.message||"AI判定に失敗しました。下のメーカー・車種からお選びください。"),"ng");
@@ -1315,21 +1339,36 @@ async function runPhotoAI(){
 
 /* ===== AI判定後の確認画面（通常版・キャンペーン版 共通） ===== */
 function renderAiConfirm(){
+  const matched = !!state.dbMatched;
+  if(!matched){
+    // マスター未一致：再判定または手動入力へ誘導
+    body().innerHTML = `<div class="step">
+      <h3 class="step-title">車種データを確認できませんでした</h3>
+      <p class="step-desc">AIが「${state.maker||"—"} ${state.model||"—"}」を検出しましたが、車種マスターと一致しませんでした。<br>メーカー・車種をご確認の上、再度お試しください。</p>
+      <button class="cp-btn" onclick="aiRetryPhoto()">📷 もう一度AI判定する</button>
+      <div class="cp-or">または</div>
+      <button class="cp-btn go" onclick="aiManualInput()">メーカー・車種を直接入力する</button>
+    </div>`;
+    return;
+  }
   body().innerHTML = `<div class="step">
     <h3 class="step-title">AIが車両を判定しました</h3>
     <p class="step-desc">判定結果をご確認ください。</p>
     <div class="cp-judge">
       <dl><dt>メーカー</dt><dd>${state.maker||"—"}</dd></dl>
       <dl><dt>車種</dt><dd>${state.model||"—"}</dd></dl>
-      <dl><dt>サイズ</dt><dd>${state.size||"—"}${state.size?'<span style="font-size:11px;color:var(--muted);margin-left:6px">（車種データより自動設定）</span>':""}</dd></dl>
+      <dl><dt>サイズ</dt><dd>${state.size||"—"}<span style="font-size:11px;color:var(--muted);margin-left:6px">（車種データより自動設定）</span></dd></dl>
     </div>
     <button class="cp-btn go big" onclick="aiConfirmYes(this)">はい、この内容で進む</button>
     <button class="cp-btn sub" onclick="renderAiRetry()">メーカー・車種が違います</button>
-    <button class="cp-textlink" onclick="${IS_CAMPAIGN?(cstate.from==="manual"?"cRenderManual()":"cgo(1)"):"go(1)"}">← 戻る（写真・車両情報）</button>
+    <button class="cp-textlink" onclick="IS_CAMPAIGN?(cstate.from==='manual'?cRenderManual():cgo(1)):go(1)">← 戻る（写真・車両情報）</button>
   </div>`;
 }
 async function aiConfirmYes(btn){
-  if(!SIZES.includes(state.size)){ alert("車両サイズを取得できませんでした。「メーカー・車種が違います」から再度お試しください。"); return; }
+  if(!state.dbMatched || !SIZES.includes(state.size)){
+    alert("車種マスターからサイズを取得できませんでした。「メーカー・車種が違います」から再度お試しください。");
+    return;
+  }
   if(IS_CAMPAIGN){
     if(btn){ btn.disabled = true; btn.textContent = "AI見積書を作成中…"; }
     const saved = await cFinalize();
@@ -1354,63 +1393,52 @@ function renderAiRetry(errMsg){
 }
 function aiRetryPhoto(){
   state.photoData = null; state.photoJudged = false;
-  state.maker = null; state.model = null; state.size = null; state.sizeAuto = false;
+  state.maker = null; state.model = null; state.size = null; state.sizeAuto = false; state.dbMatched = false;
   if(IS_CAMPAIGN) cgo(1); else go(1);
 }
 function aiManualInput(){
   state.photoJudged = false;
-  state.maker = null; state.model = null; state.size = null; state.sizeAuto = false;
+  state.maker = null; state.model = null; state.size = null; state.sizeAuto = false; state.dbMatched = false;
   if(IS_CAMPAIGN) cRenderManual(); else go(1); // 通常版はSTEP1のメーカー・車種選択＝直接入力。その後は通常通り見積へ
 }
 
 /* --- メーカー・車種の選択 --- */
 function selMaker(mk){
-  state.maker=mk; state.model=null; state.notFound=false; state.size=null; state.sizeAuto=false; state.photoJudged=false;
+  state.maker=mk; state.model=null; state.notFound=false; state.size=null; state.sizeAuto=false; state.dbMatched=false; state.photoJudged=false;
   renderVehicle();
 }
 function selModel(name){
   state.model=name; state.notFound=false; state.photoJudged=false;
   const rec = DATA.vehicles[state.maker].find(v=>v[0]===name);
-  state.size = rec ? rec[1] : null; state.sizeAuto = !!rec;
+  state.size = rec ? rec[1] : null; state.sizeAuto = !!rec; state.dbMatched = !!rec;
   renderVehicle();
 }
 function selNotFound(){
-  state.notFound=true; state.model=null; state.size=null; state.sizeAuto=false; state.photoJudged=false;
+  state.notFound=true; state.model=null; state.size=null; state.sizeAuto=false; state.dbMatched=false; state.photoJudged=false;
   renderVehicle();
 }
 function toSizeStep(){ go(2); }
 
 /* STEP2: サイズ */
 function renderSize(){
+  // サイズは必ずDATA.vehiclesの車種マスターから自動設定。お客様によるサイズ変更なし。
   let html = `<div class="step">`;
   if(state.sizeAuto && state.size){
-    html += `<h3 class="step-title">AIがサイズを判定しました</h3>
-    <p class="step-desc">${state.maker} ${state.model} のサイズクラスを${state.photoJudged?"お写真から":""}自動判定しました。</p>
+    html += `<h3 class="step-title">サイズが確定しました</h3>
+    <p class="step-desc">${state.maker} ${state.model} のサイズクラスを車種データより自動設定しました。</p>
     <div class="auto-size-banner">
       <span class="big">${state.size}</span>
-      <p><b>${state.maker} ${state.model}</b><br>${state.photoJudged?"お写真よりAIが自動判定":"サイズデータベースより自動判定"}</p>
-    </div>
-    <div class="size-card sel locked">
-      <div class="size-visual"><img src="${SIZE_IMAGES[state.size]}" alt="${state.size}サイズ"></div>
-      <div class="size-info"><b>${state.maker} ${state.model}</b></div>
-    </div>
-    <p style="font-size:11px;color:var(--muted);margin-top:10px">※サイズは車種データまたはAI判定結果から自動設定されます。</p>`;
+      <p><b>${state.maker} ${state.model}</b><br>車種データより自動設定</p>
+    </div>`;
   }else{
-    html += `<h3 class="step-title">車両サイズをお選びください</h3>
-    <p class="step-desc">お車に近いサイズをお選びください。</p>`;
-    if(state.notFound) html += `<div class="notice">車種が見つかりません — お手数ですがサイズを手動でお選びください。正確なサイズは店舗にて確認いたします。</div>`;
-    html += `<div class="grid sizes">`;
-    SIZES.forEach(sz=>{
-      html += `<button class="size-card ${state.size===sz?'sel':''}" onclick="selSize('${sz}')">
-        <div class="size-visual"><img src="${SIZE_IMAGES[sz]}" alt="${sz}サイズ" loading="lazy"></div>
-      </button>`;
-    });
-    html += `</div>`;
+    // マスター未一致：サイズを選ばせずメーカー・車種選び直しへ誘導
+    html += `<h3 class="step-title">車種データが確認できませんでした</h3>
+    <p class="step-desc">サイズを自動判定できませんでした。メーカー・車種を選び直してください。</p>
+    <button class="cp-btn go" onclick="go(1)" style="margin-top:12px">← メーカー・車種を選び直す</button>`;
   }
   html += navRow(1,"次へ","go(3)",!state.size) + `</div>`;
   body().innerHTML = html;
 }
-function selSize(sz){ state.size=sz; renderSize(); }
 
 /* STEP3: 車両状態 */
 function renderCondition(){
@@ -1913,7 +1941,7 @@ function restart(){
   state.leadSubmitting=false;
   state.leadTurnstileToken="";
   leadTurnstileWidgetId=null;
-  Object.assign(state,{step:1,maker:null,model:null,size:null,sizeAuto:false,notFound:false,condition:null,menuId:null,options:[],estimateNo:null,total:0,customer:{name:"",tel:"",mail:"",pref:""},photoJudged:false,photoData:null});
+  Object.assign(state,{step:1,maker:null,model:null,size:null,sizeAuto:false,dbMatched:false,notFound:false,condition:null,menuId:null,options:[],estimateNo:null,total:0,customer:{name:"",tel:"",mail:"",pref:""},photoJudged:false,photoData:null});
   go(1);
 }
 
@@ -2730,14 +2758,17 @@ async function cStartAI(mode){
       state.maker = hit ? hit.maker : "その他";
       state.model = hit ? hit.model : (baseVehicleModel(otherName,"") || "（リストにない車種）");
       state.size = hit ? hit.size : null;
+      state.dbMatched = !!hit; state.sizeAuto = !!hit;
     }else if(mdSel === "__other__"){
       const hit = otherName ? dbMatchVehicle(otherName,mkSel) : null;
       state.maker = hit ? hit.maker : mkSel;
       state.model = hit ? hit.model : (baseVehicleModel(otherName,mkSel) || "（リストにない車種）");
       state.size = hit ? hit.size : null;
+      state.dbMatched = !!hit; state.sizeAuto = !!hit;
     }else{
       const v = (DATA.vehicles[mkSel]||[])[Number(mdSel)];
       state.maker = mkSel; state.model = v ? v[0] : "（車種不明）"; state.size = v ? v[1] : null;
+      state.dbMatched = !!v; state.sizeAuto = !!v;
     }
     cstate.from = "manual";
   }else{
@@ -2789,7 +2820,7 @@ async function cAnalyze(mode){
     for(let i=1;i<stages.length;i++){ await cSleep(820); setStage(i); }
     await cSleep(450);
     const last=document.getElementById("cpS"+cur); if(last) last.className="done";
-    // 手動選択でも確定前にサイズ確認画面を表示し、必要なら変更できるようにする
+    // 手動選択でも確定前に判定結果の確認画面を表示（サイズは車種マスターから自動設定・変更不可）
     cgo(3);
     return;
   }
@@ -2798,7 +2829,10 @@ async function cAnalyze(mode){
     const r = await aiDetectVehicle(cstate.photoData.split(",")[1]);
     clearInterval(timer);
     await finishAll(280);
-    state.maker = r.maker; state.model = r.model; state.size = r.size; cstate.err = "";
+    // サイズは車種マスター（DATA.vehicles）の値のみ。未一致時はrenderAiConfirmで再判定・手動入力へ誘導
+    state.maker = r.maker; state.model = r.model; state.size = r.size;
+    state.dbMatched = !!r.dbMatched; state.sizeAuto = !!r.dbMatched;
+    cstate.err = "";
     setTimeout(()=>cgo(3), 500);
   }catch(e){
     clearInterval(timer);
