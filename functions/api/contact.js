@@ -55,35 +55,35 @@ export async function onRequestPost(context) {
   const campaignName = str(body.campaignName, 100);
   const normalPrice = safeMoney(body.normalPrice);
   const campaignPrice = safeMoney(body.campaignPrice);
+  // 新フロントはactionを明示。旧キャッシュ互換としてキャンペーン＋本文空欄は見積取得扱い。
+  const action = body.action === "estimate" ? "estimate"
+    : body.action === "inquiry" ? "inquiry"
+    : (source === "campaign" && !msg ? "estimate" : "inquiry");
 
   if (!validName(name) || !validTel(tel) || !validEmail(mail)) {
     return json({ message: "入力内容に不備があります" }, 400);
   }
   if ([name, tel, mail, msg, wishMenu, campaignName].some(hasDangerousMarkup)) {
-    await saveSecurityEvent(getKV(env), "blocked_input", client, { estimateNo, source });
+    await saveSecurityEvent(getKV(env), "blocked_input", client, { estimateNo, source, action });
     return json({ message: "使用できない文字列が含まれています。入力内容をご確認ください。" }, 400);
   }
 
   const yen = n => "¥" + Number(n).toLocaleString("ja-JP");
   const isCamp = source === "campaign";
-  const subject = `【AI見積${isCamp ? "・キャンペーン" : ""}】お問い合わせ｜${name}様${estimateNo ? `（${estimateNo}）` : ""}`;
-  const campLines = isCamp
-    ? `■流入タイプ：キャンペーン\n■キャンペーン名：${campaignName || "—"}\n■通常価格：${yen(normalPrice)}（税別）\n■キャンペーン価格：${campaignPrice ? yen(campaignPrice) + "（税別）" : "—（期間外・通常価格を表示）"}\n■割引額：${campaignPrice ? yen(Math.max(0, normalPrice - campaignPrice)) : "¥0"}\n`
-    : `■流入タイプ：通常\n`;
+  const kv = getKV(env);
 
-  // KVの見積レコードから確定済みの車両情報を取得（estimateNoがある場合）
-  // 通知メール（⑧）と問い合わせ履歴 inq:（⑨）の両方で使用する
+  // KVの見積レコード（確定済みデータ）を1回だけ取得。
+  // 車両情報はフロント送信値を信用せず、KVを正とする。
+  let kvRec = null;
   let vehicleInfo = null;
-  let vehicleLines = "";
-  if (estimateNo && getKV(env)) {
+  let kvCampaignName = "";
+  if (estimateNo && kv) {
     try {
-      // キャンペーン版/通常版: est: + estimateNo、旧形式: record: + estimateNo の両方を試みる
-      let kvRec = null;
-      const rawEst = await getKV(env).get("est:" + estimateNo);
+      const rawEst = await kv.get("est:" + estimateNo);
       if (rawEst) {
         kvRec = JSON.parse(rawEst);
       } else {
-        const rawRec = await getKV(env).get("record:" + estimateNo);
+        const rawRec = await kv.get("record:" + estimateNo);
         if (rawRec) kvRec = JSON.parse(rawRec);
       }
       if (kvRec) {
@@ -91,97 +91,141 @@ export async function onRequestPost(context) {
         const vModel = kvRec.model || kvRec.vehicle?.model || "";
         const vSize  = kvRec.size  || kvRec.vehicle?.size  || "";
         const vCond  = kvRec.condition || (kvRec.vehicle?.carAge === "new" ? "新車" : kvRec.vehicle?.carAge === "used" ? "経年車" : "");
-        if (vMaker || vModel) {
-          vehicleInfo = { maker: vMaker, model: vModel, size: vSize, condition: vCond };
-          vehicleLines = `■メーカー：${vMaker || "—"}\n■車種：${vModel || "—"}\n` +
-            (vSize ? `■サイズ：${vSize}\n` : "") +
-            (vCond ? `■車両状態：${vCond}\n` : "");
-        }
+        kvCampaignName = str(kvRec.campaignName, 100);
+        if (vMaker || vModel) vehicleInfo = { maker: vMaker, model: vModel, size: vSize, condition: vCond };
       }
     } catch (_) {}
   }
+
+  const v = vehicleInfo || {};
+  const sourceLabel = isCamp ? "キャンペーン版" : "通常版";
+  const dispCampName = isCamp ? (kvCampaignName || campaignName || "—") : "";
+  const from = env.FROM_EMAIL ? `UNCUORE AI見積 <${env.FROM_EMAIL}>` : (env.CONTACT_FROM || DEFAULT_FROM);
+  const to = [env.NOTIFY_EMAIL || env.CONTACT_TO || DEFAULT_TO];
+
+  async function sendStoreMail(subject, text) {
+    try {
+      const res = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${env.RESEND_API_KEY}` },
+        body: JSON.stringify({ from, to, reply_to: mail, subject, text }),
+      });
+      if (!res.ok) {
+        let detail = "";
+        try { const e = await res.json(); detail = e && e.message ? e.message : ""; } catch (_) {}
+        return { ok: false, message: detail || `メール送信に失敗しました（${res.status}）` };
+      }
+      return { ok: true, message: "" };
+    } catch (_) {
+      return { ok: false, message: "メールサーバーへの接続に失敗しました" };
+    }
+  }
+
+  // ── キャンペーン見積メール取得 ─────────────────────────────
+  // 「見積メールを受け取る」は問い合わせではないため、inq:には保存しない。
+  if (action === "estimate") {
+    if (!isCamp) return json({ message: "不正なリクエストです" }, 400);
+    if (!estimateNo || !kv || !kvRec) return json({ message: "見積データを確認できませんでした。もう一度お試しください。" }, 404);
+
+    // cFinalize()が保存したest:レコードへ顧客情報を反映。
+    kvRec.name = kvRec.name || name;
+    kvRec.tel = kvRec.tel || tel;
+    kvRec.mail = kvRec.mail || mail;
+    kvRec.history = Array.isArray(kvRec.history) ? kvRec.history.slice(-99) : [];
+
+    let campEmailOk = false;
+    try {
+      campEmailOk = await sendCampaignEmail(env, kvRec, { name, mail, estimateNo });
+    } catch (e) {
+      console.error("[contact] campaign email error:", e?.message || e);
+    }
+    kvRec.campaignEmailStatus = campEmailOk ? "sent" : "failed";
+    kvRec.history.push(`[${new Date().toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" })}] キャンペーン見積メール${campEmailOk ? "送信済み" : "送信失敗"}（${name}）`);
+    try { await kv.put("est:" + estimateNo, JSON.stringify(kvRec)); } catch (_) {}
+
+    if (!campEmailOk) return json({ message: "メールの送信に失敗しました。もう一度お試しください。" }, 502);
+
+    // 店舗側には「問い合わせ」ではなく新規AI見積リードとして通知。
+    const leadSubject = `【新規キャンペーンAI見積リード】${name}様${estimateNo ? `（${estimateNo}）` : ""}`;
+    const leadText = `UNCUORE キャンペーンAI見積の新規リードです。\n\n` +
+`見積番号：${estimateNo || "—"}\n` +
+`キャンペーン名：${dispCampName}\n` +
+`お客様名：${name}\n` +
+`電話番号：${tel}\n` +
+`メールアドレス：${mail}\n` +
+`メーカー：${v.maker || "—"}\n` +
+`車種：${v.model || "—"}\n` +
+`サイズ：${v.size || "—"}\n` +
+`車両状態：${v.condition || "—"}\n` +
+`送信日時：${new Date().toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" })}`;
+
+    const leadNotify = await sendStoreMail(leadSubject, leadText);
+    if (!leadNotify.ok) {
+      // お客様への見積メールは送信済みなので、再送による二重送信を避けるため成功扱いにする。
+      console.error("[contact] campaign lead notify failed:", leadNotify.message);
+      return json({ ok: true, warning: "notify_failed" }, 200);
+    }
+    return json({ ok: true }, 200);
+  }
+
+  // ── 実際のお問い合わせ ───────────────────────────────────
+  // お問い合わせボタンから送られたものだけ店舗通知＋inq:保存する。
+  const subject = `【AI見積${isCamp ? "・キャンペーン" : ""}】お問い合わせ｜${name}様${estimateNo ? `（${estimateNo}）` : ""}`;
+  const priceLines = (isCamp && normalPrice > 0)
+    ? `通常価格：${yen(normalPrice)}（税別）\nキャンペーン価格：${campaignPrice ? yen(campaignPrice) + "（税別）" : "—（期間外・通常価格を表示）"}\n割引額：${campaignPrice ? yen(Math.max(0, normalPrice - campaignPrice)) : "¥0"}\n`
+    : "";
   const text =
-`UNCUORE AI見積LPからお問い合わせがありました。
+`UNCUORE AI見積LPからお問い合わせがありました。\n\n` +
+`【お問い合わせ】\n` +
+`見積番号：${estimateNo || "—"}\n` +
+`流入：${sourceLabel}\n` +
+`${isCamp ? `キャンペーン名：${dispCampName}\n` : ""}` +
+`お客様名：${name}\n` +
+`電話番号：${tel}\n` +
+`メールアドレス：${mail}\n` +
+`メーカー：${v.maker || "—"}\n` +
+`車種：${v.model || "—"}\n` +
+`サイズ：${v.size || "—"}\n` +
+`車両状態：${v.condition || "—"}\n` +
+`${wishMenu ? `希望メニュー：${wishMenu}\n` : ""}` +
+`${priceLines}` +
+`送信日時：${new Date().toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" })}\n\n` +
+`お問い合わせ内容：\n${msg || "（本文なし）"}\n\n` +
+`※このメールに返信すると、お客様（${mail}）宛に届きます。`;
 
-■見積番号：${estimateNo || "—"}
-${vehicleLines}■お名前：${name}
-■電話番号：${tel}
-■メール：${mail}
-${wishMenu ? `■希望メニュー：${wishMenu}\n` : ""}${campLines}■送信日時：${new Date().toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" })}
+  const notify = await sendStoreMail(subject, text);
+  if (!notify.ok) return json({ message: notify.message }, 502);
 
-――― お問い合わせ内容 ―――
-${msg || "（本文なし）"}
-
-※このメールに返信すると、お客様（${mail}）宛に届きます。`;
-
-  let res;
-  try {
-    res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${env.RESEND_API_KEY}` },
-      body: JSON.stringify({
-        from: env.FROM_EMAIL ? `UNCUORE AI見積 <${env.FROM_EMAIL}>` : (env.CONTACT_FROM || DEFAULT_FROM),
-        to: [env.NOTIFY_EMAIL || env.CONTACT_TO || DEFAULT_TO],
-        reply_to: mail,
-        subject,
-        text,
-      }),
-    });
-  } catch (_) {
-    return json({ message: "メールサーバーへの接続に失敗しました" }, 502);
-  }
-
-  if (!res.ok) {
-    let detail = "";
-    try { const e = await res.json(); detail = e && e.message ? e.message : ""; } catch (_) {}
-    return json({ message: detail || `メール送信に失敗しました（${res.status}）` }, 502);
-  }
-
-  if (getKV(env)) {
+  if (kv) {
     try {
       const at = new Date().toISOString();
-      // 問い合わせ履歴に車両情報（maker / model / size / condition）を含めて保存
       const inqVehicle = vehicleInfo
         ? { maker: vehicleInfo.maker, model: vehicleInfo.model, size: vehicleInfo.size, condition: vehicleInfo.condition }
         : {};
-      await getKV(env).put(
+      await kv.put(
         "inq:" + at + "-" + crypto.randomUUID().slice(0, 8),
         JSON.stringify({
           at, estimateNo, name, tel, mail, msg, wishMenu, source,
+          campaignName: isCamp ? (kvCampaignName || campaignName || "") : "",
           ...inqVehicle,
           ip: client.ip, userAgent: client.userAgent, country: client.country,
           colo: client.colo, rayId: client.rayId,
         })
       );
+
+      // 見積レコードには「問い合わせ送信」の履歴だけ追記。キャンペーン見積メールは再送しない。
       if (estimateNo) {
-        const raw = await getKV(env).get("est:" + estimateNo);
+        const raw = await kv.get("est:" + estimateNo);
         if (raw) {
           const rec = JSON.parse(raw);
           rec.name = rec.name || name; rec.tel = rec.tel || tel; rec.mail = rec.mail || mail;
           if (wishMenu) rec.wishMenu = wishMenu;
           rec.history = Array.isArray(rec.history) ? rec.history.slice(-99) : [];
-
-          if (isCamp && mail) {
-            // キャンペーン版のみ：お客様へ見積メールを自動送信
-            let campEmailOk = false;
-            try {
-              campEmailOk = await sendCampaignEmail(env, rec, { name, mail, estimateNo });
-            } catch (e) {
-              console.error("[contact] campaign email error:", e?.message || e);
-            }
-            rec.campaignEmailStatus = campEmailOk ? "sent" : "failed";
-            rec.history.push(`[${new Date().toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" })}] キャンペーン見積メール${campEmailOk ? "送信済み" : "送信失敗"}（${name}）`);
-            // キャンペーン版の場合はメール送信結果をレスポンスに含める
-            await getKV(env).put("est:" + estimateNo, JSON.stringify(rec));
-            if (!campEmailOk) return json({ message: "メールの送信に失敗しました。もう一度お試しください。" }, 502);
-            return json({ ok: true }, 200);
-          }
-
           rec.history.push(`[${new Date().toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" })}] お問い合わせフォーム送信（${name}）`);
-          await getKV(env).put("est:" + estimateNo, JSON.stringify(rec));
+          await kv.put("est:" + estimateNo, JSON.stringify(rec));
         }
       }
-    } catch (_) { /* メール送信成功を妨げない */ }
+    } catch (_) { /* 店舗メール送信成功を妨げない */ }
   }
 
   return json({ ok: true }, 200);

@@ -260,6 +260,9 @@ header.scrolled{background:rgba(4,6,12,.82);backdrop-filter:blur(14px);border-bo
 .result-note{font-size:11px;color:var(--muted);margin-top:12px}
 .result-ctas{display:grid;gap:14px;margin-top:34px}
 @media(min-width:640px){.result-ctas{grid-template-columns:1fr 1fr}}
+.result-ctas.three{grid-template-columns:1fr}
+@media(min-width:640px){.result-ctas.three{grid-template-columns:repeat(3,1fr)}}
+.rcta.contact-btn{background:linear-gradient(90deg,#2563eb,#3b82f6);border:none;color:#fff;box-shadow:0 8px 28px rgba(37,99,235,.35);cursor:pointer;font-family:inherit}
 .rcta{display:flex;align-items:center;justify-content:center;gap:10px;padding:18px;border-radius:4px;font-size:14px;letter-spacing:.18em;transition:.3s;border:1px solid var(--line2);color:var(--text);background:transparent;text-align:center}
 .rcta.line-btn{background:#06C755;border:none;color:#fff;box-shadow:0 8px 28px rgba(6,199,85,.35)}
 .rcta:hover{transform:translateY(-2px)}
@@ -1761,9 +1764,10 @@ function renderLeadComplete(){
       <b>${escHtml(state.customer.mail||"")}</b> 宛に、見積金額とおすすめプランをお送りしました。<br>
       メールが見当たらない場合は迷惑メールフォルダもご確認ください。
     </p>
-    <div class="result-ctas">
-      <a class="rcta line-btn" href="${LINE_URL}" target="_blank" rel="noopener">LINEで相談する</a>
-      <a class="rcta" href="tel:0455488588">電話で相談する<br><small style="font-size:11px;opacity:.8">045-548-8588</small></a>
+    <div class="result-ctas three">
+      <button class="rcta contact-btn" onclick="openContact()">お問い合わせ</button>
+      <a class="rcta line-btn" href="${LINE_URL}" target="_blank" rel="noopener">LINEで相談</a>
+      <a class="rcta" href="tel:0455488588">電話で相談<br><small style="font-size:11px;opacity:.8">045-548-8588</small></a>
     </div>
     <div class="nav-row" style="justify-content:center">
       <button class="btn" onclick="restart()">最初からやり直す</button>
@@ -1973,6 +1977,13 @@ function openContact(customMsg){
   // 前回のエラー表示をリセット（開いた時点ではエラーを出さない）
   document.querySelectorAll("#contactForm .field.invalid").forEach(f=>f.classList.remove("invalid"));
   const _se=document.getElementById("cSendErr"); if(_se)_se.style.display="none";
+  // 見積時に入力済みのお客様情報を自動入力（再入力の手間をなくす。編集は可能）
+  if(state.customer){
+    const fill=(id,v)=>{ const el=document.getElementById(id); if(el && v) el.value=v; };
+    fill("cName", state.customer.name);
+    fill("cTel",  state.customer.tel);
+    fill("cMail", state.customer.mail);
+  }
   // 【通常版】見積結果からの問い合わせ時のみ、希望メニューの選択肢を表示（管理画面「問い合わせ表示」設定に従う）
   const wmWrap=document.getElementById("wishMenuWrap");
   if(wmWrap){
@@ -2047,6 +2058,7 @@ async function submitContact(){
       headers:{"Content-Type":"application/json"},
       body:JSON.stringify({
         name, tel, mail, msg,
+        action:"inquiry",
         wishMenu: (()=>{ const w=document.getElementById("wishMenuWrap");
           if(!w || w.style.display==="none") return "";
           const r=document.querySelector('#wishMenuWrap input[name="wishMenu"]:checked');
@@ -2334,14 +2346,17 @@ async function adRenderInq(){
   document.getElementById("tab-inq").innerHTML = `<div class="ad-card">
     <h3>お問い合わせ一覧（${inq.length}件）</h3>
     <div class="ad-table-wrap"><table class="ad" style="min-width:760px">
-      <thead><tr><th>日時</th><th>名前</th><th>電話</th><th>メール</th><th>見積番号</th><th>希望メニュー</th><th>IP / 国</th><th>内容</th></tr></thead>
+      <thead><tr><th>日時</th><th>流入</th><th>名前</th><th>電話</th><th>メール</th><th>見積番号</th><th>車両</th><th>希望メニュー</th><th>IP / 国</th><th>内容</th></tr></thead>
       <tbody>${inq.map(q=>`<tr>
-        <td>${escHtml(new Date(q.at).toLocaleString("ja-JP"))}</td><td>${escHtml(q.name)}</td><td>${escHtml(q.tel)}</td><td>${escHtml(q.mail)}</td>
+        <td>${escHtml(new Date(q.at).toLocaleString("ja-JP"))}</td>
+        <td>${q.source==="campaign"?"キャンペーン":"通常"}${q.campaignName?`<br><small>${escHtml(q.campaignName)}</small>`:""}</td>
+        <td>${escHtml(q.name)}</td><td>${escHtml(q.tel)}</td><td>${escHtml(q.mail)}</td>
         <td>${escHtml(q.estimateNo||"—")}</td>
+        <td>${(q.maker||q.model)?`${escHtml(q.maker||"—")} ${escHtml(q.model||"")}<br><small>${escHtml(q.size||"—")}${q.condition?" / "+escHtml(q.condition):""}</small>`:"—"}</td>
         <td>${q.wishMenu?escHtml(q.wishMenu):"—"}</td>
         <td>${escHtml(q.ip||"—")}<br><small>${escHtml(q.country||"")}${q.colo?" / "+escHtml(q.colo):""}</small></td>
         <td style="white-space:pre-wrap;max-width:420px">${escHtml(q.msg||"")}</td>
-      </tr>`).join("")||`<tr><td colspan="8" style="text-align:center;color:#98a7c4;padding:30px">お問い合わせはまだありません</td></tr>`}</tbody>
+      </tr>`).join("")||`<tr><td colspan="10" style="text-align:center;color:#98a7c4;padding:30px">お問い合わせはまだありません</td></tr>`}</tbody>
     </table></div>
   </div>`;
 }
@@ -3016,14 +3031,15 @@ function cRenderCampDone(){
   if(!DATA.campaignEmailTemplate) DATA.campaignEmailTemplate={};
   const T = DATA.campaignEmailTemplate;
   const lineText = T.lineText || "LINEで相談";
-  const telText  = (!T.telText || T.telText==="045-548-8588") ? "電話で相談する" : T.telText;
+  const telText  = (!T.telText || T.telText==="045-548-8588" || T.telText==="電話で相談する") ? "電話で相談" : T.telText;
   cSetHead(100,"DONE","送信完了");
   body().innerHTML = `<div class="step" style="text-align:center">
     <div style="font-size:48px;margin-bottom:16px">✅</div>
     <h2 style="font-size:20px;font-weight:700;margin:0 0 10px">キャンペーン見積をメールへ送信しました</h2>
     <p style="font-size:14px;line-height:1.8;color:var(--text2,#7a8799);margin:0 0 28px">ご入力いただいたメールアドレスをご確認ください。<br>担当者より折り返しご連絡いたします。</p>
-    <a class="cp-btn go" href="https://line.me/ti/p/@271goter" target="_blank" rel="noopener">${cesc(lineText)}</a>
-    <a class="cp-btn" href="tel:0455488588" style="margin-top:10px;display:block;text-align:center">${cesc(telText)}<br><small style="font-size:11px;opacity:.8">045-548-8588</small></a>
+    <button class="cp-btn go" onclick="cOpenContact()">お問い合わせ</button>
+    <a class="cp-btn line" href="https://line.me/ti/p/@271goter" target="_blank" rel="noopener">${cesc(lineText)}</a>
+    <a class="cp-btn" href="tel:0455488588" style="flex-direction:column;line-height:1.4">${cesc(telText)}<small style="font-size:11px;opacity:.8">045-548-8588</small></a>
   </div>`;
 }
 /* キャンペーンリード送信 */
@@ -3058,6 +3074,7 @@ async function submitCampLead(){
       body:JSON.stringify({
         name, tel, mail,
         msg:"",
+        action:"estimate",
         estimateNo: state.estimateNo||"",
         source:"campaign",
         website:"",
@@ -3079,6 +3096,8 @@ async function submitCampLead(){
     }
     return;
   }
+  // 送信成功後もお客様情報を保持（完了画面の「お問い合わせ」で自動入力するため）
+  state.customer = { name, tel, mail, pref: "" };
   // 送信成功時のみ完了画面へ
   cgo(7);
 }
@@ -3091,12 +3110,14 @@ function cOpenContact(){
   openContact(
 `【見積番号】${state.estimateNo||"—"}
 【キャンペーン】${c.name}
-【車両】${state.maker||"—"} ${state.model||""}${known?`（${state.size}サイズ）`:""}${cond?`・${cond}`:""}
+【車両】${state.maker||"—"} ${state.model||""}
+【サイズ】${known?state.size:"判定不可（担当者確認）"}${cond?`
+【車両状態】${cond}`:""}
 【メニュー】${(c.desc||"").replace(/\n/g," ")}
 ${active&&p.tokuten.length?`【${c.name}特典】${p.tokuten.join(" / ")} プレゼント\n`:""}${!known?`【価格】サイズ判定不可のため、担当者確認のうえ正式見積をご案内`:active?`【通常価格】${yen(p.normal)}（税別）
 【キャンペーン価格】${yen(p.camp)}（税別）`:`【価格】${yen(p.normal)}（税別）`}
 ――――――――――
-${known?"この価格で問い合わせます。":"正式なお見積りを希望します。"}`);
+この見積について相談したいです。`);
 }
 
 (async function init(){
