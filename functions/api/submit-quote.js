@@ -257,6 +257,7 @@ export async function onRequestPost(context){
   const tplLineTxt  = esc(tpl.lineText || DEFAULT_EMAIL_TEMPLATE.lineText);
   const tplTelTxt   = esc(tpl.telText || DEFAULT_EMAIL_TEMPLATE.telText);
   const tplFooter   = esc(tpl.footer || DEFAULT_EMAIL_TEMPLATE.footer);
+  const inquiryUrl = `https://ai.un-cuore.com/?inquiry=${encodeURIComponent(id)}`;
 
   const customerHtml=`<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;background:#f4f6f8;font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Noto Sans JP',sans-serif;color:#17233a;">
@@ -276,7 +277,9 @@ export async function onRequestPost(context){
 <div style="font-size:13px;font-weight:700;border-bottom:2px solid #e7edf5;padding-bottom:7px">${tplHeading}</div>
 <table width="100%" cellpadding="0" cellspacing="0">${menuHtml}</table>
 <p style="font-size:11px;color:#7b8798;line-height:1.7;margin:18px 0 22px">${tplNote}</p>
-<table width="100%" cellpadding="0" cellspacing="0"><tr>
+<table width="100%" cellpadding="0" cellspacing="0" style="margin-top:4px">
+<tr><td colspan="2" style="padding-bottom:10px"><a href="${esc(inquiryUrl)}" style="display:block;text-align:center;background:#2563eb;color:#fff;text-decoration:none;padding:14px 8px;border-radius:6px;font-size:13px;font-weight:700">お問い合わせ</a></td></tr>
+<tr>
 <td style="padding-right:5px"><a href="https://line.me/ti/p/@271goter" style="display:block;text-align:center;background:#06c755;color:#fff;text-decoration:none;padding:14px 8px;border-radius:6px;font-size:13px;font-weight:700">${tplLineTxt}</a></td>
 <td style="padding-left:5px"><a href="tel:0455488588" style="display:block;text-align:center;background:#17233a;color:#fff;text-decoration:none;padding:14px 8px;border-radius:6px;font-size:13px;font-weight:700">${tplTelTxt}</a></td>
 </tr></table>

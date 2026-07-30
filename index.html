@@ -2677,7 +2677,9 @@ async function adSaveAll(silent){
 /* ---------- 起動 ---------- */
 
 /* ============ キャンペーン版フロー（?mode=campaign／LPデザインは通常版を共有） ============ */
-const IS_CAMPAIGN = new URLSearchParams(location.search).get("mode")==="campaign";
+const _QS = new URLSearchParams(location.search);
+const IS_CAMPAIGN = _QS.get("mode")==="campaign";
+const INQUIRY_ESTIMATE_NO = String(_QS.get("inquiry")||"").trim().slice(0,40);
 const cstate = { step:1, photoData:null, condition:null, from:"photo" };
 const cesc = s=>String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;");
 function cSetHead(pct,label,name){
@@ -3157,6 +3159,17 @@ ${active&&p.tokuten.length?`【${c.name}特典】${p.tokuten.join(" / ")} プレ
     crender(); // 見積ウィザード部分のみキャンペーン導線（写真→AI→確認→キャンペーン見積）に差し替え
   }else{
     setProgress(1); render();
+  }
+
+  // 見積メールの「お問い合わせ」から来た場合、見積番号だけを安全に引き継いで共通フォームを開く。
+  // 氏名・連絡先はURLに載せず、車両情報は送信時にサーバーがestimateNoからKV参照する。
+  if(INQUIRY_ESTIMATE_NO && !location.hash.startsWith("#admin")){
+    state.estimateNo = INQUIRY_ESTIMATE_NO;
+    state.source = IS_CAMPAIGN ? "campaign" : "normal";
+    if(IS_CAMPAIGN) state.campaignName = (DATA.campaign || DEFAULT_CAMPAIGN).name || "";
+    setTimeout(()=>openContact(`【見積番号】${INQUIRY_ESTIMATE_NO}
+――――――――――
+この見積について相談したいです。`), 0);
   }
   checkAdminRoute();
 })();

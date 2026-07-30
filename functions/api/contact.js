@@ -276,6 +276,7 @@ async function sendCampaignEmail(env, rec, contact) {
   const estimateNo = contact.estimateNo || "";
   const maker      = rec.maker || "";
   const model      = rec.model || "";
+  const inquiryUrl = `https://ai.un-cuore.com/?mode=campaign&inquiry=${encodeURIComponent(estimateNo)}`;
 
   const subject = T.subject
     .replace("{見積番号}", estimateNo).replace("{メーカー}", maker)
@@ -347,10 +348,12 @@ async function sendCampaignEmail(env, rec, contact) {
     ${priceHtml}
   </div>
   <p style="font-size:11px;color:#7b8798;line-height:1.7;margin:18px 0 22px">${escNl(T.note)}</p>
-  <table width="100%" cellpadding="0" cellspacing="0"><tr>
+  <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:4px">
+    <tr><td colspan="2" style="padding-bottom:10px"><a href="${esc(inquiryUrl)}" style="display:block;text-align:center;background:#2563eb;color:#fff;text-decoration:none;padding:14px 8px;border-radius:6px;font-size:13px;font-weight:700">お問い合わせ</a></td></tr>
+    <tr>
     <td style="padding-right:5px"><a href="https://line.me/ti/p/@271goter" style="display:block;text-align:center;background:#06c755;color:#fff;text-decoration:none;padding:14px 8px;border-radius:6px;font-size:13px;font-weight:700">${esc(T.lineText)}</a></td>
     <td style="padding-left:5px"><a href="tel:0455488588" style="display:block;text-align:center;background:#17233a;color:#fff;text-decoration:none;padding:14px 8px;border-radius:6px;font-size:13px;font-weight:700">${esc(T.telText)}</a></td>
-  </tr></table>
+    </tr></table>
 </td></tr>
 <tr><td style="background:#eef2f7;padding:16px;text-align:center;color:#8a96a8;font-size:10px">${esc(T.footer)}</td></tr>
 </table></td></tr></table>
