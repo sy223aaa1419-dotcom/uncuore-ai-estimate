@@ -406,6 +406,9 @@ table.ad tr:hover td{background:#f7faff}
 .qr-plan-price small{display:block;font-size:10px;color:var(--muted);letter-spacing:.08em;margin-bottom:3px}
 .qr-plan-price strong{display:block;color:#fff;font-size:clamp(20px,5.5vw,28px);line-height:1.25}
 .qr-plan-price.line strong{color:#4ade80;text-shadow:0 0 18px rgba(74,222,128,.18)}
+.qr-plan-price-row.single{grid-template-columns:1fr;max-width:260px;margin-left:auto;margin-right:auto}
+.qr-plan-only-benefit{margin-top:12px;padding:10px 12px;border-radius:6px;background:rgba(6,199,85,.08);border:1px solid rgba(6,199,85,.32);color:#86efac;font-size:12px;font-weight:700;text-align:center;line-height:1.7}
+.qr-line-benefit .note{margin-top:10px;font-size:10.5px;color:var(--muted);line-height:1.7}
 .qr-plan-arrow{color:var(--blue);font-size:18px;text-align:center}
 .qr-line-benefit{border:1px solid rgba(6,199,85,.45);background:linear-gradient(145deg,rgba(6,199,85,.11),rgba(7,11,22,.5));border-radius:10px;padding:20px 16px;text-align:center;margin:18px 0}
 .qr-line-benefit .ey{font-size:11px;letter-spacing:.2em;color:#69e79b;font-weight:700}
@@ -1785,8 +1788,9 @@ function normalQuotePlans(){
     const m = DATA.menus.find(x=>x.id===id);
     if(!m) return null;
     const normal = (state.condition==="new" ? m.priceNew : m.priceUsed)[idx] || 0;
-    const linePrice = Math.max(0, Math.round((normal * 0.5)/100)*100);
-    return {m, normal, linePrice, recommended:id==="original"};
+    const recommended = id === "original";
+    const linePrice = recommended ? Math.max(0, Math.round((normal * 0.5)/100)*100) : null;
+    return {m, normal, linePrice, recommended};
   }).filter(Boolean);
 }
 
@@ -1808,11 +1812,14 @@ function renderQuoteResult(){
       <div class="qr-plan-name">${escHtml(p.m.name)}</div>
       <div class="qr-plan-kana">${escHtml(p.m.kana||"")}</div>
       <div class="qr-plan-desc">${escHtml(p.m.desc||"")}</div>
-      <div class="qr-plan-price-row">
+      ${p.recommended ? `<div class="qr-plan-price-row">
         <div class="qr-plan-price"><small>通常見積価格</small><strong>${yen(p.normal)}</strong><small>税別・概算</small></div>
         <div class="qr-plan-arrow">→</div>
         <div class="qr-plan-price line"><small>LINEお問い合わせ限定 50%OFF</small><strong>${yen(p.linePrice)}</strong><small>税別・概算</small></div>
       </div>
+      <div class="qr-plan-only-benefit">LINE限定：50%OFF ＋ ウィンドウコート無料施工</div>` : `<div class="qr-plan-price-row single">
+        <div class="qr-plan-price"><small>通常見積価格</small><strong>${yen(p.normal)}</strong><small>税別・概算</small></div>
+      </div>`}
     </div>`).join("");
 
   body().innerHTML = `<div class="step quote-result">
@@ -1830,9 +1837,10 @@ function renderQuoteResult(){
     <div class="qr-plan-list">${planHtml}</div>
 
     <div class="qr-line-benefit">
-      <div class="ey">公式LINE限定特典</div>
-      <div class="main">LINEからお問い合わせで<br><b>表示価格から50%OFF</b></div>
+      <div class="ey">Original CERAMIC限定｜公式LINE特典</div>
+      <div class="main">Original CERAMICをLINEからお問い合わせで<br><b>通常価格から50%OFF</b></div>
       <div class="sub">＋ ウィンドウコート無料施工</div>
+      <div class="note">※ Cuore russo coat・Veloce Coatingは50%OFF対象外です。</div>
     </div>
 
     ${estNoBlock()}
@@ -1864,7 +1872,7 @@ function estNoBlock(){
 function lineGuideBlock(){
   const cta = IS_CAMPAIGN
     ? "公式LINEを追加して<br>50％OFF＋ウィンドウコート付きを受け取る"
-    : "LINEでこの見積について問い合わせる<br><small style=\"font-size:11px;font-weight:500\">50％OFF＋ウィンドウコート無料施工</small>";
+    : "LINEでこの見積について問い合わせる<br><small style=\"font-size:11px;font-weight:500\">Original CERAMIC限定：50％OFF＋ウィンドウコート無料施工</small>";
   return `<div class="line-guide">
     <p class="line-guide-title">公式LINE追加後、トーク画面に<br>「見積もり番号」を入力してください。</p>
     <div class="qr-norow" style="margin:10px 0 12px">
