@@ -49,6 +49,20 @@ const STATUS_OPTIONS = ["未対応", "LINE追加済み", "電話済み", "来店
 
 const SIZES = ["S", "M", "L", "LL", "3L"];
 
+// ── 導線設定 ─────────────────────────────────────────────────────────────────
+const LINE_URL = "https://line.me/ti/p/@271goter";
+// キャンペーン版LP（?mode=campaign）判定
+const IS_CAMPAIGN = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("mode") === "campaign";
+// 公式LINE追加キャンペーン（表示用。実際の適用はスタッフがLINEでご案内）
+const CAMPAIGN_RATE = 0.5; // 50%OFF
+const campaignPriceOf = (normal) => Math.round((normal * (1 - CAMPAIGN_RATE)) / 100) * 100;
+// スタッフ紹介画像（public/staff/ に配置。ファイルを置き換えるだけで反映）
+const STAFF_MEMBERS = [
+  { img: "/staff/staff-1.jpg", alt: "Un cuore スタッフ 1" },
+  { img: "/staff/staff-2.jpg", alt: "Un cuore スタッフ 2" },
+  { img: "/staff/staff-3.jpg", alt: "Un cuore スタッフ 3" },
+];
+
 // getOptionPrice は shared-pricing.js の calcOptionPrice を使用
 function getOptionPrice(optId, size) {
   return calcOptionPrice(optId, size);
@@ -232,6 +246,88 @@ const CSS = `
   .status-select { background: var(--navy-mid); border: 1px solid var(--border); color: var(--white); padding: 8px 12px; font-size: 12px; font-family: 'Inter', sans-serif; appearance: none; outline: none; width: 100%; margin-top: 8px; }
 
   @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── HERO 特徴3点 ── */
+  .hero-features { display: flex; gap: 10px; flex-wrap: wrap; margin: 0 0 32px; }
+  .hero-feature { display: inline-flex; align-items: center; gap: 8px; border: 1px solid rgba(58,123,213,0.45); background: rgba(13,27,46,0.6); color: #dbe7f8; font-size: 13px; padding: 9px 14px; border-radius: 999px; letter-spacing: 0.02em; }
+  .hero-feature .ic { color: #3a7bd5; font-weight: 700; }
+
+  /* ── かんたん3ステップ ── */
+  .flow-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 0 0 8px; }
+  .flow-card { border: 1px solid var(--border); background: var(--navy-mid); padding: 22px 16px; text-align: center; }
+  .flow-card .no { font-family: 'Barlow Condensed', sans-serif; font-size: 13px; letter-spacing: 0.3em; color: var(--blue-accent); display: block; margin-bottom: 8px; }
+  .flow-card .ic { font-size: 26px; display: block; margin-bottom: 8px; }
+  .flow-card .tt { font-size: 13px; color: var(--white); font-weight: 500; line-height: 1.6; }
+
+  /* ── 見積結果（即時表示） ── */
+  .quote-result { border: 1px solid var(--blue-accent); background: var(--navy-mid); padding: 32px 24px; margin-bottom: 20px; border-radius: 10px; }
+  .quote-result-title { font-size: clamp(20px, 4.5vw, 26px); font-weight: 700; color: var(--white); text-align: center; margin-bottom: 20px; }
+  .quote-rows { margin-bottom: 20px; }
+  .quote-row { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border-light); font-size: 14px; }
+  .quote-row .k { color: var(--white-dim); white-space: nowrap; }
+  .quote-row .v { color: var(--white); font-weight: 600; text-align: right; }
+  .quote-price-box { text-align: center; padding: 22px 16px; background: rgba(58,123,213,0.08); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 20px; }
+  .quote-price-label { font-size: 12px; letter-spacing: 0.2em; color: var(--blue-accent); margin-bottom: 6px; }
+  .quote-price-main { font-family: 'Barlow Condensed', sans-serif; font-size: clamp(44px, 12vw, 60px); color: var(--white); font-weight: 600; line-height: 1.1; }
+  .quote-price-main small { font-size: 14px; color: var(--white-dim); font-family: 'Noto Sans JP', sans-serif; font-weight: 400; margin-left: 6px; }
+  .quote-price-strike { font-size: clamp(20px, 5vw, 26px); color: #8fa0b4; text-decoration: line-through; margin-bottom: 4px; }
+  .quote-price-off { display: inline-block; background: linear-gradient(90deg, #f59e0b, #ef4444); color: #fff; font-size: 13px; font-weight: 700; letter-spacing: 0.08em; border-radius: 20px; padding: 5px 16px; margin: 8px 0 6px; }
+  .quote-price-camp { font-family: 'Barlow Condensed', sans-serif; font-size: clamp(48px, 14vw, 66px); color: #fff; font-weight: 700; line-height: 1.1; text-shadow: 0 0 24px rgba(58,123,213,0.5); }
+  .quote-price-bonus { font-size: 14px; color: #ffd479; font-weight: 700; margin-top: 8px; }
+
+  /* ── 見積もり番号＋コピー ── */
+  .quote-no-box { background: rgba(13,27,46,0.85); border: 1px dashed var(--blue-accent); border-radius: 8px; padding: 16px; text-align: center; margin-bottom: 20px; }
+  .quote-no-label { font-size: 11px; letter-spacing: 0.25em; color: var(--blue-accent); margin-bottom: 6px; }
+  .quote-no-row { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; }
+  .quote-no-value { font-family: monospace; font-size: clamp(18px, 5.4vw, 24px); font-weight: 700; color: var(--white); letter-spacing: 0.04em; }
+  .copy-btn { display: inline-flex; align-items: center; gap: 6px; background: var(--blue-bright); border: none; color: #fff; font-size: 13px; font-weight: 700; padding: 10px 18px; border-radius: 6px; cursor: pointer; }
+  .copy-btn:active { transform: scale(0.97); }
+  .copy-toast { position: fixed; left: 50%; bottom: 32px; transform: translateX(-50%); background: #17233a; border: 1px solid var(--blue-accent); color: #fff; font-size: 14px; padding: 12px 22px; border-radius: 999px; z-index: 500; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+
+  /* ── LINE誘導 ── */
+  .line-guide { background: rgba(6,199,85,0.07); border: 1px solid rgba(6,199,85,0.4); border-radius: 8px; padding: 20px 16px; margin-bottom: 20px; }
+  .line-guide-title { font-size: 14px; font-weight: 700; color: var(--white); margin-bottom: 8px; text-align: center; line-height: 1.7; }
+  .line-guide-note { font-size: 12px; color: var(--white-dim); line-height: 1.8; text-align: center; }
+  .line-cta { display: block; width: 100%; text-align: center; background: #06c755; color: #fff; font-size: 16px; font-weight: 700; padding: 18px 14px; border-radius: 8px; text-decoration: none; letter-spacing: 0.04em; line-height: 1.6; box-shadow: 0 8px 26px rgba(6,199,85,0.35); }
+  .line-cta small { display: block; font-size: 11px; font-weight: 400; opacity: 0.9; }
+
+  /* ── LINE限定キャンペーン（通常版） ── */
+  .camp-box { border: 1px solid rgba(245,158,11,0.5); background: linear-gradient(160deg, rgba(245,158,11,0.08), rgba(13,27,46,0.4)); border-radius: 10px; padding: 24px 18px; text-align: center; margin-bottom: 20px; }
+  .camp-eyebrow { display: inline-block; font-size: 11px; letter-spacing: 0.25em; color: #ffd479; border: 1px solid rgba(245,158,11,0.6); border-radius: 20px; padding: 4px 14px; margin-bottom: 12px; }
+  .camp-title { font-size: clamp(20px, 5.5vw, 28px); font-weight: 700; color: var(--white); line-height: 1.5; margin-bottom: 4px; }
+  .camp-title em { font-style: normal; color: #ffd479; }
+  .camp-sub { font-size: 15px; color: #ffd479; font-weight: 700; margin-bottom: 14px; }
+
+  /* ── ご相談までの流れ ── */
+  .consult-flow { border: 1px solid var(--border); background: var(--navy-mid); border-radius: 8px; padding: 24px 18px; margin-bottom: 20px; }
+  .consult-flow-title { font-size: 15px; font-weight: 700; color: var(--white); text-align: center; margin-bottom: 18px; letter-spacing: 0.1em; }
+  .consult-step { display: flex; align-items: flex-start; gap: 14px; padding: 10px 0; }
+  .consult-step .no { flex-shrink: 0; width: 34px; height: 34px; border: 1px solid var(--blue-accent); color: var(--blue-accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'Barlow Condensed', sans-serif; font-size: 14px; }
+  .consult-step .tx { font-size: 14px; color: var(--white); line-height: 1.7; padding-top: 5px; }
+  .consult-step:not(:last-child) .no { position: relative; }
+  .consult-step:not(:last-child)::after { content: ''; }
+
+  /* ── スタッフ紹介・Un cuoreとは？ ── */
+  .staff-section { padding: 80px 24px; max-width: 980px; margin: 0 auto; }
+  .staff-grid { display: grid; grid-template-columns: 5fr 6fr; gap: 36px; align-items: start; }
+  .staff-photos { display: grid; gap: 14px; }
+  .staff-photo { position: relative; border: 1px solid var(--border); background: linear-gradient(160deg, var(--navy-mid), var(--navy-light)); overflow: hidden; border-radius: 6px; aspect-ratio: 4 / 3; }
+  .staff-photo img { width: 100%; height: 100%; object-fit: cover; display: block; position: relative; z-index: 1; }
+  .staff-photo .ph { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: var(--silver-dim); font-size: 12px; letter-spacing: 0.15em; }
+  .staff-about h3 { font-size: clamp(22px, 4.5vw, 30px); font-weight: 700; color: var(--white); margin-bottom: 16px; }
+  .staff-about p { font-size: 14px; color: var(--white-dim); line-height: 2.0; margin-bottom: 14px; }
+  .staff-about p strong { color: var(--white); font-weight: 700; }
+  .trust-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 36px; }
+  .trust-card { border: 1px solid var(--border); background: var(--navy-mid); padding: 22px 18px; border-radius: 6px; }
+  .trust-card .ic { font-size: 24px; margin-bottom: 10px; display: block; }
+  .trust-card h4 { font-size: 14px; color: var(--white); font-weight: 700; margin-bottom: 8px; }
+  .trust-card p { font-size: 12px; color: var(--white-dim); line-height: 1.8; }
+
+  .reveal-btn { width: 100%; padding: 20px; background: linear-gradient(135deg, #2556a8, #3a7bd5); border: none; color: white; font-size: 17px; font-weight: 700; border-radius: 8px; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; letter-spacing: 0.04em; box-shadow: 0 8px 26px rgba(37,86,168,0.45); }
+  .reveal-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .pc-br { display: none; }
+  @media (min-width: 641px) { .pc-br { display: inline; } }
   @media (max-width: 640px) {
     .nav { padding: 16px 20px; }
     .field-row, .field-row-3 { grid-template-columns: 1fr; }
@@ -240,6 +336,12 @@ const CSS = `
     .hero-title { font-size: 40px; }
     .step { padding: 24px 20px; }
     .result-card { padding: 28px 20px; }
+    .flow-strip { grid-template-columns: 1fr; }
+    .staff-grid { grid-template-columns: 1fr; }
+    .trust-grid { grid-template-columns: 1fr; }
+    .quote-result { padding: 24px 16px; }
+    .hero-inner { padding: 0 24px !important; }
+    .staff-section { padding: 56px 20px; }
   }
 `;
 
@@ -273,20 +375,12 @@ function QuoteLp({ onAdmin }) {
   const [photoAnalyzing, setPhotoAnalyzing] = useState(false);
   const [photoResult, setPhotoResult] = useState(null);
   const [photoError, setPhotoError] = useState("");
-  const [customer, setCustomer] = useState({ name: "", phone: "", email: "", pref: "" });
   const [errors, setErrors] = useState({});
-  const [showContactForm, setShowContactForm] = useState(false);
-  const [contactName, setContactName] = useState('');
-  const [contactPhone, setContactPhone] = useState('');
-  const [contactEmail, setContactEmail] = useState('');
-  const [showLeadForm, setShowLeadForm] = useState(false);
-  const [leadName, setLeadName] = useState('');
-  const [leadEmail, setLeadEmail] = useState('');
-  const [leadPhone, setLeadPhone] = useState('');
-  const [leadErrors, setLeadErrors] = useState({});
-  const [submitted, setSubmitted] = useState(false);
-  const [submittedId, setSubmittedId] = useState('');
+  // ── 即時見積表示（個人情報の入力なし） ──
+  const [quoteId, setQuoteId] = useState("");        // 発行された見積もり番号（UC-XXXXXXXX-XXXXXX）
+  const [quoteError, setQuoteError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [copied, setCopied] = useState(false);       // コピー完了トースト
   const [turnstileToken, setTurnstileToken] = useState("");
   const turnstileRef = useRef(null);
   const turnstileWidgetIdRef = useRef(null);
@@ -379,7 +473,8 @@ function QuoteLp({ onAdmin }) {
         turnstileWidgetIdRef.current = null;
       }
     };
-  }, []);
+    // 入力がそろいwidgetコンテナがマウントされたタイミングでも再renderを試みる
+  }, [maker, menu, size, carAge]);
 
   const toggleOption = (id) => setOptions(o => ({ ...o, [id]: !o[id] }));
 
@@ -392,6 +487,97 @@ function QuoteLp({ onAdmin }) {
     : 0;
 
   const total = menuPrice + optionTotal;
+
+  // 見積表示に必要な入力がそろっているか
+  const readyForQuote = !!(maker && menu && size && carAge);
+
+  // ── 見積もり番号のコピー（スマホ対応・フォールバック付き） ──
+  const copyQuoteId = async () => {
+    if (!quoteId) return;
+    let ok = false;
+    try {
+      await navigator.clipboard.writeText(quoteId);
+      ok = true;
+    } catch (e) {
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = quoteId;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        ok = document.execCommand("copy");
+        document.body.removeChild(ta);
+      } catch (e2) { ok = false; }
+    }
+    if (ok) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2200);
+    }
+  };
+
+  // ── 見積もり価格を表示（見積番号発行・KV保存。個人情報は送信しない） ──
+  const revealQuote = async () => {
+    const errs = {};
+    if (!maker) errs.maker = "メーカーを選択してください";
+    if (!carAge) errs.carAge = "新車・経年車を選択してください";
+    if (!menu) errs.menu = "コーティングメニューを選択してください";
+    if (Object.keys(errs).length > 0) { setErrors(errs); return; }
+    setErrors({});
+    setQuoteError("");
+
+    // Turnstile（Site Key設定時のみ必須）
+    const token = turnstileToken || window.__turnstileTokenValue__ || "";
+    if (import.meta.env.VITE_TURNSTILE_SITE_KEY && !token) {
+      setQuoteError("セキュリティ認証が完了していません。しばらくお待ちください。");
+      return;
+    }
+
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      // 金額はサーバー側で再計算・KVに保存（見積番号で管理画面から特定可能）
+      const payload = {
+        customer: { name: "", email: "", phone: "", pref: "" },
+        vehicle: { maker, model: model || "不明", size, carAge },
+        menu,
+        optionIds: [],
+        source: IS_CAMPAIGN ? "campaign" : "normal",
+        turnstileToken: token,
+      };
+      const res = await fetch("/api/submit-quote", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const resData = await res.json().catch(() => ({}));
+      if (res.ok && resData.ok && resData.id) {
+        setQuoteId(resData.id);
+        resetTurnstile();
+        // 広告計測（見積表示成功時のみ発火）
+        if (typeof window.gtag === "function") {
+          window.gtag("event", "ai_estimate_submitted", { event_category: "lead", event_label: resData.id });
+          window.gtag("event", "generate_lead", { event_category: "lead" });
+        }
+        if (typeof window.fbq === "function") {
+          window.fbq("track", "Lead", { content_name: "AI見積", content_category: "カーコーティング" });
+        }
+        // 結果カードへスクロール
+        setTimeout(() => {
+          document.getElementById("quote-result")?.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 100);
+      } else {
+        setQuoteError(resData.error || "見積の発行に失敗しました。もう一度お試しください。");
+        resetTurnstile();
+      }
+    } catch (err) {
+      setQuoteError("ネットワークエラーが発生しました。もう一度お試しください。");
+      resetTurnstile();
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const analyzePhoto = async (base64Data, mediaType = "image/jpeg") => {
     setPhotoAnalyzing(true);
@@ -460,13 +646,33 @@ function QuoteLp({ onAdmin }) {
 
       <div className="section" id="quote-section">
         <p className="section-eyebrow">Free Estimate</p>
-        <h2 className="section-title">愛車<em>見積</em></h2>
+        <h2 className="section-title">かんたん<em>3ステップ</em>で見積もり</h2>
         <div className="section-line" />
 
-        {/* PHOTO UPLOAD */}
+        {/* かんたん3ステップ（見積もりフロー） */}
+        <div className="flow-strip">
+          <div className="flow-card">
+            <span className="no">STEP 01</span>
+            <span className="ic">📷</span>
+            <span className="tt">愛車の写真を<br />アップロード</span>
+          </div>
+          <div className="flow-card">
+            <span className="no">STEP 02</span>
+            <span className="ic">🚗</span>
+            <span className="tt">AIが車種・サイズを<br />自動判定</span>
+          </div>
+          <div className="flow-card">
+            <span className="no">STEP 03</span>
+            <span className="ic">💴</span>
+            <span className="tt">その場で見積もり価格を<br />表示</span>
+          </div>
+        </div>
+        <p style={{fontSize:12,color:"var(--silver-dim)",textAlign:"center",margin:"10px 0 28px"}}>お名前・メールアドレスの入力は不要です</p>
+
+        {/* STEP 1: 写真アップロード */}
         <div className="step">
-          <span className="step-num">Step 00 — 写真判定（任意）</span>
-          <h3 className="step-title">愛車の写真で自動判定</h3>
+          <span className="step-num">Step 01 — 愛車の写真をアップロード</span>
+          <h3 className="step-title">写真を撮るだけ。AIが自動判定します</h3>
           <div style={{position:"relative",border:"1.5px dashed var(--border)",borderRadius:0,padding:"28px 16px",textAlign:"center",background:"var(--navy)",cursor:"pointer",overflow:"hidden",marginBottom:12}}>
             <input type="file" accept="image/*" onChange={handlePhotoUpload} style={{position:"absolute",inset:0,opacity:0,cursor:"pointer",width:"100%",height:"100%"}} />
             {photoData ? (
@@ -498,7 +704,7 @@ function QuoteLp({ onAdmin }) {
                 <span style={{color:"var(--white-dim)"}}>判定精度</span>
                 <span style={{color: photoResult.confidence==="高" ? "#06c755" : "var(--blue-accent)"}}>{photoResult.confidence}</span>
               </div>
-              <p style={{fontSize:11,color:"var(--silver-dim)",marginTop:10,fontWeight:300}}>※ 下のStep01で内容をご確認・修正できます</p>
+              <p style={{fontSize:11,color:"var(--silver-dim)",marginTop:10,fontWeight:300}}>※ 下のStep02で内容をご確認・修正できます</p>
             </div>
           )}
           {photoError && (
@@ -506,10 +712,10 @@ function QuoteLp({ onAdmin }) {
           )}
         </div>
 
-        {/* STEP 1: Vehicle */}
-        <div className="step" id="quote-section">
-          <span className="step-num">Step 01 — 車両情報</span>
-          <h3 className="step-title">メーカー・車種を選択</h3>
+        {/* STEP 2: Vehicle */}
+        <div className="step">
+          <span className="step-num">Step 02 — 車種・サイズの確認</span>
+          <h3 className="step-title">AI判定結果の確認（手動でも選択できます）</h3>
 
           <div className="field-row" style={{marginBottom:16}}>
             <div className="field-group">
@@ -544,9 +750,9 @@ function QuoteLp({ onAdmin }) {
           ) : null}
         </div>
 
-        {/* STEP 2: Car Age */}
+        {/* STEP 3: Car Age */}
         <div className="step">
-          <span className="step-num">Step 02 — 車両状態</span>
+          <span className="step-num">Step 03 — 車両状態</span>
           <h3 className="step-title">新車・経年車の選択</h3>
           <div className="toggle-group">
             <button className={`toggle-btn ${carAge === "new" ? "active" : ""}`} onClick={() => setCarAge("new")}>
@@ -559,9 +765,9 @@ function QuoteLp({ onAdmin }) {
           {errors.carAge && <p style={{color:"#ff6b6b",fontSize:11,marginTop:8}}>{errors.carAge}</p>}
         </div>
 
-        {/* STEP 3: Menu */}
+        {/* STEP 4: Menu */}
         <div className="step">
-          <span className="step-num">Step 03 — コーティングメニュー</span>
+          <span className="step-num">Step 04 — コーティングメニュー</span>
           <h3 className="step-title">メニューを選択</h3>
           {errors.menu && <p style={{color:"#ff6b6b",fontSize:11,marginBottom:12}}>{errors.menu}</p>}
           <div className="menu-grid">
@@ -587,256 +793,224 @@ function QuoteLp({ onAdmin }) {
           </div>
         </div>
 
-        {/* STEP 4: Options */}
-        <div className="step">
-          <span className="step-num">Step 04 — オプション</span>
-          <h3 className="step-title">追加オプション（任意）</h3>
-          <div className="option-grid">
-            {OPTION_DATA.map(opt => {
-              const price = size ? getOptionPrice(opt.id, size) : null;
-              const checked = !!options[opt.id];
-              return (
-                <div key={opt.id} className={`option-item ${checked ? "checked" : ""}`} onClick={() => toggleOption(opt.id)}>
-                  <div className="option-checkbox">
-                    {checked && <span className="option-check-mark">✓</span>}
-                  </div>
-                  <span className="option-label">{opt.label}</span>
-
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* RESULT PREVIEW after Step 4 - 新導線 */}
-        {menu && size && carAge && !submitted && (
+        {/* 見積もり価格の表示（個人情報の入力なし・その場で表示） */}
+        {readyForQuote && !quoteId && (
           <div style={{border:"1px solid var(--border)",background:"var(--navy-mid)",padding:"28px 24px",marginBottom:20,borderRadius:8}}>
-
-            {/* AI解析完了バナー */}
-            <div style={{textAlign:"center",marginBottom:24}}>
-              <div style={{display:"inline-flex",alignItems:"center",gap:8,background:"rgba(37,86,168,0.2)",border:"1px solid #2556a8",borderRadius:20,padding:"6px 16px",marginBottom:12}}>
-                <span style={{color:"#3a7bd5",fontSize:11,letterSpacing:"0.2em"}}>✦ AI ESTIMATE COMPLETE</span>
-              </div>
+            <div style={{textAlign:"center",marginBottom:20}}>
               <h2 style={{fontFamily:"'Noto Sans JP',sans-serif",fontSize:"clamp(18px,4vw,24px)",fontWeight:700,color:"#f0f4f8",marginBottom:8}}>
-                あなたの愛車のAI見積が完成しました
+                準備ができました
               </h2>
-              <p style={{fontSize:13,color:"#a8b4c4",lineHeight:1.6}}>
-                AI見積結果を<strong style={{color:"#f0f4f8"}}>最短1分でメールにお届け</strong>します
+              <p style={{fontSize:13,color:"#a8b4c4",lineHeight:1.7}}>
+                下のボタンを押すと、<strong style={{color:"#f0f4f8"}}>その場で見積もり価格</strong>を表示します。<br />
+                お名前・メールアドレスの入力は不要です。
               </p>
             </div>
-
-            {/* ぼかし見積カード */}
-            <div style={{position:"relative",marginBottom:24,borderRadius:8,overflow:"hidden"}}>
-              {/* 見積内容（ぼかし） */}
-              <div style={{filter:"blur(6px)",userSelect:"none",pointerEvents:"none",background:"rgba(13,27,46,0.9)",padding:"20px",borderRadius:8,border:"1px solid #1e3a5f"}}>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px 24px",marginBottom:16}}>
-                  {[["メーカー",maker],["車種",model],["サイズ",size],["車両状態",carAge==="new"?"新車":"経年車"],["メニュー",menu]].map(([k,v])=>(
-                    <div key={k} style={{display:"flex",justifyContent:"space-between",padding:"6px 0",borderBottom:"1px solid #1e3a5f"}}>
-                      <span style={{color:"#6a7a8a",fontSize:12}}>{k}</span>
-                      <span style={{color:"#a8b4c4",fontSize:12}}>{v}</span>
-                    </div>
-                  ))}
-                </div>
-                <div style={{textAlign:"center",padding:"12px 0"}}>
-                  <div style={{fontSize:11,color:"#6a7a8a",marginBottom:4}}>AI見積金額（税込）</div>
-                  <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:44,color:"#f0f4f8",fontWeight:400,letterSpacing:"0.02em"}}>¥ ██████</div>
-                </div>
-              </div>
-              {/* ロックオーバーレイ */}
-              <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",background:"rgba(8,18,36,0.55)",backdropFilter:"blur(1px)"}}>
-                <div style={{fontSize:28,marginBottom:8}}>🔒</div>
-                <p style={{color:"#f0f4f8",fontSize:13,fontWeight:700,marginBottom:4,textAlign:"center"}}>見積金額はメールでご確認いただけます</p>
-                <p style={{color:"#a8b4c4",fontSize:11,textAlign:"center"}}>お名前・メールアドレス・電話番号を入力してください</p>
-              </div>
+            <div className="quote-rows" style={{maxWidth:420,margin:"0 auto 20px"}}>
+              {[["車種", `${maker} ${model || ""}`],["判定サイズ", size],["車両状態", carAge==="new"?"新車":"経年車"],["コーティング", menu]].map(([k,v])=>(
+                <div key={k} className="quote-row"><span className="k">{k}</span><span className="v">{v}</span></div>
+              ))}
             </div>
-
-            {/* リード取得フォーム */}
-            <div style={{background:"rgba(13,27,46,0.8)",border:"1px solid #2556a8",borderRadius:10,padding:"24px"}}>
-              <p style={{fontFamily:"'Noto Sans JP',sans-serif",fontSize:13,color:"#a8b4c4",marginBottom:20,textAlign:"center",lineHeight:1.7}}>
-                以下を入力して<strong style={{color:"#f0f4f8"}}>無料AI見積を受け取る</strong>
+            {/* Cloudflare Turnstile（Site Key設定時のみ表示） */}
+            {import.meta.env.VITE_TURNSTILE_SITE_KEY ? (
+              <div ref={turnstileRef} style={{margin:"0 auto 12px",display:"flex",justifyContent:"center",minHeight:65}} />
+            ) : null}
+            <button className="reveal-btn" onClick={revealQuote} disabled={isSubmitting}>
+              {isSubmitting ? "見積もりを作成中..." : "見積もり価格を表示する →"}
+            </button>
+            {quoteError && (
+              <p style={{color:"#ff6b6b",fontSize:13,textAlign:"center",marginTop:12,padding:"10px",background:"rgba(255,107,107,0.1)",borderRadius:6}}>
+                ⚠️ {quoteError}
               </p>
-              <div style={{marginBottom:14}}>
-                <label style={{color:"#a8b4c4",fontSize:12,display:"block",marginBottom:6}}>お名前 <span style={{color:"#ff6b6b"}}>*</span></label>
-                <input
-                  value={leadName}
-                  onChange={e=>setLeadName(e.target.value)}
-                  placeholder="山田 太郎"
-                  style={{width:"100%",padding:"13px",background:"#1a2a3e",border:`1px solid ${leadErrors.name?"#ff6b6b":"#2556a8"}`,borderRadius:6,color:"#f0f4f8",fontSize:15,boxSizing:"border-box"}}
-                />
-                {leadErrors.name && <p style={{color:"#ff6b6b",fontSize:11,marginTop:4}}>{leadErrors.name}</p>}
-              </div>
-              <div style={{marginBottom:14}}>
-                <label style={{color:"#a8b4c4",fontSize:12,display:"block",marginBottom:6}}>メールアドレス <span style={{color:"#ff6b6b"}}>*</span></label>
-                <input
-                  value={leadEmail}
-                  onChange={e=>setLeadEmail(e.target.value)}
-                  placeholder="example@email.com"
-                  type="email"
-                  inputMode="email"
-                  style={{width:"100%",padding:"13px",background:"#1a2a3e",border:`1px solid ${leadErrors.email?"#ff6b6b":"#2556a8"}`,borderRadius:6,color:"#f0f4f8",fontSize:15,boxSizing:"border-box"}}
-                />
-                {leadErrors.email && <p style={{color:"#ff6b6b",fontSize:11,marginTop:4}}>{leadErrors.email}</p>}
-              </div>
-              <div style={{marginBottom:20}}>
-                <label style={{color:"#a8b4c4",fontSize:12,display:"block",marginBottom:6}}>電話番号 <span style={{color:"#ff6b6b"}}>*</span></label>
-                <input
-                  value={leadPhone}
-                  onChange={e=>setLeadPhone(e.target.value)}
-                  placeholder="090-0000-0000"
-                  type="tel"
-                  inputMode="tel"
-                  style={{width:"100%",padding:"13px",background:"#1a2a3e",border:`1px solid ${leadErrors.phone?"#ff6b6b":"#2556a8"}`,borderRadius:6,color:"#f0f4f8",fontSize:15,boxSizing:"border-box"}}
-                />
-                {leadErrors.phone && <p style={{color:"#ff6b6b",fontSize:11,marginTop:4}}>{leadErrors.phone}</p>}
-              </div>
-              {/* Cloudflare Turnstile */}
-              {import.meta.env.VITE_TURNSTILE_SITE_KEY ? (
-                <div
-                  ref={turnstileRef}
-                  style={{margin:"0 auto 12px",display:"flex",justifyContent:"center",minHeight:65}}
-                />
-              ) : (
-                <p style={{fontSize:11,color:"#ff6b6b",textAlign:"center",marginBottom:8}}>⚠️ Turnstile Site Keyが設定されていません（VITE_TURNSTILE_SITE_KEY）</p>
-              )}
-              <button
-                onClick={async ()=>{
-                  // ── バリデーション（isSubmitting前に実行）
-                  const errs = {};
-                  if(!leadName.trim()) errs.name = "お名前を入力してください";
-                  if(!leadEmail.trim()) errs.email = "メールアドレスを入力してください";
-                  else if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(leadEmail)) errs.email = "正しいメールアドレスを入力してください";
-                  if(!leadPhone.trim()) errs.phone = "電話番号を入力してください";
-                  else if(!/^[0-9\-+() ]{10,}$/.test(leadPhone)) errs.phone = "正しい電話番号を入力してください";
-                  if(Object.keys(errs).length > 0){ setLeadErrors(errs); return; }
-                  setLeadErrors({});
-
-                  // ── Turnstileトークン確認（isSubmitting前）
-                  const token = turnstileToken || window.__turnstileTokenValue__ || "";
-                  if (!token) {
-                    setLeadErrors({ submit: "セキュリティ認証が完了していません。しばらくお待ちください。" });
-                    return;
-                  }
-
-                  // ── 二重送信防止
-                  if (isSubmitting) return;
-                  setIsSubmitting(true);
-
-                  // ── APIペイロード（金額はサーバー側で再計算）
-                  const optionIds = OPTION_DATA.filter(o => options[o.id]).map(o => o.id);
-                  const payload = {
-                    customer: { name: leadName.trim(), email: leadEmail.trim(), phone: leadPhone.trim(), pref: "" },
-                    vehicle: { maker, model: model || "不明", size, carAge },
-                    menu,
-                    optionIds,
-                    turnstileToken: token,
-                  };
-
-                  let serverQuoteId = "";
-                  try {
-                    const res = await fetch("/api/submit-quote", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify(payload)
-                    });
-                    const resData = await res.json().catch(() => ({}));
-                    if (res.ok && resData.ok && resData.id) {
-                      serverQuoteId = resData.id;
-                    } else {
-                      setLeadErrors({ submit: resData.error || "送信に失敗しました。もう一度お試しください。" });
-                      resetTurnstile();
-                      return;
-                    }
-                  } catch(err) {
-                    setLeadErrors({ submit: "ネットワークエラーが発生しました。もう一度お試しください。" });
-                    resetTurnstile();
-                    return;
-                  } finally {
-                    setIsSubmitting(false);
-                  }
-
-                  // ── 完了状態（API成功時のみ）
-                  setSubmittedId(serverQuoteId);
-                  setSubmitted(true);
-                  resetTurnstile();
-
-                  // ── 広告計測（送信成功時のみ発火）
-                  if(typeof window.gtag === "function") {
-                    window.gtag("event", "ai_estimate_submitted", { event_category: "lead", event_label: serverQuoteId });
-                    window.gtag("event", "generate_lead", { event_category: "lead" });
-                  }
-                  if(typeof window.fbq === "function") {
-                    window.fbq("track", "Lead", { content_name: "AI見積", content_category: "カーコーティング" });
-                  }
-                }}
-                disabled={isSubmitting}
-                style={{width:"100%",padding:"18px",background:isSubmitting?"#1a3a6e":"linear-gradient(135deg,#2556a8,#3a7bd5)",border:"none",color:"white",fontSize:16,fontWeight:700,borderRadius:8,cursor:isSubmitting?"not-allowed":"pointer",fontFamily:"'Noto Sans JP',sans-serif",letterSpacing:"0.08em",opacity:isSubmitting?0.7:1}}
-              >
-                {isSubmitting ? "AI見積を送信中..." : "無料AI見積をメールで受け取る →"}
-              </button>
-              {leadErrors.submit && (
-                <p style={{color:"#ff6b6b",fontSize:13,textAlign:"center",marginTop:12,padding:"10px",background:"rgba(255,107,107,0.1)",borderRadius:6}}>
-                  ⚠️ {leadErrors.submit}
-                </p>
-              )}
-              <p style={{fontSize:11,color:"#6a7a8a",textAlign:"center",marginTop:10}}>
-                入力情報はお見積の送付以外には使用しません
-              </p>
-            </div>
+            )}
           </div>
         )}
 
-        {/* 送信完了画面 */}
-        {submitted && (
-          <div style={{border:"1px solid #2556a8",background:"var(--navy-mid)",padding:"40px 24px",marginBottom:20,borderRadius:8,textAlign:"center"}}>
-            <div style={{fontSize:48,marginBottom:16}}>✅</div>
-            <h2 style={{fontFamily:"'Noto Sans JP',sans-serif",fontSize:"clamp(20px,4vw,28px)",fontWeight:700,color:"#f0f4f8",marginBottom:12}}>
-              AI見積を送信しました
-            </h2>
-            <p style={{fontSize:14,color:"#a8b4c4",lineHeight:1.8,marginBottom:8}}>
-              ご入力いただいたメールアドレスへ<br />
-              <strong style={{color:"#f0f4f8"}}>AI見積結果をお送りしました。</strong>
+        {/* 見積結果（その場で即時表示） */}
+        {quoteId && (
+          <div className="quote-result" id="quote-result">
+            <p style={{textAlign:"center",marginBottom:10}}>
+              <span style={{display:"inline-block",background:"rgba(37,86,168,0.2)",border:"1px solid #2556a8",borderRadius:20,padding:"5px 16px",color:"#3a7bd5",fontSize:11,letterSpacing:"0.2em"}}>ESTIMATE RESULT</span>
             </p>
-            <p style={{fontSize:12,color:"#6a7a8a",marginBottom:32}}>見積番号：{submittedId}</p>
+            <h2 className="quote-result-title">あなたの愛車のお見積もり</h2>
 
-            <p style={{fontSize:13,color:"#a8b4c4",marginBottom:20,fontWeight:500}}>
-              そのままご相談も承っております
-            </p>
-
-            <div style={{display:"flex",flexDirection:"column",gap:14,maxWidth:320,margin:"0 auto"}}>
-              <a
-                href="https://line.me/ti/p/@271goter"
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={()=>{ if(typeof window.gtag==="function") window.gtag("event","line_click",{event_category:"cta",event_label:"complete_screen"}); }}
-                style={{display:"block",padding:"18px",background:"#06c755",borderRadius:8,color:"white",fontSize:15,fontWeight:700,textDecoration:"none",letterSpacing:"0.05em"}}
-              >
-                💬 LINEで相談する
-              </a>
-              <a
-                href="tel:0455488588"
-                onClick={()=>{ if(typeof window.gtag==="function") window.gtag("event","phone_click",{event_category:"cta",event_label:"complete_screen"}); }}
-                style={{display:"block",padding:"18px",background:"#1a2a3e",border:"1px solid #2556a8",borderRadius:8,color:"#f0f4f8",fontSize:15,fontWeight:700,textDecoration:"none",letterSpacing:"0.05em"}}
-              >
-                📞 電話で相談する（045-548-8588）
-              </a>
+            <div className="quote-rows">
+              <div className="quote-row"><span className="k">車種</span><span className="v">{maker} {model || ""}</span></div>
+              <div className="quote-row"><span className="k">判定サイズ</span><span className="v">{size}</span></div>
+              <div className="quote-row"><span className="k">車両状態</span><span className="v">{carAge==="new"?"新車":"経年車"}</span></div>
+              <div className="quote-row"><span className="k">{IS_CAMPAIGN ? "対象コーティング" : "選択・おすすめコーティング"}</span><span className="v">{menu}</span></div>
             </div>
+
+            {IS_CAMPAIGN ? (
+              /* キャンペーン版：通常価格 → 公式LINE追加で50％OFF */
+              <div className="quote-price-box">
+                <p className="quote-price-label">通常価格</p>
+                <p className="quote-price-strike">{fmt(total)}</p>
+                <div><span className="quote-price-off">公式LINE追加で50％OFF</span></div>
+                <p className="quote-price-camp">{fmt(campaignPriceOf(total))}<small style={{fontSize:14,color:"#a8b4c4",fontFamily:"'Noto Sans JP',sans-serif",fontWeight:400,marginLeft:6}}>（税込）</small></p>
+                <p className="quote-price-bonus">＋ ウィンドウコート付き</p>
+              </div>
+            ) : (
+              /* 通常版：通常のお見積もり価格 */
+              <div className="quote-price-box">
+                <p className="quote-price-label">通常のお見積もり価格</p>
+                <p className="quote-price-main">{fmt(total)}<small>（税込）</small></p>
+              </div>
+            )}
+
+            {/* 見積もり番号＋コピー */}
+            <div className="quote-no-box">
+              <p className="quote-no-label">見積もり番号</p>
+              <div className="quote-no-row">
+                <span className="quote-no-value">{quoteId}</span>
+                <button className="copy-btn" onClick={copyQuoteId}>📋 コピー</button>
+              </div>
+            </div>
+
+            {/* 通常版のみ：公式LINE限定キャンペーン（見積結果とは別の特典として表示） */}
+            {!IS_CAMPAIGN && (
+              <div className="camp-box">
+                <span className="camp-eyebrow">公式LINE限定キャンペーン</span>
+                <p className="camp-title"><em>Original CERAMIC 50％OFF</em></p>
+                <p className="camp-sub">＋ ウィンドウコート付き</p>
+                <p style={{fontSize:12,color:"var(--white-dim)",lineHeight:1.8,margin:0}}>公式LINEを追加いただいた方だけの限定特典です。</p>
+              </div>
+            )}
+
+            {/* 公式LINE誘導（見積もり番号の送信案内） */}
+            <div className="line-guide">
+              <p className="line-guide-title">公式LINE追加後、トーク画面に<br />「見積もり番号」を入力してください。</p>
+              <div className="quote-no-row" style={{margin:"10px 0 12px"}}>
+                <span className="quote-no-value" style={{fontSize:"clamp(15px,4.6vw,20px)"}}>{quoteId}</span>
+                <button className="copy-btn" onClick={copyQuoteId}>📋 コピー</button>
+              </div>
+              <p className="line-guide-note">
+                スタッフが見積もり内容を確認し、キャンペーンや施工についてご案内いたします。<br />
+                <strong style={{color:"#ffd479"}}>※ LINEへ移動する前に、上の「コピー」ボタンで見積もり番号をコピーしてください</strong>
+              </p>
+            </div>
+            <a
+              className="line-cta"
+              href={LINE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={()=>{ if(typeof window.gtag==="function") window.gtag("event","line_click",{event_category:"cta",event_label: IS_CAMPAIGN ? "campaign_result" : "normal_result"}); }}
+            >
+              {IS_CAMPAIGN ? <>公式LINEを追加して<br />50％OFF＋ウィンドウコート付きを受け取る</> : <>公式LINEを追加して<br />限定キャンペーンを受け取る</>}
+            </a>
+
+            {/* ご相談までの流れ */}
+            <div className="consult-flow" style={{marginTop:20}}>
+              <p className="consult-flow-title">ご相談までの流れ</p>
+              {[
+                "公式LINEを追加",
+                "見積もり番号をトーク画面に入力",
+                "スタッフが見積内容を確認",
+                "キャンペーン・施工内容をご案内",
+                "相談・施工予約",
+              ].map((t,i)=>(
+                <div key={i} className="consult-step">
+                  <span className="no">{String(i+1).padStart(2,"0")}</span>
+                  <span className="tx">{t}</span>
+                </div>
+              ))}
+            </div>
+            <p style={{fontSize:11,color:"var(--silver-dim)",textAlign:"center",lineHeight:1.8,margin:0}}>
+              ※ 表示価格は概算です。車両の状態により変動する場合があります。正式なお見積もりは現車確認のうえご提示いたします。
+            </p>
           </div>
         )}
+
+        {/* コピー完了トースト */}
+        {copied && <div className="copy-toast">✓ 見積もり番号をコピーしました</div>}
       </div>
 
-      {/* SEO説明エリア */}
-      <section style={{background:"#060f1c",borderTop:"1px solid #1a2a3e",padding:"40px 24px",textAlign:"center"}}>
+      {/* スタッフ紹介・Un cuoreとは？・安心要素 */}
+      <StaffSection />
+
+      {/* AI見積もりとは？（簡潔に） */}
+      <section style={{background:"#060f1c",borderTop:"1px solid #1a2a3e",padding:"48px 24px",textAlign:"center"}}>
         <div style={{maxWidth:700,margin:"0 auto"}}>
-          <h2 style={{fontFamily:"'Noto Sans JP',sans-serif",fontSize:"clamp(14px,3vw,18px)",fontWeight:500,color:"#a8b4c4",marginBottom:12,letterSpacing:"0.05em"}}>
-            横浜・都筑のカーコーティング AI見積シミュレーション
+          <h2 style={{fontFamily:"'Noto Sans JP',sans-serif",fontSize:"clamp(16px,3.4vw,22px)",fontWeight:700,color:"#f0f4f8",marginBottom:12,letterSpacing:"0.05em"}}>
+            写真からすぐに見積もり
           </h2>
-          <p style={{fontFamily:"'Noto Sans JP',sans-serif",fontSize:13,color:"#6a7a8a",lineHeight:1.8,margin:0}}>
-            Uncuoreは横浜市都筑区のカーコーティング専門店です。<br />
-            AI見積シミュレーションを使って、愛車に合わせたカーコーティングの概算料金をオンラインで簡単に確認できます。
+          <p style={{fontFamily:"'Noto Sans JP',sans-serif",fontSize:13,color:"#a8b4c4",lineHeight:2.0,margin:0}}>
+            愛車の写真からAIが車種・サイズなどを判定し、<br />
+            コーティングのお見積もりをスピーディーにご案内します。
+          </p>
+          <p style={{fontFamily:"'Noto Sans JP',sans-serif",fontSize:12,color:"#6a7a8a",lineHeight:1.9,margin:"14px 0 0"}}>
+            横浜市都筑区のカーコーティング専門店 Un cuore
           </p>
         </div>
       </section>
     </>
+  );
+}
+
+// ── STAFF & ABOUT SECTION ────────────────────────────────────────────────────
+function StaffSection() {
+  return (
+    <section className="staff-section" style={{borderTop:"1px solid #1a2a3e"}}>
+      <p className="section-eyebrow">Staff &amp; Shop</p>
+      <h2 className="section-title">私たちが<em>施工</em>します</h2>
+      <div className="section-line" />
+
+      <div className="staff-grid">
+        {/* 左（スマホでは上）：スタッフ画像 */}
+        <div className="staff-photos">
+          {STAFF_MEMBERS.map((s, i) => (
+            <div key={i} className="staff-photo">
+              <div className="ph"><span style={{fontSize:26}}>👤</span><span>STAFF PHOTO</span></div>
+              <img
+                src={s.img}
+                alt={s.alt}
+                loading="lazy"
+                onError={(e) => { e.currentTarget.style.display = "none"; }}
+              />
+            </div>
+          ))}
+        </div>
+
+        {/* 右（スマホでは下）：Un cuoreとは？ */}
+        <div className="staff-about">
+          <h3>Un cuoreとは？</h3>
+          <p>
+            神奈川県港北を拠点に、カーコーティング施工を行う専門店。
+          </p>
+          <p>
+            Un cuoreは、愛車一台一台と真剣に向き合い、<br className="pc-br" />
+            お客様の大切な車を自分たちの車のように想いながら施工しています。
+          </p>
+          <p>
+            <strong>「一心同体」</strong>の気持ちと、<br className="pc-br" />
+            <strong>「一心不乱」</strong>に磨き続けてきた技術で、<br className="pc-br" />
+            愛車本来の美しさを最大限に引き出します。
+          </p>
+          <p style={{color:"#f0f4f8",fontWeight:700}}>
+            一台一台、心を込めて。<br />
+            愛車を最高の状態へ。
+          </p>
+        </div>
+      </div>
+
+      {/* 安心要素 3項目 */}
+      <div className="trust-grid">
+        <div className="trust-card">
+          <span className="ic">🛠</span>
+          <h4>確かな施工技術</h4>
+          <p>経験を積んだスタッフが、一台一台丁寧に施工。</p>
+        </div>
+        <div className="trust-card">
+          <span className="ic">✨</span>
+          <h4>厳選したコーティング</h4>
+          <p>艶・耐久性・撥水性など、愛車に合わせてご提案。</p>
+        </div>
+        <div className="trust-card">
+          <span className="ic">🤝</span>
+          <h4>施工後も安心のサポート</h4>
+          <p>施工後のお手入れやメンテナンスについても相談可能。</p>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -867,13 +1041,18 @@ function HeroSection() {
         }} />
       ))}
       <div style={{position:"absolute",inset:0,background:"linear-gradient(160deg,rgba(13,27,46,0.92) 0%,rgba(13,27,46,0.6) 50%,rgba(13,27,46,0.88) 100%)",zIndex:1}} />
-      <div style={{position:"relative",zIndex:2,padding:"0 60px",maxWidth:800}}>
+      <div style={{position:"relative",zIndex:2,padding:"0 60px",maxWidth:800}} className="hero-inner">
         <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,letterSpacing:"0.4em",color:"#3a7bd5",textTransform:"uppercase",marginBottom:16,fontWeight:300}}>Car Coating Specialist — Yokohama</p>
-        <h1 style={{fontFamily:"'Noto Sans JP',sans-serif",fontSize:"clamp(36px,5vw,72px)",fontWeight:700,lineHeight:1.3,color:"#f0f4f8",marginBottom:8,letterSpacing:"0.05em"}}>カーコーティング<br /><em style={{fontStyle:"normal",color:"#3a7bd5",fontWeight:700}}>AI シミュレーション</em></h1>
-        <p style={{fontSize:14,color:"#a8b4c4",marginBottom:40,fontWeight:300,letterSpacing:"0.05em"}}>愛車にふさわしい、最高峰のコーティングを。<br />まずは無料で愛車見積を。</p>
-        <button style={{display:"inline-flex",alignItems:"center",gap:14,padding:"16px 40px",background:"#2556a8",border:"none",color:"white",fontSize:13,letterSpacing:"0.2em",fontWeight:500,cursor:"pointer",fontFamily:"'Noto Sans JP',sans-serif",textTransform:"uppercase"}}
+        <h1 style={{fontFamily:"'Noto Sans JP',sans-serif",fontSize:"clamp(34px,5vw,64px)",fontWeight:700,lineHeight:1.35,color:"#f0f4f8",marginBottom:14,letterSpacing:"0.04em"}}>あなたの愛車を<br /><em style={{fontStyle:"normal",color:"#3a7bd5",fontWeight:700}}>10秒で見積もり。</em></h1>
+        <p style={{fontSize:15,color:"#c4d0de",marginBottom:24,fontWeight:400,letterSpacing:"0.04em",lineHeight:2.0}}>愛車の写真を撮るだけ。<br />あなたの車に合ったコーティング価格がすぐにわかる。</p>
+        <div className="hero-features">
+          <span className="hero-feature"><span className="ic">✓</span>写真をアップロードするだけ</span>
+          <span className="hero-feature"><span className="ic">✓</span>AIが車種・サイズを自動判定</span>
+          <span className="hero-feature"><span className="ic">✓</span>その場で見積もり価格を表示</span>
+        </div>
+        <button style={{display:"inline-flex",alignItems:"center",gap:14,padding:"18px 44px",background:"linear-gradient(135deg,#2556a8,#3a7bd5)",border:"none",color:"white",fontSize:16,letterSpacing:"0.08em",fontWeight:700,cursor:"pointer",fontFamily:"'Noto Sans JP',sans-serif",borderRadius:8,boxShadow:"0 8px 26px rgba(37,86,168,0.5)"}}
           onClick={() => document.getElementById("quote-section").scrollIntoView({ behavior: "smooth" })}>
-          無料見積を始める →
+          無料で愛車を見積もる →
         </button>
       </div>
       <div style={{position:"absolute",bottom:28,right:40,zIndex:3,display:"flex",gap:8}}>

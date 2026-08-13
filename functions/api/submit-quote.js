@@ -183,7 +183,8 @@ export async function onRequestPost(context){
   const kv=kvOf(env);
   if(!sameOrigin(request)) return json({error:"不正なリクエストです"},403);
   if(!kv) return json({error:"現在見積機能の設定を確認中です。時間をおいてもう一度お試しください。"},503);
-  if(!env.RESEND_API_KEY) return json({error:"現在メール送信機能を準備中です。時間をおいてもう一度お試しください。"},503);
+  // RESEND_API_KEY 未設定でも見積発行は止めない。
+  // メール送信は「メールアドレス入力あり かつ RESEND_API_KEY 設定あり」の場合のみ行う。
 
   const ip=(request.headers.get("CF-Connecting-IP")||"unknown").slice(0,80);
   if(await rateLimit(kv,`rl:submit-quote:${ip}`,8,600)){
@@ -206,16 +207,39 @@ export async function onRequestPost(context){
   const model=str(body.vehicle?.model,100);
   const size=str(body.vehicle?.size,4);
   const carAge=str(body.vehicle?.carAge,10);
+  const menuName=str(body.menu,100);
+  const source=body.source==="campaign" ? "campaign" : "normal";
 
-  if(!name || !/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(email) || !/^[0-9+\-()\s]{8,30}$/.test(phone)){
-    return json({error:"お名前・メールアドレス・電話番号をご確認ください。"},400);
+  // 氏名・メール・電話は任意（LP即時表示フローでは未入力のまま見積を発行する）。
+  // 入力された場合のみ形式チェックを行う。
+  if(email && !/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(email)){
+    return json({error:"メールアドレスをご確認ください。"},400);
+  }
+  if(phone && !/^[0-9+\-()\s]{8,30}$/.test(phone)){
+    return json({error:"電話番号をご確認ください。"},400);
   }
   if(!maker || !SIZES.includes(size) || !["new","used"].includes(carAge)){
     return json({error:"車両情報が不足しています。最初からやり直してください。"},400);
   }
 
   const cfg=await loadPricing(kv);
-  const calc=computeResults(cfg,carAge,size,body.optionIds);
+  let calc=computeResults(cfg,carAge,size,body.optionIds);
+
+  // LPで選択されたメニューが指定されている場合は、そのメニュー単体で見積を作成する
+  const chosenMenu=menuName ? cfg.menus.find(m=>m.name===menuName) : null;
+  if(chosenMenu){
+    calc={
+      selectedOptions:calc.selectedOptions,
+      optionTotal:calc.optionTotal,
+      results:[{
+        id:chosenMenu.id,
+        name:chosenMenu.name,
+        years:Number(chosenMenu.years||0),
+        total:menuBase(chosenMenu,carAge,size)+calc.optionTotal,
+        recommend:true,no1:false,ai:true,highlight:true,
+      }],
+    };
+  }
   if(!calc.results.length) return json({error:"見積メニューを取得できませんでした。"},500);
 
   const id=makeId();
@@ -287,23 +311,33 @@ export async function onRequestPost(context){
 <tr><td style="background:#eef2f7;padding:16px;text-align:center;color:#8a96a8;font-size:10px">${tplFooter}</td></tr>
 </table></td></tr></table></body></html>`;
 
+  // お客様メールは「メールアドレス入力あり かつ RESEND_API_KEY 設定あり」の場合のみ送信
+  //（LP即時表示フローでは未入力のため送信しない。キー未設定でも見積発行は継続する）
+  const canSendEmail = !!(email && env.RESEND_API_KEY);
   let customerEmailOk=false;
-  try{
-    const r=await fetch("https://api.resend.com/emails",{
-      method:"POST",
-      headers:{"Authorization":`Bearer ${env.RESEND_API_KEY}`,"Content-Type":"application/json"},
-      body:JSON.stringify({
-        from:`Uncuore AI見積 <${FROM}>`,
-        to:[email],
-        subject:Object.entries({"{見積番号}":id,"{メーカー}":maker,"{車種}":model,"{名前}":name})
-          .reduce((s,[token,value])=>s.split(token).join(value),String(tpl.subject||DEFAULT_EMAIL_TEMPLATE.subject))
-          .replace(/[\r\n]+/g," ").slice(0,240),
-        html:customerHtml
-      })
-    });
-    if(r.ok) customerEmailOk=true;
-    else console.error("[submit-quote] customer email failed",r.status,await r.text());
-  }catch(e){console.error("[submit-quote] customer email exception",e?.message||e);}
+  if(canSendEmail){
+    try{
+      const r=await fetch("https://api.resend.com/emails",{
+        method:"POST",
+        headers:{"Authorization":`Bearer ${env.RESEND_API_KEY}`,"Content-Type":"application/json"},
+        body:JSON.stringify({
+          from:`Uncuore AI見積 <${FROM}>`,
+          to:[email],
+          subject:Object.entries({"{見積番号}":id,"{メーカー}":maker,"{車種}":model,"{名前}":name})
+            .reduce((s,[token,value])=>s.split(token).join(value),String(tpl.subject||DEFAULT_EMAIL_TEMPLATE.subject))
+            .replace(/[\r\n]+/g," ").slice(0,240),
+          html:customerHtml
+        })
+      });
+      if(r.ok) customerEmailOk=true;
+      else console.error("[submit-quote] customer email failed",r.status,await r.text());
+    }catch(e){console.error("[submit-quote] customer email exception",e?.message||e);}
+  }
+
+  const emailStatus = canSendEmail ? (customerEmailOk ? "sent" : "failed") : "none";
+  const historyLine = canSendEmail
+    ? `[${now.toLocaleString("ja-JP",{timeZone:"Asia/Tokyo"})}] AI見積メール ${customerEmailOk?"送信済み":"送信失敗"}`
+    : `[${now.toLocaleString("ja-JP",{timeZone:"Asia/Tokyo"})}] AI見積を発行（LP即時表示・LINE誘導）`;
 
   const record={
     no:id,
@@ -314,33 +348,60 @@ export async function onRequestPost(context){
     years:calc.results[0].years,
     options:calc.selectedOptions.map(o=>o.name),
     total:calc.results[0].total,
-    source:"normal",campaignName:"",normalPrice:0,campaignPrice:0,
+    source,campaignName:source==="campaign"?"公式LINE限定 50%OFF＋ウィンドウコート":"",normalPrice:0,campaignPrice:0,
     status:"未対応",memo:"",
-    history:[`[${now.toLocaleString("ja-JP",{timeZone:"Asia/Tokyo"})}] AI見積メール ${customerEmailOk?"送信済み":"送信失敗"}`],
-    emailStatus:customerEmailOk?"sent":"failed",
+    history:[historyLine],
+    emailStatus,
     resultMenus:calc.results,
   };
 
   const saved=await saveRecord(kv,`est:${id}`,JSON.stringify(record));
 
-  if(!customerEmailOk){
+  // 管理画面（React版 /#admin）の一覧・見積番号検索用レコードも保存する
+  // （quotes.js は idx: + quote: を参照するため。LINEで見積番号を受け取った際の特定に必須）
+  const quoteRecord={
+    id,
+    date:now.toISOString(),
+    customer:{ name, phone, email, pref },
+    vehicle:{ maker, model, size, carAge },
+    menu:calc.results[0].name,
+    menuDuration:`${calc.results[0].years}年`,
+    menuPrice:calc.results[0].total-calc.optionTotal,
+    options:calc.selectedOptions.map(o=>({id:o.id,label:o.name,price:o.price})),
+    optionTotal:calc.optionTotal,
+    total:calc.results[0].total,
+    source,
+    status:"未対応",
+    memo:"",
+    emailStatus,
+  };
+  const savedQuote=await saveRecord(kv,`quote:${id}`,JSON.stringify(quoteRecord));
+  if(savedQuote){
+    try{ await kv.put(`idx:${now.toISOString()}_${id}`,"1"); }
+    catch(e){ console.error("[submit-quote] idx save failed",e?.message||e); }
+  }
+
+  // メール送信を実際に試みて失敗した場合のみエラー（メール未入力・キー未設定時はエラーにしない）
+  if(canSendEmail && !customerEmailOk){
     return json({error:"メールの送信に失敗しました。メールアドレスをご確認のうえ、もう一度お試しください。"},500);
   }
 
-  const notifyText=`[新規AI見積リード] ${id}
-お名前: ${name}
-メール: ${email}
-電話: ${phone}
+  const notifyText=`[新規AI見積] ${id}${source==="campaign"?"（キャンペーンLP）":""}
+お名前: ${name||"（未入力・LINE誘導フロー）"}
+メール: ${email||"—"}
+電話: ${phone||"—"}
 送信日時: ${now.toLocaleString("ja-JP",{timeZone:"Asia/Tokyo"})}
 車両: ${maker} ${model} / ${size} / ${conditionLabel}
 オプション: ${calc.selectedOptions.map(o=>o.name).join("、")||"なし"}
-見積: ${calc.results.map(r=>`${r.name} ¥${Number(r.total).toLocaleString("ja-JP")}（税別）`).join(" / ")}
+見積: ${calc.results.map(r=>`${r.name} ¥${Number(r.total).toLocaleString("ja-JP")}`).join(" / ")}
+※ お客様にはLINEで見積番号（${id}）を送信いただく案内をしています
 管理画面: https://ai.un-cuore.com/#admin`;
 
   if(!saved){
     const warning=`⚠️ KV保存失敗・管理画面未登録\n${notifyText}`;
     console.error("[submit-quote]",warning);
     context.waitUntil((async()=>{
+      if(!env.RESEND_API_KEY) return; // キー未設定時は通知メールをスキップ
       try{
         const r=await fetch("https://api.resend.com/emails",{
           method:"POST",
@@ -354,11 +415,15 @@ export async function onRequestPost(context){
   }
 
   context.waitUntil((async()=>{
+    if(!env.RESEND_API_KEY) return; // キー未設定時は店舗通知メールをスキップ（見積発行は完了済み）
     try{
       const r=await fetch("https://api.resend.com/emails",{
         method:"POST",
         headers:{"Authorization":`Bearer ${env.RESEND_API_KEY}`,"Content-Type":"application/json"},
-        body:JSON.stringify({from:`Uncuore システム <${FROM}>`,to:[NOTIFY],reply_to:email,subject:`[新規AI見積リード] ${id} ${name}`,text:notifyText})
+        body:JSON.stringify(Object.assign(
+          {from:`Uncuore システム <${FROM}>`,to:[NOTIFY],subject:`[新規AI見積] ${id}${name?" "+name:""}`,text:notifyText},
+          email ? {reply_to:email} : {}
+        ))
       });
       if(!r.ok) console.error("[submit-quote] notify failed",r.status,await r.text());
     }catch(e){console.error("[submit-quote] notify exception",e?.message||e);}
