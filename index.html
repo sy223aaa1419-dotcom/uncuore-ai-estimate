@@ -1828,11 +1828,11 @@ function renderQuoteResult(){
       <div class="qr-plan-kana">${escHtml(p.m.kana||"")}</div>
       <div class="qr-plan-desc">${escHtml(p.m.desc||"")}</div>
       ${p.recommended ? `<div class="qr-plan-price-row">
-        <div class="qr-plan-price"><small>Original CERAMIC＋ウィンドウコート セット通常価格</small><strong>${yen(p.normal)}</strong><small>税別・概算</small></div>
+        <div class="qr-plan-price"><small>Original CERAMIC＋ウィンドウコート付 通常価格</small><strong>${yen(p.normal)}</strong><small>税別・概算</small></div>
         <div class="qr-plan-arrow">→</div>
         <div class="qr-plan-price line"><small>LINEお問い合わせ限定 50%OFF</small><strong>${yen(p.linePrice)}</strong><small>税別・概算</small></div>
       </div>
-      <div class="qr-plan-only-benefit">LINE限定：セット通常価格から50%OFF（ウィンドウコート込み）</div>` : `<div class="qr-plan-price-row single">
+      <div class="qr-plan-only-benefit">LINE限定：通常価格から50%OFF（ウィンドウコート付）</div>` : `<div class="qr-plan-price-row single">
         <div class="qr-plan-price"><small>通常見積価格</small><strong>${yen(p.normal)}</strong><small>税別・概算</small></div>
       </div>`}
     </div>`).join("");
@@ -1853,8 +1853,8 @@ function renderQuoteResult(){
 
     <div class="qr-line-benefit">
       <div class="ey">Original CERAMIC限定｜公式LINE特典</div>
-      <div class="main">Original CERAMIC＋ウィンドウコートのセットを<br>LINEからお問い合わせで <b>50%OFF</b></div>
-      <div class="sub">ウィンドウコート込みのセット価格です</div>
+      <div class="main">Original CERAMIC＋ウィンドウコート付を<br>LINEからお問い合わせで <b>50%OFF</b></div>
+      <div class="sub">ウィンドウコート付の価格です</div>
       <div class="note">※ Cuore russo coat・Veloce Coatingは50%OFF対象外です。</div>
     </div>
 
@@ -1887,7 +1887,7 @@ function estNoBlock(){
 function lineGuideBlock(){
   const cta = IS_CAMPAIGN
     ? "公式LINEを追加して<br>50％OFF＋ウィンドウコート付きを受け取る"
-    : "LINEでこの見積について問い合わせる<br><small style=\"font-size:11px;font-weight:500\">Original CERAMIC＋ウィンドウコートセット 50％OFF</small>";
+    : "LINEでこの見積について問い合わせる<br><small style=\"font-size:11px;font-weight:500\">Original CERAMIC＋ウィンドウコート付 50％OFF</small>";
   return `<div class="line-guide">
     <p class="line-guide-title">公式LINE追加後、トーク画面に<br>「見積もり番号」を入力してください。</p>
     <div class="qr-norow" style="margin:10px 0 12px">
