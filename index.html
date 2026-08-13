@@ -438,6 +438,9 @@ table.ad tr:hover td{background:#f7faff}
 .line-guide-title{font-size:14px;font-weight:700;line-height:1.8;margin-bottom:6px}
 .line-guide-note{font-size:12px;color:var(--muted);line-height:1.9}
 .line-cta{display:block;width:100%;text-align:center;background:#06c755;color:#fff;font-size:16px;font-weight:700;padding:17px 14px;border-radius:8px;text-decoration:none;letter-spacing:.04em;line-height:1.6;box-shadow:0 8px 26px rgba(6,199,85,.35);margin-bottom:18px}
+.tel-cta{display:block;width:100%;text-align:center;background:transparent;color:#fff;font-size:15px;font-weight:700;padding:15px 14px;border-radius:8px;text-decoration:none;letter-spacing:.04em;line-height:1.6;border:1px solid rgba(125,211,252,.45);margin:-6px 0 18px}
+.tel-cta strong{display:block;font-size:22px;letter-spacing:.06em;color:#dbeafe;margin-top:2px}
+.tel-cta small{display:block;font-size:11px;font-weight:500;color:var(--muted);margin-top:2px}
 
 /* ---------- ご相談までの流れ ---------- */
 .consult-flow{border:1px solid var(--line);background:rgba(255,255,255,.03);border-radius:8px;padding:22px 18px;margin-bottom:6px}
@@ -1883,7 +1886,13 @@ function lineGuideBlock(){
     <b style="color:#ffd479">※ LINEへ移動する前に、上の「コピー」ボタンで見積もり番号をコピーしてください</b></p>
   </div>
   <a class="line-cta" href="https://line.me/ti/p/@271goter" target="_blank" rel="noopener"
-    onclick="try{if(typeof window.gtag==='function')window.gtag('event','line_click',{event_category:'cta',event_label:'${IS_CAMPAIGN?"campaign_result":"normal_result"}'});}catch(_){}">${cta}</a>`;
+    onclick="try{if(typeof window.gtag==='function')window.gtag('event','line_click',{event_category:'cta',event_label:'${IS_CAMPAIGN?"campaign_result":"normal_result"}'});}catch(_){}">${cta}</a>
+  <a class="tel-cta" href="tel:0120502168"
+    onclick="try{if(typeof window.gtag==='function')window.gtag('event','tel_click',{event_category:'cta',event_label:'${IS_CAMPAIGN?"campaign_result":"normal_result"}'});}catch(_){}">
+    電話でお問い合わせ
+    <strong>0120-502-168</strong>
+    <small>タップすると発信できます</small>
+  </a>`;
 }
 function consultFlowBlock(){
   const steps = ["公式LINEを追加","見積もり番号を送信","スタッフが内容確認","キャンペーン案内","相談・施工予約"];
