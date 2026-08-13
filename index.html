@@ -341,6 +341,64 @@ table.ad tr:hover td{background:#f7faff}
 .ad-inline{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .ad-inline input,.ad-inline select{padding:8px;border:1px solid #cbd5e6;border-radius:4px;font-size:13px}
 .ad-note{font-size:11.5px;color:#7387ad;margin-top:8px}
+
+/* ---------- Footer SNS links ---------- */
+.footer-socials{
+  display:flex;align-items:center;justify-content:center;gap:14px;
+  margin:22px 0 8px;flex-wrap:wrap;
+}
+.footer-socials a{
+  width:46px;height:46px;display:inline-flex;align-items:center;justify-content:center;
+  border:1px solid rgba(147,167,201,.28);border-radius:50%;
+  background:rgba(255,255,255,.035);color:#fff;text-decoration:none;
+  transition:transform .2s ease,border-color .2s ease,background .2s ease;
+}
+.footer-socials a:hover{transform:translateY(-2px);border-color:rgba(77,163,255,.65);background:rgba(77,163,255,.10)}
+.footer-socials svg{width:22px;height:22px;display:block;fill:currentColor}
+@media(max-width:520px){.footer-socials{gap:12px;margin-top:20px}.footer-socials a{width:44px;height:44px}}
+
+
+/* ---------- AI見積見出し下 SNS 3リンク ---------- */
+.ai-socials{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:14px;
+  margin:26px auto 34px;
+  max-width:760px;
+}
+.ai-socials a{
+  min-height:92px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:9px;
+  border:1px solid rgba(147,167,201,.28);
+  border-radius:10px;
+  background:linear-gradient(160deg,rgba(14,23,48,.82),rgba(7,11,22,.9));
+  color:#fff;
+  text-decoration:none;
+  transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease;
+}
+.ai-socials a:hover{
+  transform:translateY(-2px);
+  border-color:rgba(77,163,255,.65);
+  box-shadow:0 10px 26px rgba(0,0,0,.28);
+}
+.ai-socials svg{width:32px;height:32px;fill:currentColor;display:block}
+.ai-socials span{font-size:13px;font-weight:700;letter-spacing:.08em}
+@media(max-width:560px){
+  .ai-socials{gap:8px;margin:20px auto 28px}
+  .ai-socials a{min-height:82px}
+  .ai-socials svg{width:28px;height:28px}
+  .ai-socials span{font-size:11px}
+}
+
+
+.ai-socials-below{margin-top:42px}
+.ai-socials-below .ai-socials{margin-top:0;margin-bottom:0}
+@media(max-width:560px){.ai-socials-below{margin-top:30px}}
+
 </style>
 
 <style>
@@ -581,6 +639,9 @@ window.STAFF_IMG_FALLBACK = "data:image/jpeg;base64,/9j/4QAYRXhpZgAASUkqAAgAAAAA
   <div class="container">
     <p class="eyebrow fade-up">AI Simulation</p>
     <h2 class="section-title fade-up">無料AI見積シミュレーション</h2>
+
+
+
     <p class="section-sub fade-up">お名前・メールアドレスの入力は不要 ｜ その場で見積もり価格を表示します</p>
 
     <div class="wizard-shell fade-up">
@@ -588,7 +649,24 @@ window.STAFF_IMG_FALLBACK = "data:image/jpeg;base64,/9j/4QAYRXhpZgAASUkqAAgAAAAA
       <div class="progress-meta"><span id="stepLabel">STEP 1 / 5</span><b id="stepName">車両情報</b></div>
       <div class="wizard-body" id="wizardBody"></div>
     </div>
-  </div>
+  
+    <div class="ai-socials-below">
+    <div class="ai-socials" aria-label="Un cuore 公式SNS">
+      <a href="https://www.youtube.com/@Uncuore-official" target="_blank" rel="noopener" aria-label="YouTube">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.6 3.6 12 3.6 12 3.6s-7.6 0-9.4.5A3 3 0 0 0 .5 6.2C0 8 0 12 0 12s0 4 .5 5.8a3 3 0 0 0 2.1 2.1c1.8.5 9.4.5 9.4.5s7.6 0 9.4-.5a3 3 0 0 0 2.1-2.1C24 16 24 12 24 12s0-4-.5-5.8ZM9.6 15.5v-7l6.2 3.5-6.2 3.5Z"/></svg>
+        <span>YouTube</span>
+      </a>
+      <a href="https://www.instagram.com/uncuore_official/" target="_blank" rel="noopener" aria-label="Instagram">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5Zm0 2a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3H7Zm5 3.5A4.5 4.5 0 1 1 7.5 12 4.5 4.5 0 0 1 12 7.5Zm0 2A2.5 2.5 0 1 0 14.5 12 2.5 2.5 0 0 0 12 9.5ZM17.8 6.2a1.05 1.05 0 1 1-1.05 1.05A1.05 1.05 0 0 1 17.8 6.2Z"/></svg>
+        <span>Instagram</span>
+      </a>
+      <a href="https://www.tiktok.com/@uncuore_" target="_blank" rel="noopener" aria-label="TikTok">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.7 2h3a5.8 5.8 0 0 0 4.3 4.3v3a9 9 0 0 1-4.3-1.1v7.1a6.7 6.7 0 1 1-6.7-6.7c.4 0 .8 0 1.2.1v3.2a3.7 3.7 0 1 0 2.5 3.5V2Z"/></svg>
+        <span>TikTok</span>
+      </a>
+    </div>
+    </div>
+</div>
 </section>
 
 <footer>
@@ -598,6 +676,9 @@ window.STAFF_IMG_FALLBACK = "data:image/jpeg;base64,/9j/4QAYRXhpZgAASUkqAAgAAAAA
       <a class="cta gold" href="#estimate">無料AI見積</a>
       <a class="cta line" href="https://line.me/ti/p/@271goter" target="_blank" rel="noopener">LINEで相談</a>
     </div>
+
+
+
     <p>© UNCUORE All Rights Reserved.</p>
     <p style="margin-top:14px"><a href="#admin" onclick="location.hash='admin'" style="font-size:10px;color:rgba(147,167,201,.45);letter-spacing:.2em;text-decoration:none">ADMIN — 管理者ログイン</a></p>
   </div>
