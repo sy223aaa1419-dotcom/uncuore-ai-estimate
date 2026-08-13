@@ -393,6 +393,27 @@ table.ad tr:hover td{background:#f7faff}
 .qr-price small{font-size:14px;color:var(--muted);font-family:var(--sans);font-weight:400;margin-left:6px}
 .qr-note{font-size:11px;color:var(--muted);text-align:center;line-height:1.8;margin:14px 0 0}
 
+/* ---------- 見積結果：3プラン比較 ---------- */
+.qr-plan-list{display:grid;gap:14px;margin:18px 0 20px}
+.qr-plan-card{position:relative;border:1px solid var(--line);border-radius:9px;background:linear-gradient(145deg,rgba(12,19,36,.92),rgba(7,11,22,.94));padding:20px 18px;overflow:hidden}
+.qr-plan-card.recommended{border-color:#f59e0b;box-shadow:0 0 0 1px rgba(245,158,11,.22),0 12px 34px rgba(245,158,11,.10);background:linear-gradient(145deg,rgba(55,34,8,.26),rgba(10,15,29,.96))}
+.qr-plan-ribbon{display:inline-flex;align-items:center;gap:6px;background:linear-gradient(90deg,#f59e0b,#fb923c);color:#fff;font-weight:700;font-size:11px;letter-spacing:.08em;border-radius:999px;padding:5px 12px;margin-bottom:10px}
+.qr-plan-name{font-size:17px;font-weight:700;color:#fff;letter-spacing:.03em;line-height:1.5}
+.qr-plan-kana{font-size:10.5px;color:var(--blue);letter-spacing:.1em;margin-top:2px}
+.qr-plan-desc{font-size:12px;color:var(--muted);line-height:1.75;margin-top:8px}
+.qr-plan-price-row{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;margin-top:15px;padding-top:14px;border-top:1px solid var(--line)}
+.qr-plan-price{text-align:center}
+.qr-plan-price small{display:block;font-size:10px;color:var(--muted);letter-spacing:.08em;margin-bottom:3px}
+.qr-plan-price strong{display:block;color:#fff;font-size:clamp(20px,5.5vw,28px);line-height:1.25}
+.qr-plan-price.line strong{color:#4ade80;text-shadow:0 0 18px rgba(74,222,128,.18)}
+.qr-plan-arrow{color:var(--blue);font-size:18px;text-align:center}
+.qr-line-benefit{border:1px solid rgba(6,199,85,.45);background:linear-gradient(145deg,rgba(6,199,85,.11),rgba(7,11,22,.5));border-radius:10px;padding:20px 16px;text-align:center;margin:18px 0}
+.qr-line-benefit .ey{font-size:11px;letter-spacing:.2em;color:#69e79b;font-weight:700}
+.qr-line-benefit .main{font-size:clamp(21px,5.6vw,30px);font-weight:800;color:#fff;line-height:1.45;margin:7px 0 2px}
+.qr-line-benefit .main b{color:#4ade80;font-size:1.16em}
+.qr-line-benefit .sub{font-size:16px;font-weight:700;color:#dfffea;margin-top:3px}
+@media(max-width:520px){.qr-plan-price-row{grid-template-columns:1fr}.qr-plan-arrow{transform:rotate(90deg);line-height:1}.qr-plan-card{padding:18px 14px}}
+
 /* ---------- 見積もり番号＋コピー ---------- */
 .qr-nobox{background:rgba(5,9,18,.8);border:1px dashed var(--blue);border-radius:8px;padding:16px;text-align:center;margin-bottom:18px}
 .qr-nolabel{font-size:11px;letter-spacing:.25em;color:var(--blue);margin-bottom:6px}
@@ -1188,7 +1209,7 @@ const state = {
   source:"normal", campaignName:"", normalPrice:0, campaignPrice:0
 };
 let leadTurnstileWidgetId = null;
-const STEP_NAMES = {1:"車両情報",2:"車両状態",3:"コーティング選択",4:"AI解析",5:"お見積り結果"};
+const STEP_NAMES = {1:"車両情報",2:"車両状態",3:"",4:"AI見積作成",5:"お見積り結果"};
 
 const yen = n => "¥" + n.toLocaleString("ja-JP");
 const sizeIdx = s => SIZES.indexOf(s);
@@ -1208,10 +1229,11 @@ function calcTotal(){
 /* ---------- ウィザード描画 ---------- */
 const body = ()=>document.getElementById("wizardBody");
 function setProgress(step){
-  const pct = {1:20,2:40,3:60,4:80,5:100}[step] || 100;
+  const pct = {1:25,2:50,4:75,5:100}[step] || 100;
   document.getElementById("progressBar").style.width = pct+"%";
   document.getElementById("stepLabel").textContent =
-    step<=3 ? `STEP ${step} / 5` :
+    step===1 ? "STEP 1 / 4" :
+    step===2 ? "STEP 2 / 4" :
     step===4 ? "AI ANALYSIS" : "RESULT";
   document.getElementById("stepName").textContent = STEP_NAMES[step] || "";
 }
@@ -1223,9 +1245,9 @@ function render(){
   const s = state.step;
   if(s===1) renderVehicle();
   else if(s===2) renderCondition();    // 車両状態（新車/経年車）
-  else if(s===3) renderMenu();         // コーティング選択
+  else if(s===3) go(4);               // 旧コーティング選択STEPは廃止
   else if(s===4) renderAnalyzing();    // AI見積判定中（演出）
-  else if(s===5) renderQuoteResult();  // 見積金額・見積番号をその場で表示
+  else if(s===5) renderQuoteResult();  // 3プラン見積・見積番号をその場で表示
 }
 
 function navRow(backStep,nextLabel,nextFn,disabled){
@@ -1549,25 +1571,40 @@ function renderSize(){
   body().innerHTML = html;
 }
 
-/* STEP3: 車両状態 */
+/* STEP2: 車両状態 — 選択後はそのままAI見積作成へ */
 function renderCondition(){
   body().innerHTML = `<div class="step">
     <h3 class="step-title">車両の状態をお選びください</h3>
-    <p class="step-desc">ご登録からの期間により最適な下地処理と価格が変わります。</p>
+    <p class="step-desc">新車・経年車を選択すると、そのまま3つのコーティングプランのお見積もりを作成します。</p>
     <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));max-width:600px">
-      <button class="choice ${state.condition==='new'?'sel':''}" style="padding:26px 16px" onclick="selCond('new')">
+      <button class="choice ${state.condition==='new'?'sel':''}" style="padding:26px 16px" onclick="selCondAndAnalyze('new')">
         <span style="font-family:var(--serif);font-size:18px;letter-spacing:.1em">新車</span>
         <small>登録から1か月以内</small>
       </button>
-      <button class="choice ${state.condition==='used'?'sel':''}" style="padding:26px 16px" onclick="selCond('used')">
+      <button class="choice ${state.condition==='used'?'sel':''}" style="padding:26px 16px" onclick="selCondAndAnalyze('used')">
         <span style="font-family:var(--serif);font-size:18px;letter-spacing:.1em">経年車</span>
         <small>登録から1か月以上</small>
       </button>
     </div>
-    ${navRow(1,"次へ","go(3)",!state.condition)}
+    <div id="leadTurnstileWrap" class="lead-turnstile" style="margin-top:18px"></div>
+    <p class="cp-err" id="conditionStepErr" style="display:none;margin-top:12px"></p>
+    <div class="nav-row"><button class="btn" onclick="go(1)">戻る</button><span></span></div>
   </div>`;
+  setTimeout(ensureLeadTurnstile, 0);
 }
 function selCond(c){ state.condition=c; renderCondition(); }
+function selCondAndAnalyze(c){
+  state.condition=c;
+  // 見積番号の保存上は、おすすめのOriginal CERAMICを代表メニューとして扱う
+  state.menuId = "original";
+  const err = document.getElementById("conditionStepErr");
+  if(turnstileEnabled && !state.leadTurnstileToken){
+    if(err){ err.textContent="⚠ セキュリティ確認が完了していません。少し待ってからもう一度お選びください。"; err.style.display="block"; }
+    return;
+  }
+  if(err) err.style.display="none";
+  go(4);
+}
 
 /* STEP4: メニュー */
 function renderMenu(){
@@ -1613,12 +1650,7 @@ function renderMenu(){
 function selMenu(id){ state.menuId=id; renderMenu(); }
 /* コーティング選択 → AI解析演出へ（Turnstile有効時はトークンを確認） */
 function startAnalyze(){
-  const err = document.getElementById("menuStepErr");
-  if(turnstileEnabled && !state.leadTurnstileToken){
-    if(err){ err.textContent = "⚠ セキュリティ確認が完了していません。少し待ってからもう一度お試しください。"; err.style.display = "block"; }
-    return;
-  }
-  if(err) err.style.display = "none";
+  state.menuId = "original";
   go(4);
 }
 
@@ -1635,9 +1667,9 @@ function renderAnalyzing(){
     <p class="ai-log" id="aiLog"></p>
     <ul class="cp-steps" id="nStages"></ul>
   </div>`;
-  document.getElementById("nStages").innerHTML = ["AIが車両をスキャンしています…","車両サイズを照合しています…","新車／経年車を反映しています…","最適なコーティングを選定しています…","見積もり価格を計算しています…","AI見積書を作成しています…"].map((t,i)=>`<li id="nS${i}"><span class="ic"></span>${t}</li>`).join("");
-  const msgs = ["AIが車両をスキャンしています…","車両サイズを照合しています…","新車／経年車を反映しています…","最適なコーティングを選定しています…","見積もり価格を計算しています…","AI見積書を作成しています…"];
-  const logs = [`${state.maker||"—"} ${state.model||""} / ${state.size} SIZE`,`SIZE CLASS: ${state.size}`,`CONDITION: ${state.condition==="new"?"NEW":"USED"}`,"COATING DATABASE MATCHING","PRICE CALCULATION","GENERATING ESTIMATE No."];
+  document.getElementById("nStages").innerHTML = ["AIが車両をスキャンしています…","車両サイズを照合しています…","新車／経年車を反映しています…","3つのコーティングプランを比較しています…","各プランの価格を計算しています…","AI見積書を作成しています…"].map((t,i)=>`<li id="nS${i}"><span class="ic"></span>${t}</li>`).join("");
+  const msgs = ["AIが車両をスキャンしています…","車両サイズを照合しています…","新車／経年車を反映しています…","3つのコーティングプランを比較しています…","各プランの価格を計算しています…","AI見積書を作成しています…"];
+  const logs = [`${state.maker||"—"} ${state.model||""} / ${state.size} SIZE`,`SIZE CLASS: ${state.size}`,`CONDITION: ${state.condition==="new"?"NEW":"USED"}`,"3 PLAN COATING MATCHING","PRICE CALCULATION","GENERATING ESTIMATE No."];
   let i=0;
   const bar = ()=>document.getElementById("aiBar");
   const tick = setInterval(()=>{
@@ -1662,7 +1694,7 @@ function renderAnalyzing(){
 /* 見積番号を即時発行（個人情報なし）。金額計算は既存ロジック（menuTotal）を使用し、
    サーバー側（/api/submit-quote）でも再計算のうえ est: / quote: / idx: に保存される。 */
 async function issueQuote(){
-  const m = DATA.menus.find(x=>x.id===state.menuId) || (lpVisibleMenus()[0]||{}).m;
+  const m = DATA.menus.find(x=>x.id==="original") || DATA.menus.find(x=>x.id===state.menuId) || (lpVisibleMenus()[0]||{}).m;
   if(!m){ state.estimateNo = null; state.quoteError = "メニューを取得できませんでした。"; return; }
   state.menuId = m.id;
   state.total = menuTotal(m);
@@ -1745,6 +1777,19 @@ function resetLeadTurnstile(){
   }
 }
 
+/* 通常版の見積結果に表示する3プラン（価格は既存DATA.menusから算出） */
+function normalQuotePlans(){
+  if(!state.size || !state.condition) return [];
+  const idx = sizeIdx(state.size);
+  return ["russo","original","veloce"].map(id=>{
+    const m = DATA.menus.find(x=>x.id===id);
+    if(!m) return null;
+    const normal = (state.condition==="new" ? m.priceNew : m.priceUsed)[idx] || 0;
+    const linePrice = Math.max(0, Math.round((normal * 0.5)/100)*100);
+    return {m, normal, linePrice, recommended:id==="original"};
+  }).filter(Boolean);
+}
+
 /* STEP5: 見積結果（その場で金額・見積番号を表示） */
 function renderQuoteResult(){
   // 発行失敗時：再試行導線
@@ -1752,38 +1797,48 @@ function renderQuoteResult(){
     body().innerHTML = `<div class="step" style="text-align:center">
       <p class="cp-err" style="display:block">⚠ ${escHtml(state.quoteError||"見積の発行に失敗しました。もう一度お試しください。")}</p>
       <button class="cp-btn go" onclick="retryQuote(this)" style="margin-top:14px">もう一度見積もりを表示する</button>
-      <div class="nav-row" style="justify-content:center"><button class="btn" onclick="go(3)">← コーティング選択に戻る</button></div>
+      <div class="nav-row" style="justify-content:center"><button class="btn" onclick="go(2)">← 新車・経年車の選択に戻る</button></div>
     </div>`;
     return;
   }
-  const m = DATA.menus.find(x=>x.id===state.menuId);
-  const campBox = `
-    <div class="camp-box">
-      <span class="camp-eyebrow">公式LINE限定キャンペーン</span>
-      <p class="camp-title">Original CERAMIC 50％OFF</p>
-      <p class="camp-sub">＋ ウィンドウコート付き</p>
-      <p style="font-size:12px;color:var(--muted);line-height:1.8;margin:0">公式LINEを追加いただいた方だけの限定特典です。</p>
-    </div>`;
+  const plans = normalQuotePlans();
+  const planHtml = plans.map(p=>`
+    <div class="qr-plan-card ${p.recommended?'recommended':''}">
+      ${p.recommended?`<span class="qr-plan-ribbon">★ おすすめ</span>`:""}
+      <div class="qr-plan-name">${escHtml(p.m.name)}</div>
+      <div class="qr-plan-kana">${escHtml(p.m.kana||"")}</div>
+      <div class="qr-plan-desc">${escHtml(p.m.desc||"")}</div>
+      <div class="qr-plan-price-row">
+        <div class="qr-plan-price"><small>通常見積価格</small><strong>${yen(p.normal)}</strong><small>税別・概算</small></div>
+        <div class="qr-plan-arrow">→</div>
+        <div class="qr-plan-price line"><small>LINEお問い合わせ限定 50%OFF</small><strong>${yen(p.linePrice)}</strong><small>税別・概算</small></div>
+      </div>
+    </div>`).join("");
+
   body().innerHTML = `<div class="step quote-result">
     <div class="result-head">
       <p class="no">ESTIMATE RESULT</p>
       <h3>あなたの愛車のお見積もり</h3>
+      <p class="step-desc" style="text-align:center;margin-top:8px;margin-bottom:0">AIが3つのコーティングプランをまとめてご提案します。</p>
     </div>
     <div class="qr-rows">
       <div class="qr-row"><span class="k">車種</span><span class="v">${escHtml(state.maker||"—")} ${escHtml(state.model||"")}</span></div>
       <div class="qr-row"><span class="k">判定サイズ</span><span class="v">${escHtml(state.size||"—")}</span></div>
       <div class="qr-row"><span class="k">車両状態</span><span class="v">${state.condition==="new"?"新車":"経年車"}</span></div>
-      <div class="qr-row"><span class="k">選択・おすすめコーティング</span><span class="v">${escHtml(m?m.name:"—")}${m&&m.years?`（耐久${m.years}年）`:""}</span></div>
     </div>
-    <div class="qr-pricebox">
-      <p class="qr-plabel">通常のお見積もり価格</p>
-      <p class="qr-price">${yen(state.total)}<small>（税込）</small></p>
+
+    <div class="qr-plan-list">${planHtml}</div>
+
+    <div class="qr-line-benefit">
+      <div class="ey">公式LINE限定特典</div>
+      <div class="main">LINEからお問い合わせで<br><b>表示価格から50%OFF</b></div>
+      <div class="sub">＋ ウィンドウコート無料施工</div>
     </div>
+
     ${estNoBlock()}
-    ${campBox}
     ${lineGuideBlock()}
     ${consultFlowBlock()}
-    <p class="qr-note">※ 表示価格は概算です。車両の状態により変動する場合があります。正式なお見積もりは現車確認のうえご提示いたします。</p>
+    <p class="qr-note">※ 表示価格は税別・概算です。車両の状態により変動する場合があります。正式なお見積もりは現車確認のうえご提示いたします。<br>※ LINE限定特典の適用条件・施工内容はスタッフよりご案内いたします。</p>
     <p style="text-align:center;margin-top:10px"><button class="cp-textlink" onclick="openContact()" style="width:auto;display:inline-block">フォームでお問い合わせ</button></p>
     <div class="nav-row" style="justify-content:center">
       <button class="btn" onclick="restart()">最初からやり直す</button>
@@ -1809,7 +1864,7 @@ function estNoBlock(){
 function lineGuideBlock(){
   const cta = IS_CAMPAIGN
     ? "公式LINEを追加して<br>50％OFF＋ウィンドウコート付きを受け取る"
-    : "公式LINEを追加して<br>限定キャンペーンを受け取る";
+    : "LINEでこの見積について問い合わせる<br><small style=\"font-size:11px;font-weight:500\">50％OFF＋ウィンドウコート無料施工</small>";
   return `<div class="line-guide">
     <p class="line-guide-title">公式LINE追加後、トーク画面に<br>「見積もり番号」を入力してください。</p>
     <div class="qr-norow" style="margin:10px 0 12px">
