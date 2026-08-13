@@ -414,20 +414,9 @@ export async function onRequestPost(context){
     return json({ok:true,id,warning:"storage_failed"},200);
   }
 
-  context.waitUntil((async()=>{
-    if(!env.RESEND_API_KEY) return; // キー未設定時は店舗通知メールをスキップ（見積発行は完了済み）
-    try{
-      const r=await fetch("https://api.resend.com/emails",{
-        method:"POST",
-        headers:{"Authorization":`Bearer ${env.RESEND_API_KEY}`,"Content-Type":"application/json"},
-        body:JSON.stringify(Object.assign(
-          {from:`Uncuore システム <${FROM}>`,to:[NOTIFY],subject:`[新規AI見積] ${id}${name?" "+name:""}`,text:notifyText},
-          email ? {reply_to:email} : {}
-        ))
-      });
-      if(!r.ok) console.error("[submit-quote] notify failed",r.status,await r.text());
-    }catch(e){console.error("[submit-quote] notify exception",e?.message||e);}
-  })());
+  // 通常のAI見積作成時は店舗への自動通知メールを送信しない。
+  // 見積データはこれまでどおりKV/管理画面へ保存される。
+  // なお、上のKV保存失敗時の警告メールだけは運用上の異常通知として残す。
 
   return json({ok:true,id},200);
 }
