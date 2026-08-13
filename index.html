@@ -415,6 +415,9 @@ table.ad tr:hover td{background:#f7faff}
 .qr-line-benefit .main{font-size:clamp(21px,5.6vw,30px);font-weight:800;color:#fff;line-height:1.45;margin:7px 0 2px}
 .qr-line-benefit .main b{color:#4ade80;font-size:1.16em}
 .qr-line-benefit .sub{font-size:16px;font-weight:700;color:#dfffea;margin-top:3px}
+.qr-line-combined{border:1px solid rgba(6,199,85,.45);background:linear-gradient(145deg,rgba(6,199,85,.11),rgba(7,11,22,.5));border-radius:10px;padding:20px 16px;margin:18px 0}
+.qr-line-combined .qr-line-benefit{border:0;background:none;border-radius:0;padding:0 0 18px;margin:0;text-align:center}
+.qr-line-combined .line-guide{border:0!important;background:none!important;border-radius:0!important;padding:18px 0 0!important;margin:0!important;border-top:1px solid rgba(6,199,85,.24)!important}
 @media(max-width:520px){.qr-plan-price-row{grid-template-columns:1fr}.qr-plan-arrow{transform:rotate(90deg);line-height:1}.qr-plan-card{padding:18px 14px}}
 
 .qr-norow{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap}
@@ -1848,14 +1851,7 @@ function renderQuoteResult(){
 
     <div class="qr-plan-list">${planHtml}</div>
 
-    <div class="qr-line-benefit">
-      <div class="ey">Original CERAMIC限定｜公式LINE特典</div>
-      <div class="main">Original CERAMIC＋ウィンドウコート付を<br>LINEからお問い合わせで <b>50%OFF</b></div>
-      <div class="sub">ウィンドウコート付の価格です</div>
-      <div class="note">※ Cuore russo coat・Veloce Coatingは50%OFF対象外です。</div>
-    </div>
-
-    ${lineGuideBlock()}
+    ${normalLineOfferBlock()}
     ${consultFlowBlock()}
     <p class="qr-note">※ 表示価格は税別・概算です。車両の状態により変動する場合があります。正式なお見積もりは現車確認のうえご提示いたします。<br>※ LINE限定特典の適用条件・施工内容はスタッフよりご案内いたします。</p>
     <p style="text-align:center;margin-top:10px"><button class="cp-textlink" onclick="openContact()" style="width:auto;display:inline-block">フォームでお問い合わせ</button></p>
@@ -1870,7 +1866,40 @@ async function retryQuote(btn){
   renderQuoteResult();
 }
 
-/* ── 見積もり番号ブロック＋コピー（通常版・キャンペーン版 共通） ── */
+/* ── 通常版：LINE特典＋見積番号案内を1枚のカードに統合 ── */
+function normalLineOfferBlock(){
+  return `<div class="qr-line-combined">
+    <div class="qr-line-benefit">
+      <div class="ey">Original CERAMIC限定｜公式LINE特典</div>
+      <div class="main">Original CERAMIC＋ウィンドウコート付を<br>LINEからお問い合わせで <b>50%OFF</b></div>
+      <div class="sub">ウィンドウコート付の価格です</div>
+      <div class="note">※ Cuore russo coat・Veloce Coatingは50%OFF対象外です。</div>
+    </div>
+
+    <div class="line-guide">
+      <p class="line-guide-title">公式LINE追加後、トーク画面に<br>「見積もり番号」を入力してください。</p>
+      <div class="qr-norow" style="margin:10px 0 12px">
+        <span class="qr-no" style="font-size:clamp(15px,4.6vw,20px)">${escHtml(state.estimateNo||"—")}</span>
+        <button class="copy-btn" onclick="copyEstimateNo()">📋 コピー</button>
+      </div>
+      <p class="line-guide-note">スタッフが見積もり内容を確認し、キャンペーンや施工についてご案内いたします。<br>
+      <b style="color:#ffd479">※ LINEへ移動する前に、上の「コピー」ボタンで見積もり番号をコピーしてください</b></p>
+    </div>
+  </div>
+  <a class="line-cta" href="https://line.me/ti/p/@271goter" target="_blank" rel="noopener"
+    onclick="try{if(typeof window.gtag==='function')window.gtag('event','line_click',{event_category:'cta',event_label:'normal_result'});}catch(_){}">
+    LINEでこの見積について問い合わせる<br>
+    <small style="font-size:11px;font-weight:500">Original CERAMIC＋ウィンドウコート付 50％OFF</small>
+  </a>
+  <a class="tel-cta" href="tel:0120502168"
+    onclick="try{if(typeof window.gtag==='function')window.gtag('event','tel_click',{event_category:'cta',event_label:'normal_result'});}catch(_){}">
+    電話でお問い合わせ
+    <strong>0120-502-168</strong>
+    <small>タップすると発信できます</small>
+  </a>`;
+}
+
+/* ── 見積もり番号ブロック＋コピー（キャンペーン版 共通処理） ── */
 function lineGuideBlock(){
   const cta = IS_CAMPAIGN
     ? "公式LINEを追加して<br>50％OFF＋ウィンドウコート付きを受け取る"
