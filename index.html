@@ -417,9 +417,6 @@ table.ad tr:hover td{background:#f7faff}
 .qr-line-benefit .sub{font-size:16px;font-weight:700;color:#dfffea;margin-top:3px}
 @media(max-width:520px){.qr-plan-price-row{grid-template-columns:1fr}.qr-plan-arrow{transform:rotate(90deg);line-height:1}.qr-plan-card{padding:18px 14px}}
 
-/* ---------- 見積もり番号＋コピー ---------- */
-.qr-nobox{background:rgba(5,9,18,.8);border:1px dashed var(--blue);border-radius:8px;padding:16px;text-align:center;margin-bottom:18px}
-.qr-nolabel{font-size:11px;letter-spacing:.25em;color:var(--blue);margin-bottom:6px}
 .qr-norow{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap}
 .qr-no{font-family:monospace;font-size:clamp(18px,5.4vw,24px);font-weight:700;color:#fff;letter-spacing:.04em}
 .copy-btn{display:inline-flex;align-items:center;gap:6px;background:var(--blue2);border:none;color:#fff;font-size:13px;font-weight:700;padding:10px 18px;border-radius:6px;cursor:pointer}
@@ -1858,7 +1855,6 @@ function renderQuoteResult(){
       <div class="note">※ Cuore russo coat・Veloce Coatingは50%OFF対象外です。</div>
     </div>
 
-    ${estNoBlock()}
     ${lineGuideBlock()}
     ${consultFlowBlock()}
     <p class="qr-note">※ 表示価格は税別・概算です。車両の状態により変動する場合があります。正式なお見積もりは現車確認のうえご提示いたします。<br>※ LINE限定特典の適用条件・施工内容はスタッフよりご案内いたします。</p>
@@ -1875,15 +1871,6 @@ async function retryQuote(btn){
 }
 
 /* ── 見積もり番号ブロック＋コピー（通常版・キャンペーン版 共通） ── */
-function estNoBlock(){
-  return `<div class="qr-nobox">
-    <p class="qr-nolabel">見積もり番号</p>
-    <div class="qr-norow">
-      <span class="qr-no">${escHtml(state.estimateNo||"—")}</span>
-      <button class="copy-btn" onclick="copyEstimateNo()">📋 コピー</button>
-    </div>
-  </div>`;
-}
 function lineGuideBlock(){
   const cta = IS_CAMPAIGN
     ? "公式LINEを追加して<br>50％OFF＋ウィンドウコート付きを受け取る"
@@ -3201,7 +3188,6 @@ function cRenderCampResult(){
       ${cond?`<div class="qr-row"><span class="k">車両状態</span><span class="v">${cond}</span></div>`:""}
     </div>
     ${priceHtml}
-    ${estNoBlock()}
     ${lineGuideBlock()}
     ${consultFlowBlock()}
     <p class="qr-note">※ 表示価格は概算です。車両の状態により変動する場合があります。正式なお見積もりは現車確認のうえご提示いたします。</p>
