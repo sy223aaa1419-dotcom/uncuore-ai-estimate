@@ -322,6 +322,34 @@ body.admin-mode #lpRoot,body.admin-mode .mobile-bar{display:none}
 .ad-btn.pri{background:#2563eb;color:#fff;border-color:#2563eb}
 .ad-btn.danger{color:#c92c4c;border-color:#e9b3c0}
 .ad-table-wrap{overflow-x:auto}
+
+/* 管理画面：一覧の横スクロールバーを画面下に固定表示 */
+.ad-xscroll-fixed{
+  position:fixed;
+  left:0;
+  bottom:0;
+  height:20px;
+  overflow-x:auto;
+  overflow-y:hidden;
+  background:#fff;
+  border:1px solid #d7dfed;
+  border-bottom:0;
+  box-shadow:0 -4px 14px rgba(15,23,42,.08);
+  z-index:999;
+  display:none;
+}
+.ad-xscroll-fixed .ad-xscroll-spacer{
+  height:1px;
+  pointer-events:none;
+}
+.ad-xscroll-fixed::-webkit-scrollbar{height:14px}
+.ad-xscroll-fixed::-webkit-scrollbar-track{background:#eef2f7}
+.ad-xscroll-fixed::-webkit-scrollbar-thumb{
+  background:#91a4c4;
+  border:3px solid #eef2f7;
+  border-radius:999px;
+}
+.ad-xscroll-fixed::-webkit-scrollbar-thumb:hover{background:#647b9f}
 table.ad{width:100%;border-collapse:collapse;font-size:12.5px;min-width:900px}
 table.ad th{background:#eef2fa;text-align:left;padding:9px 10px;border-bottom:2px solid #dde4f0;white-space:nowrap;color:#40548a}
 table.ad td{padding:9px 10px;border-bottom:1px solid #edf1f8;white-space:nowrap}
@@ -2475,6 +2503,10 @@ async function adHealthCheck(){
 }
 function adminLogout(){ adminAuthed=false; adminToken=""; document.getElementById("adPass").value=""; checkAdminRoute(); }
 function adTab(t){
+  if(t!=="list" && adXScrollCleanup){
+    adXScrollCleanup();
+    adXScrollCleanup=null;
+  }
   document.querySelectorAll(".ad-tabs button[data-tab]").forEach(b=>b.classList.toggle("on",b.dataset.tab===t));
   ["list","inq","price","opt","veh","camp","desc"].forEach(x=>document.getElementById("tab-"+x).style.display=(x===t?"block":"none"));
   if(t==="list")adRenderList(); if(t==="inq")adRenderInq(); if(t==="price")adRenderPrice(); if(t==="opt")adRenderOpt(); if(t==="veh")adRenderVeh(); if(t==="camp")adRenderCamp(); if(t==="desc")adRenderDesc();
@@ -2491,6 +2523,87 @@ async function adGetEstimates(force){
   try{ adEstCache = (await apiAdmin("GET","records")).list || []; }
   catch(e){ alert("見積データの取得に失敗しました：" + e.message); adEstCache = adEstCache || []; }
   return adEstCache;
+}
+
+let adXScrollFixed=null;
+let adXScrollCleanup=null;
+
+function adSetupStickyXScroll(){
+  if(adXScrollCleanup){
+    adXScrollCleanup();
+    adXScrollCleanup=null;
+  }
+  if(adXScrollFixed){
+    adXScrollFixed.remove();
+    adXScrollFixed=null;
+  }
+
+  const wrap=document.querySelector("#tab-list .ad-table-wrap");
+  if(!wrap) return;
+
+  const bar=document.createElement("div");
+  bar.className="ad-xscroll-fixed";
+  bar.setAttribute("aria-label","見積一覧 横スクロール");
+  const spacer=document.createElement("div");
+  spacer.className="ad-xscroll-spacer";
+  bar.appendChild(spacer);
+  document.body.appendChild(bar);
+  adXScrollFixed=bar;
+
+  let syncing=false;
+
+  const refresh=()=>{
+    if(!document.getElementById("tab-list") ||
+       document.getElementById("tab-list").style.display==="none" ||
+       !wrap.isConnected){
+      bar.style.display="none";
+      return;
+    }
+
+    const rect=wrap.getBoundingClientRect();
+    const overflow=wrap.scrollWidth > wrap.clientWidth + 2;
+    const visible=rect.bottom>0 && rect.top<window.innerHeight;
+
+    if(!overflow || !visible){
+      bar.style.display="none";
+      return;
+    }
+
+    bar.style.display="block";
+    bar.style.left=Math.max(0,rect.left)+"px";
+    bar.style.width=Math.max(0,Math.min(rect.width,window.innerWidth-Math.max(0,rect.left)))+"px";
+    spacer.style.width=wrap.scrollWidth+"px";
+
+    if(!syncing) bar.scrollLeft=wrap.scrollLeft;
+  };
+
+  const fromTable=()=>{
+    if(syncing) return;
+    syncing=true;
+    bar.scrollLeft=wrap.scrollLeft;
+    syncing=false;
+  };
+  const fromBar=()=>{
+    if(syncing) return;
+    syncing=true;
+    wrap.scrollLeft=bar.scrollLeft;
+    syncing=false;
+  };
+
+  wrap.addEventListener("scroll",fromTable,{passive:true});
+  bar.addEventListener("scroll",fromBar,{passive:true});
+  window.addEventListener("resize",refresh,{passive:true});
+  window.addEventListener("scroll",refresh,{passive:true});
+  refresh();
+
+  adXScrollCleanup=()=>{
+    wrap.removeEventListener("scroll",fromTable);
+    bar.removeEventListener("scroll",fromBar);
+    window.removeEventListener("resize",refresh);
+    window.removeEventListener("scroll",refresh);
+    if(bar.isConnected) bar.remove();
+    if(adXScrollFixed===bar) adXScrollFixed=null;
+  };
 }
 
 async function adRenderList(){
@@ -2532,6 +2645,7 @@ async function adRenderList(){
     </tr>`).join("")||`<tr><td colspan="15" style="text-align:center;color:#98a7c4;padding:30px">見積データはまだありません</td></tr>`}</tbody>
   </table></div></div>
   <div id="adDetail"></div>`;
+  adSetupStickyXScroll();
   if(adDetailNo) adOpenDetail(adDetailNo,true);
 }
 async function adOpenDetail(no,keep){
