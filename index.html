@@ -1936,7 +1936,7 @@ function resetLeadTurnstile(){
 function normalQuotePlans(){
   if(!state.size || !state.condition) return [];
   const idx = sizeIdx(state.size);
-  return ["russo","original","veloce"].map(id=>{
+  return ["russo","original"].map(id=>{
     const m = DATA.menus.find(x=>x.id===id);
     if(!m) return null;
     let normal = (state.condition==="new" ? m.priceNew : m.priceUsed)[idx] || 0;
@@ -1990,7 +1990,7 @@ function renderQuoteResult(){
     <div class="result-head">
       <p class="no">ESTIMATE RESULT</p>
       <h3>あなたの愛車のお見積もり</h3>
-      <p class="step-desc" style="text-align:center;margin-top:8px;margin-bottom:0">AIが3つのコーティングプランをまとめてご提案します。</p>
+      <p class="step-desc" style="text-align:center;margin-top:8px;margin-bottom:0">AIがお車に合わせたコーティングプランをご提案します。</p>
     </div>
     <div class="qr-rows">
       <div class="qr-row"><span class="k">車種</span><span class="v">${escHtml(state.maker||"—")} ${escHtml(state.model||"")}</span></div>
@@ -2023,7 +2023,7 @@ function normalLineOfferBlock(){
       <div class="ey">Original CERAMIC限定｜公式LINE特典</div>
       <div class="main">Original CERAMIC＋ウィンドウコート付を<br>LINEからお問い合わせで <b>50%OFF</b></div>
       <div class="sub">ウィンドウコート付の価格です</div>
-      <div class="note">※ Cuore russo coat・Veloce Coatingは50%OFF対象外です。</div>
+      <div class="note">※ Cuore russo coatは50%OFF対象外です。</div>
     </div>
 
     <div class="line-guide">
