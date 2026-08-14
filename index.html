@@ -1982,9 +1982,9 @@ function renderQuoteResult(){
       <div class="qr-plan-kana">${escHtml(p.m.kana||"")}</div>
       <div class="qr-plan-desc">${escHtml(p.m.desc||"")}</div>
       ${p.recommended ? `<div class="qr-plan-price-row">
-        <div class="qr-plan-price"><small>Original CERAMIC＋ウィンドウコート付 通常価格</small><strong>${yen(p.normal)}</strong><small>税別・概算</small></div>
+        <div class="qr-plan-price"><small>Original CERAMIC 通常価格</small><strong>${yen(p.normal)}</strong><small>税別・概算</small></div>
         <div class="qr-plan-arrow">→</div>
-        <div class="qr-plan-price line"><small>LINEお問い合わせ限定 40%OFF</small><strong>${yen(p.linePrice)}</strong><small>税別・概算</small></div>
+        <div class="qr-plan-price line"><small>LINEお問い合わせ限定 40%OFF ＋ウィンドウコート付</small><strong>${yen(p.linePrice)}</strong><small>税別・概算</small></div>
       </div>
       <div class="qr-plan-only-benefit">LINE限定：通常価格から40%OFF（ウィンドウコート付）</div>` : `<div class="qr-plan-price-row single">
         <div class="qr-plan-price"><small>通常見積価格</small><strong>${yen(p.normal)}</strong><small>税別・概算</small></div>
