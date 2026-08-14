@@ -91,10 +91,10 @@ header.scrolled{background:rgba(4,6,12,.82);backdrop-filter:blur(14px);border-bo
 .hero-slides{position:absolute;inset:0;display:none}
 .hero-slide{position:absolute;inset:0;opacity:0;transition:opacity 3.2s cubic-bezier(.4,0,.2,1);background-size:cover;background-position:center;animation:kenburns 26s ease-in-out infinite;will-change:opacity,transform;backface-visibility:hidden}
 .hero-slide.active{opacity:1}
-@keyframes kenburns{0%{transform:scale(1.02)}50%{transform:scale(1.1)}100%{transform:scale(1.02)}}
+@keyframes kenburns{0%{transform:scale(1.02)}40%{transform:scale(1.1)}100%{transform:scale(1.02)}}
 .hero-slide .ph-label{position:absolute;bottom:18px;right:20px;font-size:10px;letter-spacing:.3em;color:rgba(180,205,245,.5)}
 .hero-veil{position:absolute;inset:0;z-index:1;background:
-  radial-gradient(ellipse at 50% 100%,rgba(37,99,235,.22),transparent 55%),
+  radial-gradient(ellipse at 40% 100%,rgba(37,99,235,.22),transparent 55%),
   linear-gradient(180deg,rgba(4,6,12,.55),rgba(4,6,12,.42) 45%,rgba(4,6,12,.92));}
 .hero-grid{position:absolute;inset:0;z-index:1;background-image:linear-gradient(rgba(77,163,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(77,163,255,.05) 1px,transparent 1px);background-size:56px 56px;mask-image:radial-gradient(ellipse at center,black 30%,transparent 75%)}
 .hero-in{position:relative;z-index:2;padding:120px 20px 90px}
@@ -106,12 +106,12 @@ header.scrolled{background:rgba(4,6,12,.82);backdrop-filter:blur(14px);border-bo
 @keyframes heroIn{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
 .cta{position:relative;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;gap:10px;min-width:240px;padding:17px 34px;font-size:14px;letter-spacing:.22em;border-radius:2px;transition:.35s}
 .cta.gold{background:linear-gradient(120deg,#1d4ed8,#4da3ff);color:#fff;border:none;box-shadow:0 8px 34px rgba(37,99,235,.45)}
-.cta.gold::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.35) 50%,transparent 70%);transform:translateX(-120%);transition:transform .7s}
+.cta.gold::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.35) 40%,transparent 70%);transform:translateX(-120%);transition:transform .7s}
 .cta.gold:hover::after{transform:translateX(120%)}
 .cta.line{background:transparent;border:1px solid var(--line2);color:var(--text)}
 .cta.line:hover{border-color:var(--blue);box-shadow:var(--glow)}
 .cta:hover{transform:translateY(-2px)}
-.hero-scroll{position:absolute;bottom:26px;left:50%;transform:translateX(-50%);font-size:10px;letter-spacing:.4em;color:var(--muted);z-index:2}
+.hero-scroll{position:absolute;bottom:26px;left:40%;transform:translateX(-40%);font-size:10px;letter-spacing:.4em;color:var(--muted);z-index:2}
 .hero-scroll::after{content:"";display:block;width:1px;height:44px;margin:10px auto 0;background:linear-gradient(180deg,var(--blue),transparent);animation:scrollLine 2s infinite}
 @keyframes scrollLine{0%{transform:scaleY(0);transform-origin:top}55%{transform:scaleY(1);transform-origin:top}56%{transform-origin:bottom}100%{transform:scaleY(0);transform-origin:bottom}}
 .hero-dots{display:none}
@@ -160,8 +160,8 @@ header.scrolled{background:rgba(4,6,12,.82);backdrop-filter:blur(14px);border-bo
 /* 写真AI判定 */
 .photo-panel{border:1px dashed var(--line2);border-radius:6px;background:rgba(10,17,32,.5);padding:20px;margin:26px 0 4px}
 .photo-panel .pp-head{display:flex;align-items:center;gap:10px;font-size:13px;letter-spacing:.14em;color:var(--cyan)}
-.photo-panel .pp-head::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--blue);box-shadow:0 0 10px var(--blue);animation:pulse 1.8s infinite}
-@keyframes pulse{50%{opacity:.4}}
+.photo-panel .pp-head::before{content:"";width:8px;height:8px;border-radius:40%;background:var(--blue);box-shadow:0 0 10px var(--blue);animation:pulse 1.8s infinite}
+@keyframes pulse{40%{opacity:.4}}
 .photo-panel p.pp-desc{font-size:12px;color:var(--muted);margin:8px 0 14px}
 .photo-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .photo-btn{display:inline-flex;align-items:center;gap:8px;padding:12px 22px;border-radius:3px;font-size:13px;letter-spacing:.12em;border:1px solid var(--line2);background:transparent;color:var(--text);transition:.3s}
@@ -174,7 +174,7 @@ header.scrolled{background:rgba(4,6,12,.82);backdrop-filter:blur(14px);border-bo
 .photo-status{font-size:12.5px;color:var(--muted);letter-spacing:.06em;min-height:1.6em;flex:1;min-width:200px}
 .photo-status.ok{color:var(--ok)}
 .photo-status.ng{color:var(--danger)}
-.photo-status .spin{display:inline-block;width:12px;height:12px;border:2px solid var(--line2);border-top-color:var(--blue);border-radius:50%;margin-right:8px;vertical-align:-2px;animation:rot 1s linear infinite}
+.photo-status .spin{display:inline-block;width:12px;height:12px;border:2px solid var(--line2);border-top-color:var(--blue);border-radius:40%;margin-right:8px;vertical-align:-2px;animation:rot 1s linear infinite}
 @keyframes rot{to{transform:rotate(360deg)}}
 
 /* サイズカード */
@@ -235,10 +235,10 @@ header.scrolled{background:rgba(4,6,12,.82);backdrop-filter:blur(14px);border-bo
 .scan-wrap{position:relative;width:min(320px,80%);margin:0 auto 34px;background:linear-gradient(165deg,#f7fafd,#e9f0fa);border-radius:8px;padding:26px 20px;overflow:hidden}
 .scan-wrap svg{width:100%;height:120px}
 .scan-line{position:absolute;inset:0 auto 0 0;width:3px;background:linear-gradient(180deg,transparent,#2563eb,transparent);box-shadow:0 0 18px #2563eb;animation:scan 1.8s ease-in-out infinite}
-@keyframes scan{0%,100%{left:6%}50%{left:92%}}
+@keyframes scan{0%,100%{left:6%}40%{left:92%}}
 .analyzing h3{font-family:var(--serif);font-size:20px;letter-spacing:.12em;min-height:1.6em}
 .analyzing h3 .cursor{animation:blink 1s steps(1) infinite}
-@keyframes blink{50%{opacity:0}}
+@keyframes blink{40%{opacity:0}}
 .ai-progress{width:min(320px,80%);height:3px;background:rgba(147,167,201,.2);margin:26px auto 0;border-radius:2px;overflow:hidden}
 .ai-progress i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--blue2),var(--cyan));box-shadow:0 0 10px rgba(77,163,255,.8);transition:width .3s}
 .ai-log{margin-top:18px;font-size:11px;color:var(--muted);letter-spacing:.1em;min-height:1.5em}
@@ -253,7 +253,7 @@ header.scrolled{background:rgba(4,6,12,.82);backdrop-filter:blur(14px);border-bo
 .result-row .k{color:var(--muted);font-size:12px;letter-spacing:.12em;flex:none}
 .result-row .v{text-align:right}
 .result-total{margin-top:22px;border:1px solid var(--line2);border-radius:6px;background:linear-gradient(140deg,rgba(37,99,235,.22),rgba(10,17,32,.7));padding:26px 24px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;position:relative;overflow:hidden}
-.result-total::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 40%,rgba(125,211,252,.12) 50%,transparent 60%);animation:sheen 3.4s infinite}
+.result-total::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 40%,rgba(125,211,252,.12) 40%,transparent 60%);animation:sheen 3.4s infinite}
 @keyframes sheen{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
 .result-total .k{letter-spacing:.2em;font-size:13px;color:var(--cyan)}
 .result-total .v{font-family:var(--serif);font-size:clamp(30px,6vw,42px);letter-spacing:.04em;color:#fff;text-shadow:0 0 24px rgba(77,163,255,.5)}
@@ -377,7 +377,7 @@ table.ad tr:hover td{background:#f7faff}
 }
 .footer-socials a{
   width:46px;height:46px;display:inline-flex;align-items:center;justify-content:center;
-  border:1px solid rgba(147,167,201,.28);border-radius:50%;
+  border:1px solid rgba(147,167,201,.28);border-radius:40%;
   background:rgba(255,255,255,.035);color:#fff;text-decoration:none;
   transition:transform .2s ease,border-color .2s ease,background .2s ease;
 }
@@ -433,7 +433,7 @@ table.ad tr:hover td{background:#f7faff}
 /* ---------- 通常版：AI見積メール受取フォーム ---------- */
 .lead-gate{max-width:620px;margin:0 auto}
 .lead-complete{max-width:640px;margin:0 auto;text-align:center}
-.lead-finish-icon{width:72px;height:72px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;background:rgba(55,211,154,.12);border:1px solid rgba(55,211,154,.45);color:#37d39a;font-size:34px;box-shadow:0 0 28px rgba(55,211,154,.15)}
+.lead-finish-icon{width:72px;height:72px;border-radius:40%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;background:rgba(55,211,154,.12);border:1px solid rgba(55,211,154,.45);color:#37d39a;font-size:34px;box-shadow:0 0 28px rgba(55,211,154,.15)}
 .lead-ready{background:linear-gradient(145deg,rgba(37,99,235,.13),rgba(77,163,255,.04));border:1px solid rgba(77,163,255,.32);border-radius:10px;padding:22px;margin:20px 0 26px;text-align:center}
 .lead-ready .ai-icon{font-size:30px;margin-bottom:6px}
 .lead-ready h4{font-family:var(--serif);font-size:20px;letter-spacing:.08em;margin-bottom:7px}
@@ -550,8 +550,8 @@ table.ad tr:hover td{background:#f7faff}
 .qr-no{font-family:monospace;font-size:clamp(18px,5.4vw,24px);font-weight:700;color:#fff;letter-spacing:.04em}
 .copy-btn{display:inline-flex;align-items:center;gap:6px;background:var(--blue2);border:none;color:#fff;font-size:13px;font-weight:700;padding:10px 18px;border-radius:6px;cursor:pointer}
 .copy-btn:active{transform:scale(.97)}
-.copy-toast{position:fixed;left:50%;bottom:32px;transform:translateX(-50%) translateY(20px);background:#101b33;border:1px solid var(--blue);color:#fff;font-size:14px;padding:12px 22px;border-radius:999px;z-index:500;box-shadow:0 10px 30px rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:opacity .3s,transform .3s}
-.copy-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.copy-toast{position:fixed;left:40%;bottom:32px;transform:translateX(-40%) translateY(20px);background:#101b33;border:1px solid var(--blue);color:#fff;font-size:14px;padding:12px 22px;border-radius:999px;z-index:500;box-shadow:0 10px 30px rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:opacity .3s,transform .3s}
+.copy-toast.show{opacity:1;transform:translateX(-40%) translateY(0)}
 
 /* ---------- 公式LINE限定キャンペーン ---------- */
 .camp-box{border:1px solid rgba(245,158,11,.5);background:linear-gradient(160deg,rgba(245,158,11,.09),rgba(7,11,22,.4));border-radius:10px;padding:22px 16px;text-align:center;margin-bottom:18px}
@@ -572,7 +572,7 @@ table.ad tr:hover td{background:#f7faff}
 .consult-flow{border:1px solid var(--line);background:rgba(255,255,255,.03);border-radius:8px;padding:22px 18px;margin-bottom:6px}
 .consult-flow-title{font-size:15px;font-weight:700;text-align:center;margin-bottom:14px;letter-spacing:.1em}
 .consult-step{display:flex;align-items:flex-start;gap:14px;padding:9px 0}
-.consult-step .no{flex-shrink:0;width:34px;height:34px;border:1px solid var(--blue);color:var(--blue);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;letter-spacing:.05em}
+.consult-step .no{flex-shrink:0;width:34px;height:34px;border:1px solid var(--blue);color:var(--blue);border-radius:40%;display:flex;align-items:center;justify-content:center;font-size:13px;letter-spacing:.05em}
 .consult-step .tx{font-size:14px;line-height:1.7;padding-top:5px}
 
 /* ---------- スタッフ紹介・Un cuoreとは？ ---------- */
@@ -799,7 +799,7 @@ window.STAFF_IMG_FALLBACK = "data:image/jpeg;base64,/9j/4QAYRXhpZgAASUkqAAgAAAAA
 .cp-err{display:block;color:#fda4a4;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.4);border-radius:8px;font-size:13px;line-height:1.7;padding:10px 12px;margin-top:12px}
 .cp-steps{list-style:none;margin:14px 0 18px}
 .cp-steps li{display:flex;align-items:center;gap:12px;font-size:15px;letter-spacing:.05em;padding:11px 4px;color:#5a6c8f;transition:color .3s}
-.cp-steps li .ic{width:22px;height:22px;border-radius:50%;border:2px solid #38507e;flex:none;position:relative}
+.cp-steps li .ic{width:22px;height:22px;border-radius:40%;border:2px solid #38507e;flex:none;position:relative}
 .cp-steps li.act{color:#dbe7ff}
 .cp-steps li.act .ic{border-color:#3b82f6;border-top-color:transparent;animation:cpSpin .8s linear infinite}
 .cp-steps li.done{color:#8fa8d8}
@@ -840,7 +840,7 @@ window.STAFF_IMG_FALLBACK = "data:image/jpeg;base64,/9j/4QAYRXhpZgAASUkqAAgAAAAA
 .cp-cond-btn.on{background:linear-gradient(90deg,#2563eb,#3b82f6);border-color:transparent;color:#fff}
 .cp-cond-btn.on small{color:rgba(255,255,255,.85)}
 .cp-ai-label{text-align:center;font-size:11px;letter-spacing:.3em;color:#7fb0ff;margin:2px 0 8px;animation:cpPulse 1.2s ease-in-out infinite}
-@keyframes cpPulse{0%,100%{opacity:1}50%{opacity:.35}}
+@keyframes cpPulse{0%,100%{opacity:1}40%{opacity:.35}}
 .cp-tokuten{background:rgba(245,158,11,.10);border:1px dashed rgba(245,158,11,.55);border-radius:12px;padding:14px 16px;margin:14px 0;text-align:center}
 .cp-tokuten-t{display:block;color:#fbbf24;font-size:13px;font-weight:700;letter-spacing:.12em;margin-bottom:6px}
 .cp-tokuten-i{display:block;color:#fde9c8;font-size:15.5px;font-weight:700;letter-spacing:.06em;line-height:1.7}
@@ -1948,7 +1948,7 @@ function normalQuotePlans(){
     const recommended = id === "original";
 
     // Original CERAMICはウィンドウコート全面を含むセット通常価格を表示し、
-    // そのセット合計からLINE限定50%OFFを計算する（キャンペーン版と同じ考え方）。
+    // そのセット合計からLINE限定40%OFFを計算する（キャンペーン版と同じ考え方）。
     let windowCoat = 0;
     if(recommended){
       const win = DATA.options.find(x=>x.id==="win_all");
@@ -1958,7 +1958,7 @@ function normalQuotePlans(){
       }
     }
 
-    const linePrice = recommended ? Math.max(0, Math.round((normal * 0.5)/100)*100) : null;
+    const linePrice = recommended ? Math.max(0, Math.round((normal * 0.6)/100)*100) : null;
     return {m, normal, linePrice, recommended, windowCoat};
   }).filter(Boolean);
 }
@@ -1984,9 +1984,9 @@ function renderQuoteResult(){
       ${p.recommended ? `<div class="qr-plan-price-row">
         <div class="qr-plan-price"><small>Original CERAMIC＋ウィンドウコート付 通常価格</small><strong>${yen(p.normal)}</strong><small>税別・概算</small></div>
         <div class="qr-plan-arrow">→</div>
-        <div class="qr-plan-price line"><small>LINEお問い合わせ限定 50%OFF</small><strong>${yen(p.linePrice)}</strong><small>税別・概算</small></div>
+        <div class="qr-plan-price line"><small>LINEお問い合わせ限定 40%OFF</small><strong>${yen(p.linePrice)}</strong><small>税別・概算</small></div>
       </div>
-      <div class="qr-plan-only-benefit">LINE限定：通常価格から50%OFF（ウィンドウコート付）</div>` : `<div class="qr-plan-price-row single">
+      <div class="qr-plan-only-benefit">LINE限定：通常価格から40%OFF（ウィンドウコート付）</div>` : `<div class="qr-plan-price-row single">
         <div class="qr-plan-price"><small>通常見積価格</small><strong>${yen(p.normal)}</strong><small>税別・概算</small></div>
       </div>`}
     </div>`).join("");
@@ -2026,9 +2026,9 @@ function normalLineOfferBlock(){
     <div class="qr-line-limit10"><span class="now">今だけ！</span><span class="limit">10台限定！</span></div>
     <div class="qr-line-benefit">
       <div class="ey">Original CERAMIC限定｜公式LINE特典</div>
-      <div class="main">Original CERAMIC＋ウィンドウコート付を<br>LINEからお問い合わせで <b>50%OFF</b></div>
+      <div class="main">Original CERAMIC＋ウィンドウコート付を<br>LINEからお問い合わせで <b>40%OFF</b></div>
       <div class="sub">ウィンドウコート付の価格です</div>
-      <div class="note">※ Cuore russo coatは50%OFF対象外です。</div>
+      <div class="note">※ Cuore russo coatは40%OFF対象外です。</div>
     </div>
 
     <div class="line-guide">
@@ -2044,7 +2044,7 @@ function normalLineOfferBlock(){
   <a class="line-cta" href="https://line.me/ti/p/@271goter" target="_blank" rel="noopener"
     onclick="try{if(typeof window.gtag==='function')window.gtag('event','line_click',{event_category:'cta',event_label:'normal_result'});}catch(_){}">
     LINEでこの見積について問い合わせる<br>
-    <small style="font-size:11px;font-weight:500">Original CERAMIC＋ウィンドウコート付 50％OFF</small>
+    <small style="font-size:11px;font-weight:500">Original CERAMIC＋ウィンドウコート付 40％OFF</small>
   </a>
   <a class="tel-cta" href="tel:0120502168"
     onclick="try{if(typeof window.gtag==='function')window.gtag('event','tel_click',{event_category:'cta',event_label:'normal_result'});}catch(_){}">
@@ -2057,8 +2057,8 @@ function normalLineOfferBlock(){
 /* ── 見積もり番号ブロック＋コピー（キャンペーン版 共通処理） ── */
 function lineGuideBlock(){
   const cta = IS_CAMPAIGN
-    ? "公式LINEを追加して<br>50％OFF＋ウィンドウコート付きを受け取る"
-    : "LINEでこの見積について問い合わせる<br><small style=\"font-size:11px;font-weight:500\">Original CERAMIC＋ウィンドウコート付 50％OFF</small>";
+    ? "公式LINEを追加して<br>40％OFF＋ウィンドウコート付きを受け取る"
+    : "LINEでこの見積について問い合わせる<br><small style=\"font-size:11px;font-weight:500\">Original CERAMIC＋ウィンドウコート付 40％OFF</small>";
   return `<div class="line-guide">
     <p class="line-guide-title">公式LINE追加後、トーク画面に<br>「見積もり番号」を入力してください。</p>
     <div class="qr-norow" style="margin:10px 0 12px">
@@ -3430,15 +3430,15 @@ function cRenderCampResult(){
   let priceHtml = "";
   if(known){
     const p = cCalcPrices(state.size);
-    // 公式LINE追加キャンペーン：通常価格の50％OFF（100円単位に丸め）
-    const camp50 = Math.round(p.normal * 0.5 / 100) * 100;
+    // 公式LINE追加キャンペーン：通常価格の40％OFF（100円単位に丸め）
+    const camp40 = Math.round(p.normal * 0.6 / 100) * 100;
     priceHtml = `<div class="cp-pricebox">
       <p class="cp-plabel">通常価格</p>
       <p class="cp-price-normal">${yen(p.normal)}</p>
       <div class="cp-arrow">↓</div>
-      <p class="cp-off">公式LINE追加で50％OFF</p>
+      <p class="cp-off">公式LINE追加で40％OFF</p>
       <div class="cp-arrow">↓</div>
-      <p class="cp-price-camp">${yen(camp50)}<small>（税込）</small></p>
+      <p class="cp-price-camp">${yen(camp40)}<small>（税込）</small></p>
       <p class="camp-sub" style="margin-top:8px">＋ ウィンドウコート付き</p>
     </div>`;
   }else{
