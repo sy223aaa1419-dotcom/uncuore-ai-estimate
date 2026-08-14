@@ -510,6 +510,38 @@ table.ad tr:hover td{background:#f7faff}
 .qr-line-benefit .main b{color:#4ade80;font-size:1.16em}
 .qr-line-benefit .sub{font-size:16px;font-weight:700;color:#dfffea;margin-top:3px}
 .qr-line-combined{border:1px solid rgba(6,199,85,.45);background:linear-gradient(145deg,rgba(6,199,85,.11),rgba(7,11,22,.5));border-radius:10px;padding:20px 16px;margin:18px 0}
+.qr-line-limit10{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  margin:0 0 18px;
+  padding:10px 14px;
+  border-radius:8px;
+  background:linear-gradient(90deg,#ffb000,#ff5a1f);
+  color:#fff;
+  font-size:clamp(22px,5vw,34px);
+  font-weight:900;
+  letter-spacing:.06em;
+  line-height:1.15;
+  text-align:center;
+  text-shadow:0 2px 10px rgba(0,0,0,.22);
+  box-shadow:0 8px 24px rgba(255,120,0,.18),0 0 0 1px rgba(255,255,255,.08) inset;
+}
+.qr-line-limit10 .now{
+  font-size:.72em;
+  white-space:nowrap;
+}
+.qr-line-limit10 .limit{
+  white-space:nowrap;
+}
+@media(max-width:520px){
+  .qr-line-limit10{
+    gap:6px;
+    padding:9px 10px;
+    font-size:clamp(20px,7vw,28px);
+  }
+}
 .qr-line-combined .qr-line-benefit{border:0;background:none;border-radius:0;padding:0 0 18px;margin:0;text-align:center}
 .qr-line-combined .line-guide{border:0!important;background:none!important;border-radius:0!important;padding:18px 0 0!important;margin:0!important;border-top:1px solid rgba(6,199,85,.24)!important}
 @media(max-width:520px){.qr-plan-price-row{grid-template-columns:1fr}.qr-plan-arrow{transform:rotate(90deg);line-height:1}.qr-plan-card{padding:18px 14px}}
@@ -1986,6 +2018,7 @@ async function retryQuote(btn){
 /* ── 通常版：LINE特典＋見積番号案内を1枚のカードに統合 ── */
 function normalLineOfferBlock(){
   return `<div class="qr-line-combined">
+    <div class="qr-line-limit10"><span class="now">今だけ！</span><span class="limit">10台限定！</span></div>
     <div class="qr-line-benefit">
       <div class="ey">Original CERAMIC限定｜公式LINE特典</div>
       <div class="main">Original CERAMIC＋ウィンドウコート付を<br>LINEからお問い合わせで <b>50%OFF</b></div>
