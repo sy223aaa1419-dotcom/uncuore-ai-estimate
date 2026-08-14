@@ -1449,11 +1449,11 @@ function renderVehicle(){
     html += `<button class="choice ${state.notFound?'sel':''}" onclick="selNotFound()" style="border-style:dashed;color:var(--muted)">車種が見つかりません</button></div>`;
     if(state.notFound){
       html += `<div class="notfound-box">
-        <p>サイズ表にないお車は、メーカーと車種をご入力のうえお問い合わせください。<br>担当者が確認し、正確なお見積をご案内いたします。</p>
+        <p>登録されていない車種のため、AI見積では正確なサイズ判定ができません。<br>公式LINEからお問い合わせください。</p>
         <div class="nf-grid">
           <input id="nfMaker" placeholder="メーカー名（例：トヨタ）" value="${state.maker||""}">
           <input id="nfModel" placeholder="車種名（例：センチュリー）">
-          <button class="btn next" onclick="nfContact()">この内容で問い合わせる</button>
+          <button class="btn next" onclick="nfContact()">公式LINEで問い合わせる</button>
         </div>
       </div>`;
     }
@@ -1467,17 +1467,22 @@ function renderVehicle(){
   }
 }
 
-/* --- サイズ表にない車種 → 問い合わせへ --- */
+/* --- 登録外車種 → 公式LINEへ --- */
 function nfContact(){
   const mk = document.getElementById("nfMaker").value.trim();
   const md = document.getElementById("nfModel").value.trim();
   if(!mk || !md){ alert("メーカー名と車種名をご入力ください。"); return; }
-  const baseModel=baseVehicleModel(md,mk)||md;
-  openContact(`【お問い合わせ種別】サイズ表にない車種の見積依頼
-【メーカー】${mk}
-【車種】${baseModel}
-――――――――――
-上記車両のコーティング見積を希望します。`);
+
+  // 登録外車種は見積を止め、公式LINEへ誘導する。
+  // LINE側ではメーカー名・車種名を貼り付けてもらい、スタッフが個別確認する。
+  const message = `登録されていない車種の見積相談です。
+メーカー：${mk}
+車種：${md}`;
+  try{
+    navigator.clipboard?.writeText(message);
+  }catch(_){}
+
+  window.open(LINE_URL, "_blank", "noopener");
 }
 
 /* --- 写真AI判定 --- */
