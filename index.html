@@ -710,7 +710,7 @@ window.STAFF_IMG_FALLBACK = "data:image/jpeg;base64,/9j/4QAYRXhpZgAASUkqAAgAAAAA
 
 
 
-    <p class="section-sub fade-up">お名前・メールアドレスの入力は不要 ｜ その場で見積もり価格を表示します</p>
+    <p class="section-sub fade-up">お名前・メールアドレスの入力は不要<br>AIが判定した見積結果を公式LINEで受け取れます</p>
 
     <div class="wizard-shell fade-up">
       <div class="progress"><div class="progress-bar" id="progressBar" style="width:12%"></div></div>
@@ -1874,6 +1874,7 @@ async function issueQuote(){
         menu:m.name,
         optionIds:[],
         source:"normal",
+        attribution:(()=>{ const q=new URLSearchParams(location.search); return {utm_source:q.get("utm_source")||"",utm_medium:q.get("utm_medium")||"",utm_campaign:q.get("utm_campaign")||"",utm_content:q.get("utm_content")||"",referrer:document.referrer||""}; })(),
         turnstileToken:state.leadTurnstileToken||""
       })
     });
@@ -1963,55 +1964,42 @@ function normalQuotePlans(){
   }).filter(Boolean);
 }
 
-/* STEP5: 見積結果（その場で金額・見積番号を表示） */
+/* STEP5: AI判定完了後は金額をWeb上に表示せず、LINEで結果を受け取る */
 function renderQuoteResult(){
-  // 発行失敗時：再試行導線
   if(!state.estimateNo){
     body().innerHTML = `<div class="step" style="text-align:center">
       <p class="cp-err" style="display:block">⚠ ${escHtml(state.quoteError||"見積の発行に失敗しました。もう一度お試しください。")}</p>
-      <button class="cp-btn go" onclick="retryQuote(this)" style="margin-top:14px">もう一度見積もりを表示する</button>
+      <button class="cp-btn go" onclick="retryQuote(this)" style="margin-top:14px">もう一度見積もりを作成する</button>
       <div class="nav-row" style="justify-content:center"><button class="btn" onclick="go(2)">← 新車・経年車の選択に戻る</button></div>
     </div>`;
     return;
   }
-  const plans = normalQuotePlans();
-  const planHtml = plans.map(p=>`
-    <div class="qr-plan-card ${p.recommended?'recommended':''}">
-      ${p.recommended?`<span class="qr-plan-ribbon">★ おすすめ</span><span class="qr-plan-limit">限定10台</span>`:""}
-      <div class="qr-plan-name">${escHtml(p.m.name)}</div>
-      <div class="qr-plan-kana">${escHtml(p.m.kana||"")}</div>
-      <div class="qr-plan-desc">${escHtml(p.m.desc||"")}</div>
-      ${p.recommended ? `<div class="qr-plan-price-row">
-        <div class="qr-plan-price"><small>Original CERAMIC 通常価格</small><strong>${yen(p.normal)}</strong><small>税別・概算</small></div>
-        <div class="qr-plan-arrow">→</div>
-        <div class="qr-plan-price line"><small>LINEお問い合わせ限定 40%OFF ＋ウィンドウコート付</small><strong>${yen(p.linePrice)}</strong><small>税別・概算</small></div>
-      </div>
-      <div class="qr-plan-only-benefit">LINE限定：通常価格から40%OFF（ウィンドウコート付）</div>` : `<div class="qr-plan-price-row single">
-        <div class="qr-plan-price"><small>通常見積価格</small><strong>${yen(p.normal)}</strong><small>税別・概算</small></div>
-      </div>`}
-    </div>`).join("");
-
+  const lineUrl=`/api/line/start?estimate=${encodeURIComponent(state.estimateNo)}`;
   body().innerHTML = `<div class="step quote-result">
     <div class="result-head">
-      <p class="no">ESTIMATE RESULT</p>
-      <h3>あなたの愛車のお見積もり</h3>
-      <p class="step-desc" style="text-align:center;margin-top:8px;margin-bottom:0">AIがお車に合わせたコーティングプランをご提案します。</p>
+      <p class="no">AI ESTIMATE COMPLETE</p>
+      <h3>AI見積が完成しました</h3>
+      <p class="step-desc" style="text-align:center;margin-top:8px;margin-bottom:0">AIが判定した見積結果を公式LINEで受け取れます。</p>
     </div>
     <div class="qr-rows">
       <div class="qr-row"><span class="k">車種</span><span class="v">${escHtml(state.maker||"—")} ${escHtml(state.model||"")}</span></div>
       <div class="qr-row"><span class="k">判定サイズ</span><span class="v">${escHtml(state.size||"—")}</span></div>
       <div class="qr-row"><span class="k">車両状態</span><span class="v">${state.condition==="new"?"新車":"経年車"}</span></div>
     </div>
-
-    <div class="qr-plan-list">${planHtml}</div>
-
-    ${normalLineOfferBlock()}
-    ${consultFlowBlock()}
-    <p class="qr-note">※ 表示価格は税別・概算です。車両の状態により変動する場合があります。正式なお見積もりは現車確認のうえご提示いたします。<br>※ LINE限定特典の適用条件・施工内容はスタッフよりご案内いたします。</p>
-    <p style="text-align:center;margin-top:10px"><button class="cp-textlink" onclick="openContact()" style="width:auto;display:inline-block">フォームでお問い合わせ</button></p>
-    <div class="nav-row" style="justify-content:center">
-      <button class="btn" onclick="restart()">最初からやり直す</button>
+    <div class="line-guide" style="margin-top:20px">
+      <p class="line-guide-title">見積番号</p>
+      <div class="qr-norow" style="margin:10px 0 12px">
+        <span class="qr-no" style="font-size:clamp(16px,4.8vw,22px)">${escHtml(state.estimateNo)}</span>
+        <button class="copy-btn" onclick="copyEstimateNo()">📋 コピー</button>
+      </div>
     </div>
+    <a class="line-cta" href="${lineUrl}" style="margin-top:18px"
+      onclick="try{if(typeof window.gtag==='function')window.gtag('event','line_login_start',{event_category:'cta',event_label:state.estimateNo});}catch(_){}">
+      見積結果をLINEで受け取る
+    </a>
+    <p class="qr-note" style="text-align:center;margin-top:14px">公式LINEを友だち追加すると、AI見積結果がトーク画面に届きます。<br>そのままスタッフへのご相談・ご予約も可能です。</p>
+    <a class="tel-cta" href="tel:0120502168"><span>電話でお問い合わせ</span><strong>0120-502-168</strong><small>タップすると発信できます</small></a>
+    <div class="nav-row" style="justify-content:center"><button class="btn" onclick="restart()">最初からやり直す</button></div>
   </div>`;
 }
 async function retryQuote(btn){

@@ -209,6 +209,8 @@ export async function onRequestPost(context){
   const carAge=str(body.vehicle?.carAge,10);
   const menuName=str(body.menu,100);
   const source=body.source==="campaign" ? "campaign" : "normal";
+  const a=body.attribution&&typeof body.attribution==="object"?body.attribution:{};
+  const attribution={utm_source:str(a.utm_source,100),utm_medium:str(a.utm_medium,100),utm_campaign:str(a.utm_campaign,160),utm_content:str(a.utm_content,160),referrer:str(a.referrer,500)};
 
   // 氏名・メール・電話は任意（LP即時表示フローでは未入力のまま見積を発行する）。
   // 入力された場合のみ形式チェックを行う。
@@ -241,6 +243,18 @@ export async function onRequestPost(context){
     };
   }
   if(!calc.results.length) return json({error:"見積メニューを取得できませんでした。"},500);
+
+  // LINEで表示するOriginal CERAMIC限定価格：通常価格の40%OFF + ウィンドウコート付
+  // Web上では価格を非表示にするが、サーバー側で確定値を保存してLINE送信に使用する。
+  let lineOffer=null;
+  const original=cfg.menus.find(m=>m.id==="original");
+  const win=cfg.options.find(o=>o.id==="win_all");
+  if(original){
+    const originalBase=menuBase(original,carAge,size);
+    const windowPrice=win?optionPrice(win,size):0;
+    const regularTotal=originalBase+windowPrice;
+    lineOffer={menu:"Original CERAMIC",benefit:"40%OFF ＋ウィンドウコート付",regularTotal,price:Math.max(0,Math.round((regularTotal*0.6)/100)*100),windowCoat:windowPrice};
+  }
 
   const id=makeId();
   const now=new Date();
@@ -353,6 +367,10 @@ export async function onRequestPost(context){
     history:[historyLine],
     emailStatus,
     resultMenus:calc.results,
+    lineOffer,
+    attribution,
+    lineLinked:false,
+    lineSent:false,
   };
 
   const saved=await saveRecord(kv,`est:${id}`,JSON.stringify(record));
@@ -374,6 +392,10 @@ export async function onRequestPost(context){
     status:"未対応",
     memo:"",
     emailStatus,
+    lineOffer,
+    attribution,
+    lineLinked:false,
+    lineSent:false,
   };
   const savedQuote=await saveRecord(kv,`quote:${id}`,JSON.stringify(quoteRecord));
   if(savedQuote){
