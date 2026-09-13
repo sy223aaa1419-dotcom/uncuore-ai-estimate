@@ -1986,18 +1986,14 @@ function renderQuoteResult(){
       <div class="qr-row"><span class="k">判定サイズ</span><span class="v">${escHtml(state.size||"—")}</span></div>
       <div class="qr-row"><span class="k">車両状態</span><span class="v">${state.condition==="new"?"新車":"経年車"}</span></div>
     </div>
-    <div class="line-guide" style="margin-top:20px">
-      <p class="line-guide-title">見積番号</p>
-      <div class="qr-norow" style="margin:10px 0 12px">
-        <span class="qr-no" style="font-size:clamp(16px,4.8vw,22px)">${escHtml(state.estimateNo)}</span>
-        <button class="copy-btn" onclick="copyEstimateNo()">📋 コピー</button>
-      </div>
+    
     </div>
     <a class="line-cta" href="${lineUrl}" style="margin-top:18px"
       onclick="try{if(typeof window.gtag==='function')window.gtag('event','line_login_start',{event_category:'cta',event_label:state.estimateNo});}catch(_){}">
       見積結果をLINEで受け取る
+      <small style="display:block;margin-top:7px;font-size:13px;font-weight:800;letter-spacing:.04em">LINEから予約で40％OFF</small>
     </a>
-    <p class="qr-note" style="text-align:center;margin-top:14px">公式LINEを友だち追加すると、AI見積結果がトーク画面に届きます。<br>そのままスタッフへのご相談・ご予約も可能です。</p>
+    <p class="qr-note" style="text-align:center;margin-top:14px"><strong style="color:#4ade80">LINEからのご予約で40％OFF</strong><br>公式LINEを友だち追加すると、AI見積結果がトーク画面に届きます。<br>そのままスタッフへのご相談・ご予約も可能です。</p>
     <a class="tel-cta" href="tel:0120502168"><span>電話でお問い合わせ</span><strong>0120-502-168</strong><small>タップすると発信できます</small></a>
     <div class="nav-row" style="justify-content:center"><button class="btn" onclick="restart()">最初からやり直す</button></div>
   </div>`;
