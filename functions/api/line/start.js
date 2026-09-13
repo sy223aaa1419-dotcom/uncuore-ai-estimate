@@ -12,7 +12,7 @@ export async function onRequestGet({request,env}){
   const state=crypto.randomUUID().replace(/-/g,"");
   await kv.put(`lineoauth:${state}`,JSON.stringify({estimate,createdAt:new Date().toISOString()}),{expirationTtl:600});
   await metric(kv,"line_login_start");
-  const q=new URLSearchParams({response_type:"code",client_id:env.LINE_LOGIN_CHANNEL_ID,redirect_uri:`${ORIGIN}/api/line/callback`,state,scope:"profile openid",bot_prompt:"aggressive"});
+  const q=new URLSearchParams({response_type:"code",client_id:env.LINE_LOGIN_CHANNEL_ID,redirect_uri:`${ORIGIN}/api/line/callback`,state,scope:"profile openid",bot_prompt:"normal"});
   return Response.redirect(`https://access.line.me/oauth2/v2.1/authorize?${q.toString()}`,302);
 }
 export async function onRequest(c){if(c.request.method==="GET")return onRequestGet(c);return new Response("Method Not Allowed",{status:405});}
