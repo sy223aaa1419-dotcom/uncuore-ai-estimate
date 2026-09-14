@@ -38,7 +38,16 @@ export async function onRequestGet({request,env}){
  const eraw=await kv.get(`est:${q.id}`);if(eraw){try{const e=JSON.parse(eraw);e.lineLinked=true;e.lineUserId=userId;e.lineLinkedAt=q.lineLinkedAt;await kv.put(`est:${q.id}`,JSON.stringify(e));}catch(_){}}
  if(!env.LINE_CHANNEL_ACCESS_TOKEN)return html("<h2>LINE送信設定が未完了です</h2>",503);
  const sr=await push(env.LINE_CHANNEL_ACCESS_TOKEN,userId,flex(q));
- if(sr.ok){q.lineSent=true;q.lineSentAt=new Date().toISOString();await kv.put(`quote:${q.id}`,JSON.stringify(q));await metric(kv,"line_send_success");return html(`<div style="font-size:52px">✓</div><h2>見積結果をLINEへ送信しました</h2><p style="color:#9fb1ca;line-height:1.8">Un cuore公式LINEのトーク画面をご確認ください。<br>そのままご相談・ご予約いただけます。</p><a href="https://line.me/R/ti/p/@271goter" style="display:inline-block;margin-top:20px;padding:15px 24px;border-radius:8px;background:#06c755;color:#fff;text-decoration:none;font-weight:700">公式LINEを開く</a>`);}
+ if(sr.ok){
+  q.lineSent=true;
+  q.lineSentAt=new Date().toISOString();
+  await kv.put(`quote:${q.id}`,JSON.stringify(q));
+  await metric(kv,"line_send_success");
+
+  // 見積結果送信成功後は確認ページを挟まず、
+  // Un cuore公式LINEのトーク画面へそのまま移動する。
+  return Response.redirect("https://line.me/R/oaMessage/%40271goter",302);
+}
  const detail=await sr.text();console.error("LINE push failed",sr.status,detail);await metric(kv,"line_send_failed");
  return html(`<h2>LINEへの送信を完了できませんでした</h2><p style="color:#9fb1ca;line-height:1.8">Un cuore公式LINEを友だち追加してから、AI見積画面でもう一度「見積結果をLINEで受け取る」を押してください。</p><a href="https://line.me/R/ti/p/@271goter" style="display:inline-block;margin-top:20px;padding:15px 24px;border-radius:8px;background:#06c755;color:#fff;text-decoration:none;font-weight:700">Un cuoreを友だち追加</a>`,502);
 }
